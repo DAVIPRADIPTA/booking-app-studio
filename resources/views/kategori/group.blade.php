@@ -1839,7 +1839,7 @@
                                 </svg>
                             </div>
                             <div class="btn-text-content">
-                                <span class="btn-text">Kirim1 Pemesanan</span>
+                                <span class="btn-text">Kirim Pemesanan</span>
                                 <span class="btn-subtext">Kami akan menghubungi Anda via WhatsApp</span>
                             </div>
                         </div>
