@@ -1610,7 +1610,7 @@ document.addEventListener('DOMContentLoaded', function() {
             resetForm();
             // --- AKHIR LOGIKA BARU ---
 
-            // sendWhatsAppMessage(); // Opsional: Kamu bisa uncomment ini jika ingin tetap mengirim WA juga.
+            sendWhatsAppMessage(); // Opsional: Kamu bisa uncomment ini jika ingin tetap mengirim WA juga.
 
         } catch (error) {
             showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
