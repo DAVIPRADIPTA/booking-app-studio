@@ -36,12 +36,14 @@ Route::get('/kategori/prewed', function () {
     $backgroundItems = Background::where('category', 'pre-wedding')->where('is_active', true)->get();
 
     
-    
+    $termsAndCondition = TermsAndCondition::all();
+
     return view('kategori.prewed', [
         'printItems' => $printItems,
         'frameItems' => $frameItems,
         'serviceItems' => $serviceItems,
-        'backgroundItems' => $backgroundItems
+        'backgroundItems' => $backgroundItems,
+        'terms' => $termsAndCondition
     ]);
 })->name('kategori.prewed');
 
@@ -76,10 +78,12 @@ Route::get('/kategori/baby', function () {
     // Ambil semua item dari kategori 'tambahan' (saya asumsikan ini yang Anda maksud dengan 'layanan tambahan')
     $serviceItems = ExtraItem::where('category', 'tambahan-layanan')->where('is_active', true)->get();
     
+    $termsAndCondition = TermsAndCondition::all();
     return view('kategori.baby', [
         'printItems' => $printItems,
         'frameItems' => $frameItems,
         'serviceItems' => $serviceItems,
+        'terms' => $termsAndCondition
     ]);
 })->name('kategori.baby');
 

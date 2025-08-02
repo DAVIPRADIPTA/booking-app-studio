@@ -1568,13 +1568,6 @@
                             <div class="background-name">{{ $item->name }}</div>
                         </div>
                         @endforeach
-                        <div class="background-option disabled" data-background="prewed-1" data-name="Prewed 1"
-                            tabindex="0" role="button" aria-label="Select Prewed 1 background">
-                            <img src="{{ asset('images/prewed/1.jpg') }}" alt="Prewed Background 1"
-                                class="background-image" loading="lazy">
-                            <div class="background-name">Prewed 1</div>
-                        </div>
-            
                     </div>
                 </div>
 
@@ -1713,52 +1706,25 @@
                 </svg>
             </button>
         </div>
+               {{-- Body Modal dengan Content --}}
+        @if($terms->isNotEmpty())
         <div class="terms-modal-body">
             <div class="terms-content">
-                <h3>1. Waktu Pemotretan</h3>
+                @foreach($terms as $term)
+                <h3>{{ $term->content }}</h3>
                 <ul>
-                    <li>Harap datang tepat waktu sesuai jadwal yang telah disepakati.</li>
-                    <li>Keterlambatan lebih dari 15 menit dapat mengurangi durasi sesi atau membatalkan sesi tanpa
-                        pengembalian dana.</li>
+                    @foreach(explode("\n", $term->sub_content) as $item)
+                    @if (trim($item) !== '')
+                    <li>{{ $item }}</li>
+                    @endif
+                    @endforeach
                 </ul>
-
-                <h3>2. Pembayaran</h3>
-                <ul>
-                    <li><strong>Booking dinyatakan sah setelah melakukan pembayaran DP minimal 50%.</strong></li>
-                    <li>Pelunasan dilakukan sebelum sesi dimulai.</li>
-                    <li>Pembatalan sepihak dari pelanggan akan menyebabkan DP hangus.</li>
-                </ul>
-
-                <h3>3. Pemilihan Foto & Editing</h3>
-                <ul>
-                    <li>Jumlah foto edit sesuai paket.</li>
-                    <li>Pemilihan foto dilakukan maksimal 2 hari setelah sesi.</li>
-                    <li>Revisi hanya bisa dilakukan 1x untuk minor correction.</li>
-                </ul>
-
-                <h3>4. Hak Cipta & Publikasi</h3>
-                <p>Semua hasil foto dapat digunakan oleh Peace Photo Studio untuk keperluan promosi (Instagram, website,
-                    dll) kecuali pelanggan menyatakan keberatan saat booking.</p>
-
-                <h3>5. Wardrobe & Background</h3>
-                <ul>
-                    <li>Penggunaan wardrobe & background sesuai jumlah pada paket.</li>
-                    <li>Extra wardrobe/background akan dikenakan biaya tambahan.</li>
-                </ul>
-
-                <h3>6. Penyimpanan File</h3>
-                <ul>
-                    <li>Hasil foto disimpan di Google Drive selama 1 bulan.</li>
-                    <li>Lewat dari itu, Peace Photo Studio tidak menjamin ketersediaan file.</li>
-                </ul>
-
-                <h3>7. Perubahan Jadwal</h3>
-                <ul>
-                    <li>Perubahan jadwal hanya dapat dilakukan maksimal H-2.</li>
-                    <li>Jika mendadak, maka dianggap pembatalan dan DP hangus.</li>
-                </ul>
+                @endforeach
             </div>
         </div>
+        @else
+        <p>Syarat & ketentuan belum tersedia.</p>
+        @endif
         <div class="terms-modal-footer">
             <div class="terms-agreement">
                 <input type="checkbox" id="termsCheckbox" class="terms-checkbox">

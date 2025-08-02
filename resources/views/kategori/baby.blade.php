@@ -1382,65 +1382,25 @@
                 </svg>
             </button>
         </div>
+              {{-- Body Modal dengan Content --}}
+        @if($terms->isNotEmpty())
         <div class="terms-modal-body">
             <div class="terms-content">
-                <h3>1. Waktu Pemotretan</h3>
+                @foreach($terms as $term)
+                <h3>{{ $term->content }}</h3>
                 <ul>
-                    <li>Harap datang tepat waktu sesuai jadwal yang telah disepakati.</li>
-                    <li>Keterlambatan lebih dari 15 menit dapat mengurangi durasi sesi atau membatalkan sesi tanpa pengembalian dana.</li>
+                    @foreach(explode("\n", $term->sub_content) as $item)
+                    @if (trim($item) !== '')
+                    <li>{{ $item }}</li>
+                    @endif
+                    @endforeach
                 </ul>
-
-                <h3>2. Pembayaran</h3>
-                <ul>
-                    <li><strong>Booking dinyatakan sah setelah melakukan pembayaran DP minimal 50%.</strong></li>
-                    <li>Pelunasan dilakukan sebelum sesi dimulai.</li>
-                    <li>Pembatalan sepihak dari pelanggan akan menyebabkan DP hangus.</li>
-                </ul>
-
-                <h3>3. Pemilihan Foto & Editing</h3>
-                <ul>
-                    <li>Jumlah foto edit sesuai paket (10 foto edited).</li>
-                    <li>Pemilihan foto dilakukan maksimal 2 hari setelah sesi.</li>
-                    <li>Revisi hanya bisa dilakukan 1x untuk minor correction.</li>
-                </ul>
-
-                <h3>4. Hak Cipta & Publikasi</h3>
-                <p>Semua hasil foto dapat digunakan oleh Peace Photo Studio untuk keperluan promosi (Instagram, website, dll) kecuali pelanggan menyatakan keberatan saat booking.</p>
-
-                <h3>5. Kebijakan Khusus Baby Smash Cake</h3>
-                <ul>
-                    <li><strong>Orang tua wajib mendampingi selama sesi pemotretan.</strong></li>
-                    <li><strong>Studio tidak menyediakan kue. Kue dibawa sendiri oleh orang tua.</strong></li>
-                    <li>Bayi harus dalam kondisi sehat dan tidak rewel saat sesi.</li>
-                    <li>Jika bayi tidak kooperatif, sesi dapat dijadwal ulang tanpa biaya tambahan (1x kesempatan).</li>
-                </ul>
-
-                <h3>6. Wardrobe & Props</h3>
-                <ul>
-                    <li>Maksimal 2 wardrobe sesuai paket.</li>
-                    <li>Extra wardrobe akan dikenakan biaya tambahan Rp100.000.</li>
-                    <li>Studio menyediakan props dasar untuk baby smash cake.</li>
-                </ul>
-
-                <h3>7. Penyimpanan File</h3>
-                <ul>
-                    <li>Hasil foto disimpan di Google Drive selama 1 bulan.</li>
-                    <li>Lewat dari itu, Peace Photo Studio tidak menjamin ketersediaan file.</li>
-                </ul>
-
-                <h3>8. Perubahan Jadwal</h3>
-                <ul>
-                    <li>Perubahan jadwal hanya dapat dilakukan maksimal H-2.</li>
-                    <li>Jika mendadak karena kondisi bayi sakit, dapat dijadwal ulang dengan surat keterangan dokter.</li>
-                </ul>
-
-                <h3>9. Keamanan & Keselamatan</h3>
-                <ul>
-                    <li>Orang tua bertanggung jawab penuh atas keamanan dan keselamatan bayi selama sesi.</li>
-                    <li>Studio telah menyediakan lingkungan yang aman, namun pengawasan tetap menjadi tanggung jawab orang tua.</li>
-                </ul>
+                @endforeach
             </div>
         </div>
+        @else
+        <p>Syarat & ketentuan belum tersedia.</p>
+        @endif
         <div class="terms-modal-footer">
             <div class="terms-agreement">
                 <input type="checkbox" id="termsCheckbox" class="terms-checkbox">
