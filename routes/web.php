@@ -99,8 +99,8 @@ Route::middleware(['auth', 'verified'])->group(function(){
     Route::get('/dashboard',[DashboardController::class, 'dashboard'] )->name('dashboard');
     // Route::get('/ekstra-item',[DashboardController::class, 'ekstra'] )->name('ekstra');
     Route::resource('backgrounds', BackgroundController::class);
-    Route::resource('extra-items', ExtraItemsController::class);
     Route::resource('bookings', AdminBookingController::class)->except(['create', 'store', 'edit']);
+    Route::resource('extra-items', ExtraItemsController::class);
     Route::resource('terms', TermsAndConditionController::class);
 
     // Route::get('/order', [OrderController::class, 'index'])->name('order');
