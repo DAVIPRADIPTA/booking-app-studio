@@ -21,7 +21,7 @@ class BookingController extends Controller
             'session_name' => 'required|string|max:255',
             'package_name' => 'required|string|max:255',
             'selected_backgrounds' => 'nullable|array',
-            'selected_extra_items' => 'required|array',
+            'selected_extra_items' => 'nullable|array',
             'total_price' => 'required|integer|min:0',
             'notes' => 'nullable|string',
         ]);

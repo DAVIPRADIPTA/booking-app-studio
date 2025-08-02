@@ -1520,7 +1520,7 @@
 
                     <div class="form-group">
                         <label for="phone" class="form-label">Nomor WhatsApp</label>
-                        <input type="tel" id="phone" name="phone" class="form-input" placeholder="08xxxxxxxxxx" required
+                        <input type="tel" id="phone" name="phone" class="form-input" placeholder="+62xxxxxxxxxx" required
                             pattern="[0-9]{10,15}" aria-describedby="phone-error">
                         <div id="phone-error" class="error-message" role="alert" aria-live="polite"></div>
                     </div>

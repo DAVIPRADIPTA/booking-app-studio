@@ -1206,7 +1206,7 @@
                     <div class="form-group">
                         <label for="phone" class="form-label">Nomor WhatsApp</label>
                         <input type="tel" id="phone" name="phone" class="form-input" 
-                               placeholder="08xxxxxxxxxx" required pattern="[0-9]{10,15}" aria-describedby="phone-error">
+                               placeholder="+62xxxxxxxxxx" required pattern="[0-9]{10,15}" aria-describedby="phone-error">
                         <div id="phone-error" class="error-message" role="alert" aria-live="polite"></div>
                     </div>
 
@@ -1680,7 +1680,12 @@ document.addEventListener('DOMContentLoaded', function() {
     async function simulateFormSubmission() {
         return new Promise(resolve => setTimeout(resolve, 1500));
     }
-
+    async function sendWhatsAppMessage() {
+            const formData = new FormData(bookingForm);
+            const message = generateWhatsAppMessage(formData);
+            const whatsappUrl = `https://wa.me/6281994662990?text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
     function generateWhatsAppMessage(formData) {
         const timeNames = {
             'morning': 'Morning (08:00 - 10:00)',

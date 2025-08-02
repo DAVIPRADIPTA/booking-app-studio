@@ -1659,7 +1659,7 @@
                             id="phone"
                             name="phone"
                             class="form-input"
-                            placeholder="08xxxxxxxxxx"
+                            placeholder="+62xxxxxxxxxx"
                             required
                             pattern="[0-9]{10,15}"
                             aria-describedby="phone-error">
