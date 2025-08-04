@@ -86,7 +86,6 @@
             opacity: 0;
             transform: translateY(30px);
         }
-
         to {
             opacity: 1;
             transform: translateY(0);
@@ -351,7 +350,6 @@
             grid-template-columns: 1fr 1fr;
             gap: clamp(1.8rem, 3.5vw, 2.3rem);
         }
-
         .form-group.full-width {
             grid-column: 1 / -1;
         }
@@ -553,11 +551,9 @@
         0% {
             box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
         }
-
         70% {
             box-shadow: 0 0 0 10px rgba(220, 38, 38, 0);
         }
-
         100% {
             box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
         }
@@ -970,7 +966,6 @@
         0% {
             transform: rotate(0deg);
         }
-
         100% {
             transform: rotate(360deg);
         }
@@ -1187,7 +1182,6 @@
         .terms-content {
             columns: 2;
         }
-
         .terms-content h3 {
             break-after: avoid;
             break-inside: avoid;
@@ -1348,16 +1342,13 @@
             text-align: center;
             padding: clamp(1.1rem, 2.2vw, 1.4rem) clamp(1.2rem, 2.5vw, 1.6rem);
         }
-
         .btn-text-content {
             align-items: center;
             text-align: center;
         }
-
         .terms-modal-actions {
             flex-direction: column;
         }
-
         .terms-btn {
             width: 100%;
         }
@@ -1367,19 +1358,15 @@
         .content-wrapper {
             padding: 1.5rem 1rem 5rem;
         }
-
         .background-grid {
             grid-template-columns: repeat(2, 1fr);
         }
-
         .extras-grid {
             grid-template-columns: 1fr;
         }
-
         .form-grid {
             grid-template-columns: 1fr;
         }
-
         .package-section {
             flex-direction: column;
         }
@@ -1430,7 +1417,6 @@
     <div class="cinematic-bg">
         <div class="cinematic-overlay"></div>
     </div>
-
     <!-- Main Content -->
     <div class="content-wrapper">
         <!-- Hero Section -->
@@ -1442,14 +1428,12 @@
                 photography sessions that will create memories to last a lifetime
             </p>
         </div>
-
         <!-- Main Content Grid -->
         <div class="content-grid">
             <!-- Pricing Image Section -->
             <div class="pricing-section">
                 <img src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Prewed_price.jpg-DV6Cgo0Ug7wR0yMXl2Ok7Igf4oA7GB.jpeg" alt="Pre-Wedding Package Flyer" class="pricing-image" loading="lazy">
             </div>
-
             <!-- Package Cards Section -->
             <div class="package-section">
                 <!-- Prewed I Package -->
@@ -1468,7 +1452,6 @@
                         <li>Google Drive Expired 1 Month</li>
                     </ul>
                 </div>
-
                 <!-- Prewed II Package -->
                 <div class="package-card" data-package="prewed2" data-price="1000000" data-backgrounds="3" tabindex="0"
                     role="button" aria-label="Select Prewed II Package">
@@ -1487,11 +1470,9 @@
                 </div>
             </div>
         </div>
-
         <!-- Booking Form Section -->
         <div class="booking-section">
             <h2 class="booking-title font-dancing">Book Your Dream Session</h2>
-
             <!-- Package Selection Notice -->
             <div class="package-notice" id="packageNotice" role="alert" aria-live="polite">
                 <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -1500,14 +1481,12 @@
                 </svg>
                 <span>Silakan pilih paket terlebih dahulu untuk melihat pilihan background yang tersedia</span>
             </div>
-
             <div class="success-message" id="successMessage" role="alert" aria-live="polite">
                 <svg class="inline w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                 </svg>
                 Booking request sent successfully! We'll contact you soon via WhatsApp.
             </div>
-
             <form id="bookingForm" novalidate>
                 <!-- Basic Information -->
                 <div class="form-grid">
@@ -1517,34 +1496,33 @@
                             placeholder="Nama lengkap" required aria-describedby="contactName-error">
                         <div id="contactName-error" class="error-message" role="alert" aria-live="polite"></div>
                     </div>
-
                     <div class="form-group">
                         <label for="phone" class="form-label">Nomor WhatsApp</label>
                         <input type="tel" id="phone" name="phone" class="form-input" placeholder="+62xxxxxxxxxx" required
                             pattern="[0-9]{10,15}" aria-describedby="phone-error">
                         <div id="phone-error" class="error-message" role="alert" aria-live="polite"></div>
                     </div>
-
                     <div class="form-group">
                         <label for="date" class="form-label">Tanggal Pemotretan</label>
                         <input type="date" id="date" name="date" class="form-input" required
                             aria-describedby="date-error">
                         <div id="date-error" class="error-message" role="alert" aria-live="polite"></div>
                     </div>
-
                     <div class="form-group">
                         <label for="time" class="form-label">Waktu Pemotretan</label>
                         <select id="time" name="time" class="form-select" required aria-describedby="time-error">
-                            <option value="">Pilih waktu pemotretan</option>
-                            <option value="sunrise">Sunrise (05:30 - 07:30)</option>
-                            <option value="morning">Morning (08:00 - 10:00)</option>
-                            <option value="afternoon">Afternoon (15:00 - 17:00)</option>
-                            <option value="golden-hour">Golden Hour (17:30 - 19:00)</option>
-                        </select>
+                                <option value="">Pilih waktu pemotretan</option>
+                                <option value="10:00">10.00 WIB</option>
+                                <option value="11:00">11.00 WIB</option>
+                                <option value="12:00">12.00 WIB</option>
+                                <option value="13:00">13.00 WIB</option>
+                                <option value="14:00">14.00 WIB</option>
+                                <option value="15:00">15.00 WIB</option>
+                                <option value="16:00">16.00 WIB</option>
+                            </select>
                         <div id="time-error" class="error-message" role="alert" aria-live="polite"></div>
                     </div>
                 </div>
-
                 <!-- Dynamic Background Selection -->
                 <div class="background-section disabled" id="backgroundSection">
                     <div class="background-title">
@@ -1559,18 +1537,15 @@
                             tabindex="0"
                             role="button"
                             aria-label="Select {{ $item->name }} background">
-
                             <img src="{{ asset('storage/' . $item->image) }}"
                                 alt="{{ $item->name }}"
                                 class="background-image"
                                 loading="lazy">
-
                             <div class="background-name">{{ $item->name }}</div>
                         </div>
                         @endforeach
                     </div>
                 </div>
-
                 <!-- Extra Items -->
                 <div class="extras-section">
                     <div class="extras-title">Extra Item (Tambahan Opsional)</div>
@@ -1578,7 +1553,6 @@
                         {{-- Kategori Cetak Foto --}}
                         <div class="extras-category">
                             <div class="category-title">Cetak Foto</div>
-
                             @foreach($printItems as $item)
                             <div class="extra-item">
                                 <div class="extra-info">
@@ -1593,11 +1567,9 @@
                             </div>
                             @endforeach
                         </div>
-
                         {{-- Kategori Frame Foto --}}
                         <div class="extras-category">
                             <div class="category-title">Frame Foto</div>
-
                             @foreach($frameItems as $item)
                             <div class="extra-item">
                                 <div class="extra-info">
@@ -1612,11 +1584,9 @@
                             </div>
                             @endforeach
                         </div>
-
                         {{-- Kategori Tambahan & Layanan --}}
                         <div class="extras-category">
                             <div class="category-title">Tambahan & Layanan</div>
-
                             @foreach($serviceItems as $item)
                             <div class="extra-item">
                                 <div class="extra-info">
@@ -1633,7 +1603,6 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- Notes Section -->
                 <div class="notes-section">
                     <div class="form-group">
@@ -1648,14 +1617,12 @@
                         </div>
                     </div>
                 </div>
-
                 <!-- TOTAL PEMBAYARAN -->
                 <div class="total-payment-section">
                     <div class="total-payment-card">
                         <div class="total-amount" id="totalPrice" aria-live="polite">Total : RP.0-</div>
                     </div>
                 </div>
-
                 <!-- SUBMIT SECTION -->
                 <div class="submit-section">
                     <button type="submit" class="submit-btn-premium" id="submitBtn" aria-describedby="submit-help">
@@ -1688,11 +1655,9 @@
             </form>
         </div>
     </div>
-
     <!-- Bottom Navigation Component -->
     <x-bottom-nav current-route="prewed" />
 </div>
-
 <!-- TERMS AND CONDITIONS MODAL -->
 <div class="terms-modal-overlay" id="termsModal" role="dialog" aria-labelledby="termsModalTitle" aria-modal="true">
     <div class="terms-modal">
@@ -1741,6 +1706,7 @@
     </div>
 </div>
 @endsection
+
 @push('scripts')
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -1751,7 +1717,6 @@
                 '{{ $item->id }}',
             @endforeach
         ];
-
         // Object packageBackgrounds sekarang akan terisi secara dinamis
         const packageBackgrounds = {
             'prewed1': {
@@ -1818,7 +1783,6 @@
                     selectedBackgrounds = selectedBackgrounds.filter(bg => bg.id !== backgroundId);
                 }
             });
-
             updateBackgroundCounter();
         }
 
@@ -1873,7 +1837,6 @@
                 price: parseInt(this.dataset.price),
                 maxBackgrounds: parseInt(this.dataset.backgrounds)
             };
-
             basePrice = selectedPackage.price;
 
             // Clear previous background selections
@@ -1900,7 +1863,6 @@
         });
 
         function handleBackgroundSelection() {
-            
             if (this.classList.contains('disabled')) {
                 showNotification('Background ini tidak tersedia untuk paket yang dipilih', 'error');
                 return;
@@ -1914,7 +1876,6 @@
             this.classList.add('selecting');
             setTimeout(() => {
                 this.classList.remove('selecting');
-
                 if (isSelected) {
                     // Remove selection with animation
                     this.classList.remove('selected');
@@ -1926,7 +1887,6 @@
                         showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`, 'error');
                         return;
                     }
-
                     // Add selection with animation
                     this.classList.add('selected');
                     this.setAttribute('aria-selected', 'true');
@@ -1935,16 +1895,12 @@
                         name: backgroundName
                     });
                 }
-
                 updateBackgroundCounter();
             }, 200);
         }
+
         // Ambil semua elemen dengan kelas background-option
-        
-
         // Tambahkan event listener ke setiap elemen
-        
-
         // Extra Items Selection
         extraCheckboxes.forEach((checkbox, index) => {
             checkbox.addEventListener('change', handleExtraSelection);
@@ -1955,7 +1911,6 @@
                 name: this.dataset.name,
                 price: parseInt(this.dataset.price)
             };
-
             if (this.checked) {
                 selectedExtras.push(extraItem);
             } else {
@@ -1973,7 +1928,6 @@
             setTimeout(() => {
                 totalPriceElement.classList.remove('updating');
             }, 300);
-
             totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
             totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
         }
@@ -2073,7 +2027,6 @@
         // Terms Submit Button
         termsSubmitBtn.addEventListener('click', async () => {
             if (!termsCheckbox.checked) return;
-
             hideTermsModal();
 
             // Start submission process
@@ -2121,13 +2074,11 @@
                     // Jika sukses, tampilkan pesan sukses dan reset form
                     showSuccessMessage();
                     resetForm();
-
                     // Pilihan: Buka WhatsApp setelah sukses disimpan
-                    await sendWhatsAppMessage(); 
-                    // Jika ingin tetap kirim WA setelah data tersimpan,
+                    await sendWhatsAppMessage();
+                     // Jika ingin tetap kirim WA setelah data tersimpan,
                     // uncomment baris di atas.
                     // Fungsi sendWhatsAppMessage() tidak dihapus, hanya tidak dipanggil.
-
                 } else {
                     // Jika ada error dari server (misal validasi gagal)
                     let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
@@ -2199,7 +2150,6 @@
                 submitBtn.classList.add('loading');
                 submitBtn.disabled = true;
                 submitBtn.setAttribute('aria-busy', 'true');
-
                 btnContent.style.opacity = '0';
                 btnContent.style.transform = 'scale(0.9)';
                 setTimeout(() => {
@@ -2211,7 +2161,6 @@
                 submitBtn.classList.remove('loading');
                 submitBtn.disabled = false;
                 submitBtn.setAttribute('aria-busy', 'false');
-
                 btnLoading.classList.remove('show');
                 setTimeout(() => {
                     btnLoading.style.display = 'none';
@@ -2235,42 +2184,22 @@
 
         function generateWhatsAppMessage(formData) {
             const timeNames = {
-                'sunrise': 'Sunrise (05:30 - 07:30)',
-                'morning': 'Morning (08:00 - 10:00)',
-                'afternoon': 'Afternoon (15:00 - 17:00)',
-                'golden-hour': 'Golden Hour (17:30 - 19:00)'
-            };
-
+                    '10:00': '10.00 WIB',
+                    '11:00': '11.00 WIB',
+                    '12:00': '12.00 WIB',
+                    '13:00': '13.00 WIB',
+                    '14:00': '14.00 WIB',
+                    '15:00': '15.00 WIB',
+                    '16:00': '16.00 WIB'
+                };
             const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
             const extrasText = selectedExtras.length > 0 ?
                 selectedExtras.map(item => `- ${item.name} – ${formatPrice(item.price)}`).join('\n') :
                 'Tidak ada tambahan';
-
             const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
             const totalPrice = basePrice + extrasTotal;
 
-            return `BOOKING PRE-WEDDING – PEACE PICTURE STUDIO
-
-Nama            : ${formData.get('contactName')}
-No. WhatsApp    : ${formData.get('phone')}
-Paket           : ${selectedPackage.name} – ${formatPrice(basePrice)}
-Background      : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
-Tanggal         : ${formData.get('date')}
-Waktu           : ${timeNames[formData.get('time')]}
-
-Tambahan Item:
-${extrasText}
-
-Catatan Tambahan:
-${formData.get('notes') || 'Tidak ada'}
-
-Total Harga     : ${formatPrice(totalPrice)}
-
-Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.
-
---------------------------------------------------
-Terima kasih telah memilih Peace Picture Studio.
-Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
+            return `BOOKING PRE-WEDDING – PEACE PICTURE STUDIONama            : ${formData.get('contactName')}No. WhatsApp    : ${formData.get('phone')}Paket           : ${selectedPackage.name} – ${formatPrice(basePrice)}Background      : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})Tanggal         : ${formData.get('date')}Waktu           : ${timeNames[formData.get('time')]}Tambahan Item:${extrasText}Catatan Tambahan:${formData.get('notes') || 'Tidak ada'}Total Harga     : ${formatPrice(totalPrice)}Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.--------------------------------------------------Terima kasih telah memilih Peace Picture Studio.Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
         }
 
         function showSuccessMessage() {
@@ -2323,13 +2252,11 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
             const notification = document.createElement('div');
             notification.className = `notification notification-${type}`;
             notification.textContent = message;
-
             const bgColor = {
                 'error': 'rgba(239, 68, 68, 0.9)',
                 'warning': 'rgba(245, 158, 11, 0.9)',
                 'info': 'rgba(220, 38, 38, 0.9)'
             };
-
             notification.style.cssText = `
             position: fixed;
             top: 2rem;
@@ -2344,7 +2271,6 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
             animation: slideInRight 0.3s ease-out;
         `;
-
             document.body.appendChild(notification);
 
             setTimeout(() => {
@@ -2379,8 +2305,7 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
     @keyframes slideOutRight {
         from { transform: translateX(0); opacity: 1; }
         to { transform: translateX(100%); opacity: 0; }
-    }
-`;
+    }`;
     document.head.appendChild(style);
 </script>
 @endpush

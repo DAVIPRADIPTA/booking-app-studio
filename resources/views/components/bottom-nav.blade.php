@@ -1,4 +1,4 @@
-@props(['currentRoute' => 'homepage'])
+@props(['currentRoute' => 'home'])
 
 @push('styles')
 <style>
@@ -161,10 +161,10 @@
                 </a>
 
                 <!-- Home -->
-                <a href="{{ route('homepage') }}"
-                   class="nav-item flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 {{ $currentRoute === 'homepage' ? 'text-white active' : 'text-white/80 hover:text-white hover:bg-white/10' }}"
-                   aria-label="Go to homepage"
-                    aria-current="{{ $currentRoute === 'homepage' ? 'page' : 'false' }}">
+                <a href="{{ route('home') }}"
+                   class="nav-item flex items-center justify-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 {{ $currentRoute === 'home' ? 'text-white active' : 'text-white/80 hover:text-white hover:bg-white/10' }}"
+                   aria-label="Go to home"
+                    aria-current="{{ $currentRoute === 'home' ? 'page' : 'false' }}">
                     <svg class="transition-transform hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m2.25 12 8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"/>
                     </svg>

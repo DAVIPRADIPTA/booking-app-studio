@@ -1,4 +1,4 @@
-<?php
+{{-- <?php
 
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
@@ -96,4 +96,4 @@ new #[Layout('components.layouts.auth')] class extends Component {
         <span>{{ __('Already have an account?') }}</span>
         <flux:link :href="route('login')" wire:navigate>{{ __('Log in') }}</flux:link>
     </div>
-</div>
+</div> --}}

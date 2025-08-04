@@ -49,11 +49,11 @@
     }
     
     .cinematic-overlay {
-        background: linear-gradient(135deg,
-            rgba(0, 0, 0, 0.72) 0%,
-            rgba(0, 0, 0, 0.58) 25%,
-            rgba(0, 0, 0, 0.45) 50%,
-            rgba(0, 0, 0, 0.58) 75%,
+        background: linear-gradient(135deg, 
+            rgba(0, 0, 0, 0.72) 0%, 
+            rgba(0, 0, 0, 0.58) 25%, 
+            rgba(0, 0, 0, 0.45) 50%, 
+            rgba(0, 0, 0, 0.58) 75%, 
             rgba(0, 0, 0, 0.72) 100%);
         position: absolute;
         inset: 0;
@@ -61,9 +61,9 @@
     }
     
     .cinematic-vignette {
-        background: radial-gradient(ellipse at center,
-            rgba(0, 0, 0, 0.0) 0%,
-            rgba(0, 0, 0, 0.12) 50%,
+        background: radial-gradient(ellipse at center, 
+            rgba(0, 0, 0, 0.0) 0%, 
+            rgba(0, 0, 0, 0.12) 50%, 
             rgba(0, 0, 0, 0.35) 100%);
         position: absolute;
         inset: 0;
@@ -131,6 +131,7 @@
         width: 100%;
         transform: translateZ(0);
         backface-visibility: hidden;
+        /* Animation duration set by JS */
     }
     
     .gallery-scroll.up {
@@ -221,7 +222,7 @@
         position: absolute;
         inset: 0;
         background: linear-gradient(135deg, 
-            rgba(255, 255, 255, 0.08) 0%,
+            rgba(255, 255, 255, 0.08) 0%, 
             rgba(255, 255, 255, 0.04) 100%);
         opacity: 0;
         transition: opacity 0.35s ease;
@@ -420,9 +421,9 @@
     .hero-title {
         font-size: 2.5rem;
         line-height: 1.1;
-        background: linear-gradient(135deg,
-            #ffffff 0%,
-            #f8fafc 40%,
+        background: linear-gradient(135deg, 
+            #ffffff 0%, 
+            #f8fafc 40%, 
             #e2e8f0 100%);
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
@@ -560,47 +561,23 @@
     
     /* Smooth Animations */
     @keyframes brandSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(-15px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     @keyframes titleSlideIn {
-        from {
-            opacity: 0;
-            transform: translateY(-20px) scale(0.98);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-        }
+        from { opacity: 0; transform: translateY(-20px) scale(0.98); }
+        to { opacity: 1; transform: translateY(0) scale(1); }
     }
     
     @keyframes descriptionFadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     @keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(15px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
+        from { opacity: 0; transform: translateY(15px); }
+        to { opacity: 1; transform: translateY(0); }
     }
     
     .animate-fade-in {
@@ -611,15 +588,15 @@
     .animate-fade-in:nth-child(2) { animation-delay: 0.95s; }
     .animate-fade-in:nth-child(3) { animation-delay: 1.1s; }
     
-    /* Gallery Animations */
+    /* Gallery Animations - Adjusted for true seamless loop */
     @keyframes scrollUpSeamless {
-        0% { transform: translateY(0) translateZ(0); }
-        100% { transform: translateY(-50%) translateZ(0); }
+        0% { transform: translateY(0); }
+        100% { transform: translateY(-100%); } /* Animate full height of one set */
     }
     
     @keyframes scrollDownSeamless {
-        0% { transform: translateY(-50%) translateZ(0); }
-        100% { transform: translateY(0) translateZ(0); }
+        0% { transform: translateY(-100%); } /* Start from end of duplicated content */
+        100% { transform: translateY(0); } /* Animate back to start */
     }
     
     /* Loading State */
@@ -715,17 +692,12 @@
     <!-- Main Content -->
     <div class="content-wrapper main-content">
         <div class="w-full max-w-5xl mx-auto">
-            
             <!-- Hero Section -->
             <div class="hero-section">
-                <div class="studio-brand">
-                    peacephotostudio
-                </div>
-                
+                <div class="studio-brand">peacephotostudio</div>
                 <h1 class="hero-title font-dancing text-white">
                     Choose Your Session
                 </h1>
-                
                 <p class="hero-description text-white/80 mx-auto">
                     Professional photography experiences crafted for life's most precious moments
                 </p>
@@ -733,7 +705,6 @@
             
             <!-- Services Grid -->
             <div class="services-grid grid grid-cols-1 lg:grid-cols-3">
-                
                 <!-- Pre-Wedding Package -->
                 <div class="service-card animate-fade-in" data-service="prewed">
                     <div class="card-content">
@@ -741,12 +712,12 @@
                         <p class="service-description">
                             Romantic sessions capturing your love story with timeless elegance
                         </p>
-                        <button class="booking-btn-perfect" data-url="/kategori/prewed">
+                        <a href="/kategori/prewed" class="booking-btn-perfect" data-url="/kategori/prewed">
                             <span>Book Session</span>
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                             </svg>
-                        </button>
+                        </a>
                     </div>
                 </div>
                 
@@ -757,12 +728,12 @@
                         <p class="service-description">
                             Family and group portraits with perfect composition and natural moments
                         </p>
-                        <button class="booking-btn-perfect" data-url="/kategori/group">
+                        <a href="/kategori/group" class="booking-btn-perfect" data-url="/kategori/group">
                             <span>Book Session</span>
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                             </svg>
-                        </button>
+                        </a>
                     </div>
                 </div>
                 
@@ -773,12 +744,12 @@
                         <p class="service-description">
                             Adorable first birthday celebrations with playful cake smashing
                         </p>
-                        <button class="booking-btn-perfect" data-url="/kategori/baby">
+                        <a href="/kategori/baby" class="booking-btn-perfect" data-url="/kategori/baby">
                             <span>Book Session</span>
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
                             </svg>
-                        </button>
+                        </a>
                     </div>
                 </div>
             </div>
@@ -798,7 +769,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Optimized Gallery Images
+    // Optimized Gallery Images - Reverted to original full list for visual consistency
     const galleryImages = [
         '{{ asset("images/prewed/1.jpg") }}',
         '{{ asset("images/prewed/2.jpg") }}',
@@ -816,55 +787,47 @@ document.addEventListener('DOMContentLoaded', function() {
         '{{ asset("images/wisuda/2.jpg") }}'
     ];
     
-    // Refined Gallery System
+    // Refined Gallery System for true seamless loop
     function createRefinedGallery() {
         const leftGallery = document.getElementById('leftGallery');
         const rightGallery = document.getElementById('rightGallery');
         
         if (!leftGallery || !rightGallery) return;
         
-        // Optimized repetitions
-        const repetitions = 3;
+        // Duplicate the images array ONCE for seamless loop
+        const duplicatedImages = [...galleryImages, ...galleryImages];
         
-        // Clear existing content
-        leftGallery.innerHTML = '';
-        rightGallery.innerHTML = '';
-        
-        // Create gallery loops
-        for (let cycle = 0; cycle < repetitions; cycle++) {
-            galleryImages.forEach((img, index) => {
+        const createItems = (container, images) => {
+            container.innerHTML = ''; // Clear existing content
+            images.forEach((img, index) => {
                 const item = document.createElement('div');
                 item.className = 'gallery-item';
                 item.innerHTML = `<img src="${img}" alt="Gallery ${index + 1}" loading="lazy" decoding="async">`;
-                leftGallery.appendChild(item);
+                container.appendChild(item);
             });
-        }
+        };
         
-        // Reversed for right gallery
-        const reversedImages = [...galleryImages].reverse();
-        for (let cycle = 0; cycle < repetitions; cycle++) {
-            reversedImages.forEach((img, index) => {
-                const item = document.createElement('div');
-                item.className = 'gallery-item';
-                item.innerHTML = `<img src="${img}" alt="Gallery ${index + 1}" loading="lazy" decoding="async">`;
-                rightGallery.appendChild(item);
-            });
-        }
+        createItems(leftGallery, duplicatedImages);
+        createItems(rightGallery, [...duplicatedImages].reverse());
         
-        // Refined animation durations
-        const baseSpeed = 8;
-        const leftDuration = galleryImages.length * baseSpeed;
-        const rightDuration = galleryImages.length * baseSpeed * 1.1;
+        // Calculate height of a SINGLE set of images for animation
+        // This is crucial for the -100% translateY animation to work correctly
+        // 4rem (64px) img height + 0.25rem (4px) top/bottom padding on gallery-item = 72px item content height
+        // 0.5rem (8px) gap between items
+        // 1rem (16px) top/bottom padding on gallery-scroll container
+        // So, each item effectively takes up 72px + 8px = 80px in vertical space within the scroll container.
+        // The 1rem padding on gallery-scroll itself is handled by the container's overall height.
+        const itemEffectiveHeight = 64 + (0.25 * 16 * 2) + (0.5 * 16); // 64px (img) + 8px (item padding) + 8px (gap) = 80px
+        const singleSetHeight = galleryImages.length * itemEffectiveHeight;
         
-        leftGallery.style.setProperty('--scroll-duration', `${leftDuration}s`);
-        rightGallery.style.setProperty('--scroll-duration', `${rightDuration}s`);
-        
-        // Set heights
-        const itemHeight = 64 + 8 + 16;
-        const totalHeight = galleryImages.length * repetitions * itemHeight;
-        
-        leftGallery.style.height = `${totalHeight}px`;
-        rightGallery.style.height = `${totalHeight}px`;
+        // Set the height of the gallery-scroll container to the height of ONE set of images
+        leftGallery.style.height = `${singleSetHeight}px`;
+        rightGallery.style.height = `${singleSetHeight}px`;
+
+        // Refined animation durations based on single set height
+        const baseSpeed = 8; // Adjust this value to control overall scroll speed
+        leftGallery.style.setProperty('--scroll-duration', `${singleSetHeight / baseSpeed}s`);
+        rightGallery.style.setProperty('--scroll-duration', `${singleSetHeight / baseSpeed * 1.1}s`); // Slightly different speed for variety
     }
     
     // Initialize gallery
@@ -961,7 +924,7 @@ document.addEventListener('DOMContentLoaded', function() {
         clearTimeout(resizeTimeout);
         resizeTimeout = setTimeout(() => {
             optimizePerformance();
-            createRefinedGallery();
+            createRefinedGallery(); // Re-create gallery on resize to adjust heights
         }, 200);
     });
     
