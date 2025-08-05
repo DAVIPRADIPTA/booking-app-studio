@@ -356,6 +356,31 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
+        .form-input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            /* jadikan ikon putih */
+            opacity: 0.9;
+            cursor: pointer;
+            transition: filter 0.3s ease;
+        }
+
+        /* Hilangkan spin & clear button (khusus Chrome) */
+        .form-input[type="date"]::-webkit-inner-spin-button,
+        .form-input[type="date"]::-webkit-clear-button {
+            display: none;
+        }
+
+        /* Firefox fallback - hilangkan tampilan default */
+        @supports
+        (-moz - appearance)
+            {
+            .form-input[type="date"] {
+                -moz-appearance: none;
+                appearance: none;
+            }
+        }
+
+
         /* Extra Items - Clean */
         .extras-section {
             margin-bottom: clamp(2rem, 4vw, 2.8rem);
@@ -1577,6 +1602,25 @@
             });
 
             // Terms Submit Button
+            function formatPhoneNumber(number) {
+                if (!number) return '';
+
+                const cleaned = number.replace(/\D/g, ''); // Hilangkan semua karakter non-digit
+
+                if (cleaned.startsWith('0')) {
+                    return '+62' + cleaned.slice(1);
+                } else if (cleaned.startsWith('62')) {
+                    return '+' + cleaned;
+                } else if (cleaned.startsWith('8')) {
+                    return '+62' + cleaned; // misal: 8123456789 → +628123456789
+                } else if (cleaned.startsWith('628')) {
+                    return '+' + cleaned;
+                } else {
+                    return number; // fallback
+                }
+            }
+
+
             termsSubmitBtn.addEventListener('click', async () => {
                 if (!termsCheckbox.checked) return;
 
@@ -1587,16 +1631,15 @@
                 setSubmitButtonLoading(true);
 
                 try {
-                    // --- LOGIKA BARU UNTUK MENGIRIM KE BACKEND ---
                     const formData = new FormData(bookingForm);
                     const data = {
                         contact_name: formData.get('contactName'),
-                        whatsapp_number: formData.get('phone'),
+                        whatsapp_number: formatPhoneNumber(formData.get('phone')),
                         baby_name: formData.get('babyName'),
                         baby_age: formData.get('babyAge'),
                         booking_date: formData.get('date'),
                         booking_time: formData.get('time'),
-                        session_name: 'baby-smash-cake', // Mengidentifikasi jenis booking
+                        session_name: 'baby-smash-cake',
                         package_name: 'Baby Smash Cake',
                         selected_extra_items: selectedExtras,
                         total_price: basePrice + selectedExtras.reduce((sum, item) => sum + item.price, 0),
@@ -1623,9 +1666,9 @@
 
                     showSuccessMessage();
                     resetForm();
-                    // --- AKHIR LOGIKA BARU ---
 
-                    sendWhatsAppMessage(); // Opsional: Kamu bisa uncomment ini jika ingin tetap mengirim WA juga.
+                    // Jika ingin tetap kirim WA, uncomment:
+                    sendWhatsAppMessage();
 
                 } catch (error) {
                     showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
@@ -1635,6 +1678,7 @@
                     setSubmitButtonLoading(false);
                 }
             });
+
 
             // Form Submission
             bookingForm.addEventListener('submit', handleFormSubmission);
@@ -1695,12 +1739,14 @@
             async function simulateFormSubmission() {
                 return new Promise(resolve => setTimeout(resolve, 1500));
             }
-            async function sendWhatsAppMessage() {
+            function sendWhatsAppMessage() {
                 const formData = new FormData(bookingForm);
                 const message = generateWhatsAppMessage(formData);
-                const whatsappUrl = `https://wa.me/6281994662990?text=${encodeURIComponent(message)}`;
+                const phone = '6285865826621'; // nomor WA tujuan
+                const whatsappUrl = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
             }
+
             function generateWhatsAppMessage(formData) {
                 const timeNames = {
                     '10:00': '10.00 WIB',
@@ -1712,7 +1758,6 @@
                     '16:00': '16.00 WIB'
                 };
 
-
                 const ageNames = {
                     '10-months': '10 Bulan',
                     '11-months': '11 Bulan',
@@ -1721,6 +1766,16 @@
                     '14-months': '14 Bulan',
                     '15-months': '15 Bulan'
                 };
+
+                const name = formData.get('contactName') || '-';
+                const rawPhone = formData.get('phone') || '-';
+                const phone = rawPhone.replace(/^0/, '+62'); // Format 08xx → +628xx
+
+                const babyName = formData.get('babyName') || '-';
+                const babyAge = ageNames[formData.get('babyAge')] || '-';
+                const date = formData.get('date') || '-';
+                const time = timeNames[formData.get('time')] || '-';
+                const notes = formData.get('notes') || 'Tidak ada';
 
                 const extrasText = selectedExtras.length > 0
                     ? selectedExtras.map(item => `- ${item.name} – ${formatPrice(item.price)}`).join('\n')
@@ -1731,30 +1786,34 @@
 
                 return `BOOKING BABY SMASH CAKE – PEACE PICTURE STUDIO
 
-    Nama Kontak      : ${formData.get('contactName')}
-    No. WhatsApp     : ${formData.get('phone')}
-    Nama Bayi        : ${formData.get('babyName')}
-    Usia Bayi        : ${ageNames[formData.get('babyAge')]}
-    Paket            : Baby Smash Cake – ${formatPrice(basePrice)}
-    Tanggal          : ${formData.get('date')}
-    Waktu            : ${timeNames[formData.get('time')]}
+Nama Kontak      : ${name}
+No. WhatsApp     : ${phone}
+Nama Bayi        : ${babyName}
+Usia Bayi        : ${babyAge}
 
-    Tambahan Item:
-    ${extrasText}
+Paket            : Baby Smash Cake
+Harga Paket      : ${formatPrice(basePrice)}
 
-    Catatan Tambahan:
-    ${formData.get('notes') || 'Tidak ada'}
+Tanggal          : ${date}
+Waktu            : ${time}
 
-    Total Harga      : ${formatPrice(totalPrice)}
+Tambahan Item    :
+${extrasText}
 
-    Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.
+Catatan Tambahan :
+${notes}
 
-    --------------------------------------------------
-    Terima kasih telah memilih Peace Picture Studio.
-    Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.
+Total Harga      : ${formatPrice(totalPrice)}
 
-    *Note: Kue tidak disediakan oleh studio, mohon dibawa sendiri.`;
+Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.
+
+--------------------------------------------------
+Terima kasih telah memilih Peace Picture Studio.
+Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.
+
+*Note: Kue tidak disediakan oleh studio, mohon dibawa sendiri.*`;
             }
+
 
             function showSuccessMessage() {
                 successMessage.classList.add('show');
@@ -1794,19 +1853,19 @@
                 };
 
                 notification.style.cssText = `
-                position: fixed;
-                top: 2rem;
-                right: 2rem;
-                background: ${bgColor[type] || bgColor.info};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 0.75rem;
-                backdrop-filter: blur(10px);
-                z-index: 1000;
-                font-weight: 500;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                animation: slideInRight 0.3s ease-out;
-            `;
+                    position: fixed;
+                    top: 2rem;
+                    right: 2rem;
+                    background: ${bgColor[type] || bgColor.info};
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 0.75rem;
+                    backdrop-filter: blur(10px);
+                    z-index: 1000;
+                    font-weight: 500;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    animation: slideInRight 0.3s ease-out;
+                `;
 
                 document.body.appendChild(notification);
 
@@ -1835,15 +1894,15 @@
         // Add CSS animations for notifications
         const style = document.createElement('style');
         style.textContent = `
-        @keyframes slideInRight {
-            from { transform: translateX(100%); opacity: 0; }
-            to { transform: translateX(0); opacity: 1; }
-        }
-        @keyframes slideOutRight {
-            from { transform: translateX(0); opacity: 1; }
-            to { transform: translateX(100%); opacity: 0; }
-        }
-    `;
+            @keyframes slideInRight {
+                from { transform: translateX(100%); opacity: 0; }
+                to { transform: translateX(0); opacity: 1; }
+            }
+            @keyframes slideOutRight {
+                from { transform: translateX(0); opacity: 1; }
+                to { transform: translateX(100%); opacity: 0; }
+            }
+        `;
         document.head.appendChild(style);
     </script>
 @endpush

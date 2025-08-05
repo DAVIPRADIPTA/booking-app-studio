@@ -70,6 +70,19 @@
         z-index: 2;
     }
     
+    /* Tambahkan media query untuk mobile */
+    @media (max-width: 1023px) {
+        .cinematic-bg {
+            position: absolute; /* Ubah menjadi absolute di mobile */
+            height: 100%; /* Pastikan mengisi tinggi parent */
+        }
+        .cinematic-overlay,
+        .cinematic-vignette {
+            position: absolute; /* Pastikan overlay juga absolute */
+            height: 100%;
+        }
+    }
+    
     /* Refined Side Galleries */
     .side-panel {
         position: fixed;

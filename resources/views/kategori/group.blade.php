@@ -458,6 +458,29 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
+                .form-input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            /* jadikan ikon putih */
+            opacity: 0.9;
+            cursor: pointer;
+            transition: filter 0.3s ease;
+        }
+
+        /* Hilangkan spin & clear button (khusus Chrome) */
+        .form-input[type="date"]::-webkit-inner-spin-button,
+        .form-input[type="date"]::-webkit-clear-button {
+            display: none;
+        }
+
+        /* Firefox fallback - hilangkan tampilan default */
+        @supports (-moz - appearance) {
+            .form-input[type="date"] {
+                -moz-appearance: none;
+                appearance: none;
+            }
+        }
+
+
         /* ========================================
        7. BACKGROUND SELECTION - DYNAMIC
        ======================================== */
@@ -2458,72 +2481,74 @@
             });
 
             // Terms submit button handler
-            termsSubmitBtn.addEventListener('click', async () => {
-                if (!termsCheckbox.checked) return;
+            function formatPhoneNumber(number) {
+    if (!number) return '';
+    const cleaned = number.replace(/\D/g, '');
+    if (cleaned.startsWith('0')) {
+        return '+62' + cleaned.slice(1);
+    } else if (cleaned.startsWith('62')) {
+        return '+' + cleaned;
+    } else if (cleaned.startsWith('+62')) {
+        return cleaned;
+    }
+    return '+62' + cleaned;
+}
 
-                hideTermsModal();
+termsSubmitBtn.addEventListener('click', async () => {
+    if (!termsCheckbox.checked) return;
 
-                isFormSubmitting = true;
-                setSubmitButtonLoading(true);
+    hideTermsModal();
 
-                try {
-                    // 1. Kumpulkan semua data yang akan dikirim ke backend
-                    const formData = new FormData(bookingForm);
-                    const data = {
-                        contact_name: formData.get('contactName'),
-                        whatsapp_number: formData.get('phone'),
-                        booking_date: formData.get('date'),
-                        booking_time: formData.get('time'),
-                        session_name: formData.get('sessionType'),
-                        package_name: selectedPackage.name,
-                        selected_backgrounds: selectedBackgrounds, // Data dari state JS
-                        selected_extra_items: selectedExtras, // Data dari state JS
-                        total_price: basePrice + selectedExtras.reduce((sum, item) => sum + item.price, 0),
-                        notes: formData.get('notes'),
-                    };
+    isFormSubmitting = true;
+    setSubmitButtonLoading(true);
 
-                    // 2. Kirim data ke API Laravel menggunakan fetch
-                    const response = await fetch('/booking', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                        },
-                        body: JSON.stringify(data),
-                    });
+    try {
+        const formData = new FormData(bookingForm);
+        const data = {
+            contact_name: formData.get('contactName'),
+            whatsapp_number: formatPhoneNumber(formData.get('phone')),
+            booking_date: formData.get('date'),
+            booking_time: formData.get('time'),
+            session_name: formData.get('sessionType'),
+            package_name: selectedPackage.name,
+            selected_backgrounds: selectedBackgrounds,
+            selected_extra_items: selectedExtras,
+            total_price: basePrice + selectedExtras.reduce((sum, item) => sum + item.price, 0),
+            notes: formData.get('notes'),
+        };
 
-                    const result = await response.json();
+        const response = await fetch('/booking', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            },
+            body: JSON.stringify(data),
+        });
 
-                    // 3. Tangani respon dari server
-                    if (response.ok) {
-                        // Jika sukses, tampilkan pesan sukses dan reset form
-                        showSuccessMessage();
-                        resetForm();
+        const result = await response.json();
 
-                        // Pilihan: Buka WhatsApp setelah sukses disimpan
-                        await sendWhatsAppMessage();
-                        // Jika ingin tetap kirim WA setelah data tersimpan,
-                        // uncomment baris di atas.
-                        // Fungsi sendWhatsAppMessage() tidak dihapus, hanya tidak dipanggil.
+        if (response.ok) {
+            showSuccessMessage();
+            resetForm();
+            await sendWhatsAppMessage();
+        } else {
+            let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
+            if (response.status === 422) {
+                errorMessage = 'Mohon perbaiki kesalahan pada form.';
+            }
+            showNotification(errorMessage, 'error');
+            console.error('API Error:', result.error || result.errors);
+        }
+    } catch (error) {
+        showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+        console.error('Form submission error:', error);
+    } finally {
+        isFormSubmitting = false;
+        setSubmitButtonLoading(false);
+    }
+});
 
-                    } else {
-                        // Jika ada error dari server (misal validasi gagal)
-                        let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
-                        if (response.status === 422) {
-                            // Jika error validasi, tampilkan pesan error lebih detail
-                            errorMessage = 'Mohon perbaiki kesalahan pada form.';
-                        }
-                        showNotification(errorMessage, 'error');
-                        console.error('API Error:', result.error || result.errors);
-                    }
-                } catch (error) {
-                    showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-                    console.error('Form submission error:', error);
-                } finally {
-                    isFormSubmitting = false;
-                    setSubmitButtonLoading(false);
-                }
-            });
 
             /* ========================================
                11. FORM SUBMISSION HANDLER
@@ -2638,7 +2663,7 @@
             async function sendWhatsAppMessage() {
                 const formData = new FormData(bookingForm);
                 const message = generateWhatsAppMessage(formData);
-                const whatsappUrl = `https://wa.me/6281994662990?text=${encodeURIComponent(message)}`;
+                const whatsappUrl = `https://wa.me/6285865826621?text=${encodeURIComponent(message)}`;
 
                 window.open(whatsappUrl, '_blank');
             }
@@ -2648,57 +2673,69 @@
              * @param {FormData} formData - Data dari form
              * @returns {string} Formatted message untuk WhatsApp
              */
-            function generateWhatsAppMessage(formData) {
-                const timeNames = {
-                    '10:00': '10.00 WIB',
-                    '11:00': '11.00 WIB',
-                    '12:00': '12.00 WIB',
-                    '13:00': '13.00 WIB',
-                    '14:00': '14.00 WIB',
-                    '15:00': '15.00 WIB',
-                    '16:00': '16.00 WIB'
-                };
+           function generateWhatsAppMessage(formData) {
+    const timeNames = {
+        '10:00': '10.00 WIB',
+        '11:00': '11.00 WIB',
+        '12:00': '12.00 WIB',
+        '13:00': '13.00 WIB',
+        '14:00': '14.00 WIB',
+        '15:00': '15.00 WIB',
+        '16:00': '16.00 WIB'
+    };
 
-                const sessionTypeNames = {
-                    'family': 'Family',
-                    // 'friends': 'Friends',
-                    'graduation': 'Graduation',
-                    'maternity': 'Maternity',
-                    // 'personal': 'Personal'
-                };
+    const sessionTypeNames = {
+        'family': 'Family',
+        'graduation': 'Graduation',
+        'maternity': 'Maternity'
+    };
 
-                const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
-                const extrasText = selectedExtras.length > 0 ?
-                    selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n') :
-                    'Tidak ada';
+    const name = formData.get('contactName') || '-';
+    const phoneRaw = formData.get('phone') || '-';
+    const phone = phoneRaw.replace(/^0/, '+62'); // Ubah 08xx jadi +628xx
+    const groupSize = formData.get('groupSize') || '-';
+    const sessionType = sessionTypeNames[formData.get('sessionType')] || '-';
+    const date = formData.get('date') || '-';
+    const time = timeNames[formData.get('time')] || '-';
+    const notes = formData.get('notes') || 'Tidak ada';
 
-                const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
-                const totalPrice = basePrice + extrasTotal;
+    const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
+    const extrasText = selectedExtras.length > 0
+        ? selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n')
+        : 'Tidak ada';
 
-                return `👥 *BOOKING GROUP PHOTOGRAPHY SESSION* 👥
+    const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
+    const totalPrice = basePrice + extrasTotal;
 
-    👤 *Nama Kontak:* ${formData.get('contactName')}
-    📱 *WhatsApp:* ${formData.get('phone')}
-    📦 *Paket:* ${selectedPackage.name} - ${formatPrice(basePrice)}
-    👥 *Jumlah Orang:* ${formData.get('groupSize')}
-    📸 *Jenis Sesi:* ${sessionTypeNames[formData.get('sessionType')]}
-    🎨 *Background:* ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
-    📅 *Tanggal:* ${formData.get('date')}
-    ⏰ *Waktu:* ${timeNames[formData.get('time')]}
+    return `BOOKING GROUP PHOTOGRAPHY – PEACE PICTURE STUDIO
 
-    ✨ *Extra Items:*
-    ${extrasText}
+Nama Kontak       : ${name}
+No. WhatsApp      : ${phone}
+Jumlah Orang      : ${groupSize}
+Jenis Sesi        : ${sessionType}
 
-    💌 *Catatan Tambahan:*
-    ${formData.get('notes') || 'Tidak ada'}
+Paket             : ${selectedPackage.name}
+Harga Paket       : ${formatPrice(basePrice)}
 
-    💰 *Total Harga:* ${formatPrice(totalPrice)}
+Background        : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
 
-    ✅ *Saya telah membaca dan menyetujui Syarat & Ketentuan Peace Picture Studio*
+Tanggal Sesi      : ${date}
+Waktu Sesi        : ${time}
 
-    ---
-    Terima kasih telah memilih Peace Picture Studio! Kami akan segera menghubungi Anda untuk konfirmasi detail lebih lanjut. 📸✨`;
-            }
+Tambahan Item     : 
+${extrasText}
+
+Catatan Tambahan  : ${notes}
+
+Total Harga       : ${formatPrice(totalPrice)}
+
+Saya telah membaca dan menyetujui Syarat & Ketentuan dari Peace Picture Studio.
+
+--------------------------------------------------
+Terima kasih telah memilih Peace Picture Studio.
+Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
+}
+
 
             /* ========================================
                13. SUCCESS & RESET FUNCTIONS
