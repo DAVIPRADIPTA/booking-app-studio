@@ -24,6 +24,8 @@ return new class extends Migration
             $table->integer('total_price');
             $table->text('notes')->nullable();
             $table->enum('status', ['waiting', 'booked', 'completed', 'cancelled'])->default('waiting');
+            $table->string('baby_name')->nullable();
+            $table->string('baby_age')->nullable();
             $table->timestamps();
         });
     }

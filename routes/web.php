@@ -7,6 +7,7 @@ use App\Http\Controllers\TermsAndConditionController;
 use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\ExtraItemsController;
+use App\Http\Controllers\BookingAvailabilityController;
 use App\Models\Background;
 use App\Models\ExtraItem;
 use App\Models\TermsAndCondition;
@@ -74,6 +75,8 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/password', 'settings.password')->name('settings.password');
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
+
+Route::get('/api/available-times', [BookingAvailabilityController::class, 'getAvailableTimes'])->name('api.available.times');
 
 // Auth Routes (Login, Logout, Register) — note: register dapat dimatikan di file auth.php
 require __DIR__ . '/auth.php';

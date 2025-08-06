@@ -435,7 +435,9 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports (-moz - appearance) {
+        @supports
+        (-moz - appearance)
+            {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -1541,28 +1543,32 @@
                                 required pattern="[0-9]{10,15}" aria-describedby="phone-error">
                             <div id="phone-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
+                        <!-- Input Tanggal -->
                         <div class="form-group">
                             <label for="date" class="form-label">Tanggal Pemotretan</label>
-                            <input type="date" id="date" name="date" class="form-input" required
+                            <input type="date" id="date" name="date" required class="form-input"
+                                min="{{ now()->format('Y-m-d') }}" onchange="fetchAvailableTimes()"
                                 aria-describedby="date-error">
                             <div id="date-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
+
+                        <!-- Input Waktu -->
                         <div class="form-group">
                             <label for="time" class="form-label">Waktu Pemotretan</label>
-                            <select id="time" name="time" class="form-select" required aria-describedby="time-error">
-                                <option value="">Pilih waktu pemotretan</option>
-                                <option value="10:00">10.00 WIB</option>
-                                <option value="11:00">11.00 WIB</option>
-                                <option value="12:00">12.00 WIB</option>
-                                <option value="13:00">13.00 WIB</option>
-                                <option value="14:00">14.00 WIB</option>
-                                <option value="15:00">15.00 WIB</option>
-                                <option value="16:00">16.00 WIB</option>
+                            <select id="time" name="time" required class="form-select" disabled
+                                aria-describedby="time-error">
+                                <option value="">Pilih tanggal dulu...</option>
                             </select>
                             <div id="time-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
+
+                        <!-- Info Ketersediaan Waktu -->
+                        <div class="form-group full-width">
+                            <div id="time-availability-info" class="package-notice hidden">
+                                <span id="availability-message">Informasi ketersediaan akan muncul di sini.</span>
+                            </div>
+                        </div>
                     </div>
-                    <!-- Dynamic Background Selection -->
                     <div class="background-section disabled" id="backgroundSection">
                         <div class="background-title">
                             <span>Pilih Background</span>
@@ -1683,8 +1689,11 @@
                 </form>
             </div>
         </div>
-        <!-- Bottom Navigation Component -->
-        <x-bottom-nav current-route="prewed" />
+        <!-- Dynamic Background Selection -->
+
+    </div>
+    <!-- Bottom Navigation Component -->
+    <x-bottom-nav current-route="prewed" />
     </div>
     <!-- TERMS AND CONDITIONS MODAL -->
     <div class="terms-modal-overlay" id="termsModal" role="dialog" aria-labelledby="termsModalTitle" aria-modal="true">
@@ -1737,6 +1746,84 @@
 
 @push('scripts')
     <script>
+
+        async function fetchAvailableTimes() {
+            const dateInput = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+            const infoBox = document.getElementById('time-availability-info');
+            const messageSpan = document.getElementById('availability-message');
+
+            const selectedDate = dateInput.value;
+
+            if (!selectedDate) return;
+
+            // Reset dropdown dan tampilkan loading
+            timeSelect.disabled = true;
+            timeSelect.innerHTML = '<option value="">Memuat...</option>';
+            infoBox.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/available-times?booking_date=${selectedDate}`);
+                const data = await response.json();
+
+                // Kosongkan dropdown
+                timeSelect.innerHTML = '';
+
+                if (data.status === 'full') {
+                    // Jika semua waktu penuh
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Hari ini full booked';
+                    option.disabled = true;
+                    timeSelect.appendChild(option);
+                    timeSelect.disabled = true;
+
+                    messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
+                    infoBox.classList.remove('hidden');
+                    infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))';
+                    infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                } else {
+                    // Tampilkan waktu yang tersedia
+                    data.available_times.forEach(time => {
+                        const option = document.createElement('option');
+                        option.value = time;
+                        option.textContent = `${time} WIB`;
+                        timeSelect.appendChild(option);
+                    });
+                    timeSelect.disabled = false;
+
+                    // Tampilkan info ketersediaan
+                    if (data.status === 'limited') {
+                        messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                        infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
+                        infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                    } else {
+                        messageSpan.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
+                        infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
+                        infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    }
+                    infoBox.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Gagal memuat ketersediaan waktu:', error);
+                timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+                timeSelect.disabled = true;
+            }
+        }
+
+        // Jalankan saat halaman dimuat (jika tanggal sudah dipilih)
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateInput = document.getElementById('date');
+            if (dateInput.value) {
+                fetchAvailableTimes();
+            }
+        });
+
+
+
+
+
         document.addEventListener('DOMContentLoaded', function () {
             // Package Background Configuration
             // Ambil ID dari backgroundItems dan ubah menjadi array string JavaScript
@@ -1744,7 +1831,7 @@
                 @foreach($backgroundItems as $item)
                     '{{ $item->id }}',
                 @endforeach
-                        ];
+                                    ];
             // Object packageBackgrounds sekarang akan terisi secara dinamis
             const packageBackgrounds = {
                 'prewed1': {
@@ -2208,64 +2295,64 @@
             async function sendWhatsAppMessage() {
                 const formData = new FormData(bookingForm);
                 const message = generateWhatsAppMessage(formData);
-                const whatsappUrl = `https://wa.me/6285865826621?text=${encodeURIComponent(message)}`;
+                const whatsappUrl = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
                 window.open(whatsappUrl, '_blank');
             }
 
             function generateWhatsAppMessage(formData) {
-    const timeNames = {
-        '10:00': '10.00 WIB',
-        '11:00': '11.00 WIB',
-        '12:00': '12.00 WIB',
-        '13:00': '13.00 WIB',
-        '14:00': '14.00 WIB',
-        '15:00': '15.00 WIB',
-        '16:00': '16.00 WIB'
-    };
+                const timeNames = {
+                    '10:00': '10.00 WIB',
+                    '11:00': '11.00 WIB',
+                    '12:00': '12.00 WIB',
+                    '13:00': '13.00 WIB',
+                    '14:00': '14.00 WIB',
+                    '15:00': '15.00 WIB',
+                    '16:00': '16.00 WIB'
+                };
 
-    const contactName = formData.get('contactName') || '-';
-    const rawPhone = formData.get('phone') || '';
-    const phoneFormatted = rawPhone.replace(/^0/, '+62');
+                const contactName = formData.get('contactName') || '-';
+                const rawPhone = formData.get('phone') || '';
+                const phoneFormatted = rawPhone.replace(/^0/, '+62');
 
-    const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
-    const extrasText = selectedExtras.length > 0
-        ? selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n')
-        : 'Tidak ada tambahan';
+                const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
+                const extrasText = selectedExtras.length > 0
+                    ? selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n')
+                    : 'Tidak ada tambahan';
 
-    const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
-    const totalPrice = basePrice + extrasTotal;
+                const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
+                const totalPrice = basePrice + extrasTotal;
 
-    const selectedPkg = selectedPackage?.name || '-';
-    const bookingDate = formData.get('date') || '-';
-    const bookingTime = timeNames[formData.get('time')] || '-';
-    const notes = formData.get('notes') || 'Tidak ada';
+                const selectedPkg = selectedPackage?.name || '-';
+                const bookingDate = formData.get('date') || '-';
+                const bookingTime = timeNames[formData.get('time')] || '-';
+                const notes = formData.get('notes') || 'Tidak ada';
 
-    return `BOOKING PRE-WEDDING – PEACE PICTURE STUDIO
+                return `BOOKING PRE-WEDDING – PEACE PICTURE STUDIO
 
-Nama Kontak     : ${contactName}
-No. WhatsApp    : ${phoneFormatted}
+            Nama Kontak     : ${contactName}
+            No. WhatsApp    : ${phoneFormatted}
 
-Paket           : ${selectedPkg}
-Harga Paket     : ${formatPrice(basePrice)}
+            Paket           : ${selectedPkg}
+            Harga Paket     : ${formatPrice(basePrice)}
 
-Background      : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
+            Background      : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
 
-Tanggal Sesi    : ${bookingDate}
-Waktu Sesi      : ${bookingTime}
+            Tanggal Sesi    : ${bookingDate}
+            Waktu Sesi      : ${bookingTime}
 
-Tambahan Item   :
-${extrasText}
+            Tambahan Item   :
+            ${extrasText}
 
-Catatan Tambahan: ${notes}
+            Catatan Tambahan: ${notes}
 
-Total Harga     : ${formatPrice(totalPrice)}
+            Total Harga     : ${formatPrice(totalPrice)}
 
-Saya telah membaca dan menyetujui Syarat & Ketentuan dari Peace Picture Studio.
+            Saya telah membaca dan menyetujui Syarat & Ketentuan dari Peace Picture Studio.
 
---------------------------------------------------
-Terima kasih telah memilih Peace Picture Studio.
-Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
-}
+            --------------------------------------------------
+            Terima kasih telah memilih Peace Picture Studio.
+            Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
+            }
 
 
             function showSuccessMessage() {
@@ -2324,19 +2411,19 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
                     'info': 'rgba(220, 38, 38, 0.9)'
                 };
                 notification.style.cssText = `
-                            position: fixed;
-                            top: 2rem;
-                            right: 2rem;
-                            background: ${bgColor[type] || bgColor.info};
-                            color: white;
-                            padding: 1rem 1.5rem;
-                            border-radius: 0.75rem;
-                            backdrop-filter: blur(10px);
-                            z-index: 1000;
-                            font-weight: 500;
-                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                            animation: slideInRight 0.3s ease-out;
-                        `;
+                                        position: fixed;
+                                        top: 2rem;
+                                        right: 2rem;
+                                        background: ${bgColor[type] || bgColor.info};
+                                        color: white;
+                                        padding: 1rem 1.5rem;
+                                        border-radius: 0.75rem;
+                                        backdrop-filter: blur(10px);
+                                        z-index: 1000;
+                                        font-weight: 500;
+                                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                                        animation: slideInRight 0.3s ease-out;
+                                    `;
                 document.body.appendChild(notification);
 
                 setTimeout(() => {
@@ -2364,14 +2451,14 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
         // Add CSS animations for notifications
         const style = document.createElement('style');
         style.textContent = `
-                    @keyframes slideInRight {
-                        from { transform: translateX(100%); opacity: 0; }
-                        to { transform: translateX(0); opacity: 1; }
-                    }
-                    @keyframes slideOutRight {
-                        from { transform: translateX(0); opacity: 1; }
-                        to { transform: translateX(100%); opacity: 0; }
-                    }`;
+                                @keyframes slideInRight {
+                                    from { transform: translateX(100%); opacity: 0; }
+                                    to { transform: translateX(0); opacity: 1; }
+                                }
+                                @keyframes slideOutRight {
+                                    from { transform: translateX(0); opacity: 1; }
+                                    to { transform: translateX(100%); opacity: 0; }
+                                }`;
         document.head.appendChild(style);
     </script>
 @endpush

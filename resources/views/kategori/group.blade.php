@@ -1690,27 +1690,30 @@
                             <div id="sessionType-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
+                       <!-- Input Tanggal -->
                         <div class="form-group">
                             <label for="date" class="form-label">Tanggal Pemotretan</label>
-                            <input type="date" id="date" name="date" class="form-input" required
+                            <input type="date" id="date" name="date" required class="form-input"
+                                min="{{ now()->format('Y-m-d') }}" onchange="fetchAvailableTimes()"
                                 aria-describedby="date-error">
                             <div id="date-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
+                        <!-- Input Waktu -->
                         <div class="form-group">
                             <label for="time" class="form-label">Waktu Pemotretan</label>
-                            <select id="time" name="time" class="form-select" required aria-describedby="time-error">
-                                <option value="">Pilih waktu pemotretan</option>
-                                <option value="10:00">10.00 WIB</option>
-                                <option value="11:00">11.00 WIB</option>
-                                <option value="12:00">12.00 WIB</option>
-                                <option value="13:00">13.00 WIB</option>
-                                <option value="14:00">14.00 WIB</option>
-                                <option value="15:00">15.00 WIB</option>
-                                <option value="16:00">16.00 WIB</option>
+                            <select id="time" name="time" required class="form-select" disabled
+                                aria-describedby="time-error">
+                                <option value="">Pilih tanggal dulu...</option>
                             </select>
-
                             <div id="time-error" class="error-message" role="alert" aria-live="polite"></div>
+                        </div>
+
+                        <!-- Info Ketersediaan Waktu -->
+                        <div class="form-group full-width">
+                            <div id="time-availability-info" class="package-notice hidden">
+                                <span id="availability-message">Informasi ketersediaan akan muncul di sini.</span>
+                            </div>
                         </div>
                     </div>
 
@@ -1900,6 +1903,80 @@
 
 @push('scripts')
     <script>
+
+         async function fetchAvailableTimes() {
+            const dateInput = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+            const infoBox = document.getElementById('time-availability-info');
+            const messageSpan = document.getElementById('availability-message');
+
+            const selectedDate = dateInput.value;
+
+            if (!selectedDate) return;
+
+            // Reset dropdown dan tampilkan loading
+            timeSelect.disabled = true;
+            timeSelect.innerHTML = '<option value="">Memuat...</option>';
+            infoBox.classList.add('hidden');
+
+            try {
+                const response = await fetch(`/api/available-times?booking_date=${selectedDate}`);
+                const data = await response.json();
+
+                // Kosongkan dropdown
+                timeSelect.innerHTML = '';
+
+                if (data.status === 'full') {
+                    // Jika semua waktu penuh
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'Hari ini full booked';
+                    option.disabled = true;
+                    timeSelect.appendChild(option);
+                    timeSelect.disabled = true;
+
+                    messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
+                    infoBox.classList.remove('hidden');
+                    infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))';
+                    infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                } else {
+                    // Tampilkan waktu yang tersedia
+                    data.available_times.forEach(time => {
+                        const option = document.createElement('option');
+                        option.value = time;
+                        option.textContent = `${time} WIB`;
+                        timeSelect.appendChild(option);
+                    });
+                    timeSelect.disabled = false;
+
+                    // Tampilkan info ketersediaan
+                    if (data.status === 'limited') {
+                        messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                        infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
+                        infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                    } else {
+                        messageSpan.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
+                        infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
+                        infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    }
+                    infoBox.classList.remove('hidden');
+                }
+
+            } catch (error) {
+                console.error('Gagal memuat ketersediaan waktu:', error);
+                timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+                timeSelect.disabled = true;
+            }
+        }
+
+        // Jalankan saat halaman dimuat (jika tanggal sudah dipilih)
+        document.addEventListener('DOMContentLoaded', function () {
+            const dateInput = document.getElementById('date');
+            if (dateInput.value) {
+                fetchAvailableTimes();
+            }
+        });
+
         /* ========================================
        JAVASCRIPT DOCUMENTATION - GROUP PHOTOGRAPHY
        ========================================
@@ -2663,7 +2740,7 @@ termsSubmitBtn.addEventListener('click', async () => {
             async function sendWhatsAppMessage() {
                 const formData = new FormData(bookingForm);
                 const message = generateWhatsAppMessage(formData);
-                const whatsappUrl = `https://wa.me/6285865826621?text=${encodeURIComponent(message)}`;
+                const whatsappUrl = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
 
                 window.open(whatsappUrl, '_blank');
             }

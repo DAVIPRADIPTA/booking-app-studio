@@ -11,7 +11,7 @@ use Carbon\Carbon;
 class AdminBookingController extends Controller
 {
     /**
-     * Tampilkan daftar pesanan.
+     * Tampilkan daftar semua pesanan.
      */
     public function index()
     {
@@ -29,85 +29,103 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * Konfirmasi pembayaran DP dan arahkan ke WhatsApp.
+     * Konfirmasi DP: simpan bukti, ubah status ke 'booked', lalu arahkan ke WhatsApp.
      */
     public function confirmDp(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
+        // Validasi input
         $request->validate([
             'dp_amount' => 'required|numeric|min:0',
             'dp_proof' => 'required|image|max:2048',
         ]);
 
+        // Simpan bukti DP
         $path = $request->file('dp_proof')->store('bukti_dp', 'public');
 
+        // Update data booking
         $booking->update([
             'dp_amount' => $request->dp_amount,
             'dp_proof' => $path,
             'status' => 'booked',
         ]);
 
-        // Pesan sukses
+        // Set pesan sukses
         session()->flash('success', 'DP berhasil dikonfirmasi. Silakan kirim pesan ke pelanggan.');
 
-        // Pesan WhatsApp
+        // Buat pesan WhatsApp
         $message = "Halo kak {$booking->contact_name},\n\n"
             . "Terima kasih, DP kamu untuk sesi {$booking->session_name} pada tanggal "
-            . Carbon::parse($booking->booking_date)->format('d F Y') . " pukul {$booking->booking_time} telah kami terima.\n"
-            . "Pesananmu sudah dikonfirmasi. Sampai jumpa di hari H!";
+            . Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . " pukul {$booking->booking_time} telah kami terima.\n"
+            . "Pesananmu sudah dikonfirmasi ✅ Sampai jumpa di hari H!";
 
+        // Format nomor WhatsApp (08xx → 628xx)
         $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
+        if (str_starts_with($whatsappNumber, '0')) {
+            $whatsappNumber = '62' . substr($whatsappNumber, 1);
+        }
+
+        // ✅ URL BENAR: TANPA SPASI EKSTRA
         $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
 
         return redirect()->away($url);
     }
 
     /**
-     * Selesaikan pesanan (pelunasan) dan arahkan ke WhatsApp.
+     * Selesaikan pesanan: simpan bukti pelunasan, ubah status ke 'completed', lalu arahkan ke WhatsApp.
      */
     public function completeBooking(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
+        // Validasi input
         $request->validate([
             'final_payment_amount' => 'required|numeric|min:0',
             'final_payment_proof' => 'required|image|max:2048',
         ]);
 
+        // Simpan bukti pelunasan
         $path = $request->file('final_payment_proof')->store('bukti_pelunasan', 'public');
 
+        // Update data booking
         $booking->update([
             'final_payment_amount' => $request->final_payment_amount,
             'final_payment_proof' => $path,
             'status' => 'completed',
         ]);
 
-        // Pesan sukses
-        session()->flash('success', 'Pelunasan berhasil dikonfirmasi. Silakan kirim konfirmasi ke pelanggan.');
+        // Set pesan sukses
+        session()->flash('success', 'Pelunasan berhasil dikonfirmasi.');
 
-        // Pesan WhatsApp
+        // Buat pesan WhatsApp
         $message = "Halo kak {$booking->contact_name},\n\n"
             . "Kami telah menerima pelunasan untuk sesi {$booking->session_name} pada tanggal "
-            . Carbon::parse($booking->booking_date)->format('d F Y') . ".\n"
-            . "Terima kasih telah mempercayakan layanan kami. See you next time!";
+            . Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . ".\n"
+            . "Terima kasih telah mempercayakan layanan kami. See you next time! ❤️";
 
+        // Format nomor WhatsApp
         $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
+        if (str_starts_with($whatsappNumber, '0')) {
+            $whatsappNumber = '62' . substr($whatsappNumber, 1);
+        }
+
+        // ✅ URL BENAR: TANPA SPASI EKSTRA
         $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
 
         return redirect()->away($url);
     }
 
     /**
-     * Hapus pesanan dan hapus file bukti pembayaran.
+     * Hapus pesanan dan file bukti pembayaran.
      */
     public function destroy(Booking $booking)
     {
         // Hapus file bukti jika ada
-        if ($booking->dp_proof) {
+        if ($booking->dp_proof && Storage::disk('public')->exists($booking->dp_proof)) {
             Storage::disk('public')->delete($booking->dp_proof);
         }
-        if ($booking->final_payment_proof) {
+        if ($booking->final_payment_proof && Storage::disk('public')->exists($booking->final_payment_proof)) {
             Storage::disk('public')->delete($booking->final_payment_proof);
         }
 
