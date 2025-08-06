@@ -23,7 +23,7 @@ return new class extends Migration
             $table->json('selected_extra_items'); // Simpan sebagai JSON
             $table->integer('total_price');
             $table->text('notes')->nullable();
-            $table->enum('status', ['pending', 'confirmed', 'completed', 'cancelled'])->default('pending');
+            $table->enum('status', ['waiting', 'booked', 'completed', 'cancelled'])->default('waiting');
             $table->timestamps();
         });
     }

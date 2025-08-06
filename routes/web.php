@@ -13,8 +13,8 @@ use App\Models\TermsAndCondition;
 use Livewire\Volt\Volt;
 
 // Homepage
-Route::get('/', fn () => view('welcome'))->name('home');
-Route::get('/homepage', fn () => view('homepage'))->name('homepage');
+Route::get('/', fn() => view('welcome'))->name('home');
+Route::get('/homepage', fn() => view('homepage'))->name('homepage');
 
 // Kategori: Prewedding
 Route::get('/kategori/prewed', function () {
@@ -48,7 +48,7 @@ Route::get('/kategori/baby', function () {
 })->name('kategori.baby');
 
 // Info & Sosial Media
-Route::get('/info-more', fn () => view('info'))->name('info');
+Route::get('/info-more', fn() => view('info'))->name('info');
 
 // Booking Store
 Route::post('/booking', [BookingController::class, 'store']);
@@ -59,9 +59,12 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::resource('backgrounds', BackgroundController::class);
     Route::resource('bookings', AdminBookingController::class)->except(['create', 'store', 'edit']);
+    Route::post('/bookings/{id}/confirm-dp', [AdminBookingController::class, 'confirmDp'])->name('bookings.confirmDp');
+    Route::post('/bookings/{id}/complete-booking', [AdminBookingController::class, 'completeBooking'])->name('bookings.completeBooking');
     Route::resource('extra-items', ExtraItemsController::class);
     Route::resource('terms', TermsAndConditionController::class);
 });
+
 
 // Settings via Volt
 Route::middleware(['auth'])->group(function () {
@@ -73,4 +76,4 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // Auth Routes (Login, Logout, Register) — note: register dapat dimatikan di file auth.php
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

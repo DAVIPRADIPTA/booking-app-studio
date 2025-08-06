@@ -1,101 +1,182 @@
-<x-layouts.app :title="__('Ekstra')">
+<x-layouts.app :title="'Detail Pesanan #' . $booking->id">
     <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
         <div class="flex justify-between items-center mb-6">
             <h1 class="text-2xl font-bold text-gray-800">Detail Pesanan #{{ $booking->id }}</h1>
-            <a href="{{ route('bookings.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Kembali</a>
+            <a href="{{ route('bookings.index') }}"
+               class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">Kembali</a>
         </div>
 
+        <!-- Alert Success -->
         @if (session('success'))
-        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg mb-4" role="alert">
-            {{ session('success') }}
-        </div>
+            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-4">
+                {{ session('success') }}
+            </div>
         @endif
 
-        <div class="flex flex-wrap -mx-4">
-            <div class="w-full md:w-2/3 px-4">
-                <div class="bg-white shadow-lg rounded-lg mb-6">
-                    <div class="bg-gray-100 px-6 py-4 rounded-t-lg">
-                        <h4 class="text-lg font-semibold text-gray-800">Informasi Pesanan</h4>
-                    </div>
-                    <div class="p-6">
-                        <p class="mb-2"><strong class="font-semibold">Nama Kontak:</strong> {{ $booking->contact_name }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Nomor WhatsApp:</strong> {{ $booking->whatsapp_number }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Tanggal:</strong> {{ \Carbon\Carbon::parse($booking->booking_date)->format('d F Y') }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Waktu:</strong> {{ $booking->booking_time }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Jenis Sesi:</strong> {{ $booking->session_name }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Paket:</strong> {{ $booking->package_name }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Total Harga:</strong> Rp.{{ number_format($booking->total_price, 0, ',', '.') }}</p>
-                        <p class="mb-2"><strong class="font-semibold">Catatan Tambahan:</strong> {{ $booking->notes ?? '-' }}</p>
+        <!-- Grid Layout -->
+        <div class="grid md:grid-cols-3 gap-6">
+            <!-- Kolom Informasi -->
+            <div class="md:col-span-2 space-y-6">
+                <!-- Informasi Booking -->
+                <div class="bg-white rounded shadow p-6">
+                    <h2 class="text-lg font-bold mb-4">Informasi Pesanan</h2>
+                    <div class="space-y-2 text-sm">
+                        <p><strong>Nama:</strong> {{ $booking->contact_name }}</p>
+                        <p><strong>WhatsApp:</strong> {{ $booking->whatsapp_number }}</p>
+                        <p><strong>Tanggal:</strong> {{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') }}</p>
+                        <p><strong>Jam:</strong> {{ $booking->booking_time }}</p>
+                        <p><strong>Sesi:</strong> {{ $booking->session_name }}</p>
+                        <p><strong>Paket:</strong> {{ $booking->package_name }}</p>
+                        <p><strong>Total:</strong> Rp{{ number_format($booking->total_price, 0, ',', '.') }}</p>
+                        <p><strong>Catatan:</strong> {{ $booking->notes ?? '-' }}</p>
                     </div>
                 </div>
-
-                <div class="bg-white shadow-lg rounded-lg mb-6">
-                    <div class="bg-gray-100 px-6 py-4 rounded-t-lg">
-                        <h4 class="text-lg font-semibold text-gray-800">Pilihan Pengguna</h4>
-                    </div>
-                    <div class="p-6">
-                        @if (!empty($booking->selected_backgrounds))
-                        <p class="font-semibold mb-2">Background yang dipilih:</p>
-                        <ul class="list-disc list-inside ml-4">
+                <!-- Background & Tambahan -->
+                <div class="bg-white rounded shadow p-6">
+                    <h2 class="text-lg font-bold mb-4">Tambahan & Background</h2>
+                    @if ($booking->selected_backgrounds)
+                        <p class="font-semibold">Background:</p>
+                        <ul class="list-disc ml-5 mb-2">
                             @foreach ($booking->selected_backgrounds as $bg)
-                            <li>{{ $bg['name'] }}</li>
+                                <li>{{ $bg['name'] }}</li>
                             @endforeach
                         </ul>
-                        @else
-                   
-                        @endif
-                        <h5 class="font-semibold mb-2">Extra Items:</h5>
-                        @if ($booking->selected_extra_items)
-                        <ul class="list-disc list-inside ml-4">
+                    @endif
+                    @if ($booking->selected_extra_items)
+                        <p class="font-semibold">Extra Item:</p>
+                        <ul class="list-disc ml-5">
                             @foreach ($booking->selected_extra_items as $extra)
-                            <li>{{ $extra['name'] }} (Rp.{{ number_format($extra['price'], 0, ',', '.') }})</li>
+                                <li>{{ $extra['name'] }} (Rp{{ number_format($extra['price'], 0, ',', '.') }})</li>
                             @endforeach
                         </ul>
-                        @else
+                    @else
                         <p class="text-gray-500">Tidak ada extra item.</p>
-                        @endif
-                    </div>
+                    @endif
                 </div>
             </div>
 
-            <div class="w-full md:w-1/3 px-4">
-                <div class="bg-white shadow-lg rounded-lg mb-6">
-                    <div class="bg-gray-100 px-6 py-4 rounded-t-lg">
-                        <h4 class="text-lg font-semibold text-gray-800">Perbarui Status</h4>
+            <!-- Kolom Admin -->
+            <div class="space-y-6">
+                <!-- Tombol Refresh Manual -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
+                    <h2 class="text-lg font-bold text-gray-800 mb-3">Tindakan Cepat</h2>
+                    <button 
+                        onclick="window.location.reload()" 
+                        class="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition w-full">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2A8.001 8.001 0 0020.418 15" />
+                        </svg>
+                        Refresh Halaman
+                    </button>
+                    <p class="text-gray-500 text-xs mt-2">Klik untuk memperbarui status terbaru</p>
+                </div>
+
+                <!-- STATUS -->
+                <div class="bg-white rounded shadow p-6">
+                    <h2 class="text-lg font-bold mb-4">Status Pesanan</h2>
+                    @php
+                        $badge = match ($booking->status) {
+                            'waiting' => 'bg-yellow-200 text-yellow-800',
+                            'booked' => 'bg-green-200 text-green-800',
+                            'completed' => 'bg-blue-200 text-blue-800',
+                            default => 'bg-gray-200 text-gray-800'
+                        };
+                    @endphp
+                    <span class="px-3 py-1 rounded text-sm font-semibold {{ $badge }}">
+                        {{ ucfirst($booking->status === 'waiting' ? 'Menunggu DP' : ($booking->status === 'booked' ? 'Sudah Dibooking' : 'Selesai')) }}
+                    </span>
+                </div>
+
+                <!-- Kirim Konfirmasi WA -->
+                @if ($booking->status === 'waiting')
+                    @php
+                        $dpAmount = number_format($booking->total_price / 2, 0, ',', '.');
+                        $message = "Halo kak {$booking->contact_name}, pesananmu untuk tanggal {$booking->booking_date->format('d M Y')} jam {$booking->booking_time} telah kami terima. Mohon transfer DP Rp{$dpAmount} untuk mengamankan jadwal. Balas dengan bukti transfer ya. Terima kasih.";
+                        $whatsappLink = "https://wa.me/" . preg_replace('/[^0-9]/', '', $booking->whatsapp_number) . "?text=" . urlencode($message);
+                    @endphp
+                    <div>
+                        <a href="{{ $whatsappLink }}" target="_blank"
+                            class="block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded mb-4">
+                            Kirim Konfirmasi Pesanan via WhatsApp
+                        </a>
                     </div>
-                    <div class="p-6">
-                        <form action="{{ route('bookings.update', $booking->id) }}" method="POST">
+                @endif
+
+                <!-- FORM KONFIRMASI DP -->
+                @if ($booking->status === 'waiting')
+                    <div class="bg-white rounded shadow p-6">
+                        <h2 class="text-lg font-bold mb-4">Konfirmasi DP</h2>
+                        <form action="{{ route('bookings.confirmDp', $booking->id) }}" method="POST" enctype="multipart/form-data" onsubmit="setTimeout(() => window.location.reload(), 3000)">
                             @csrf
-                            @method('PUT')
                             <div class="mb-4">
-                                <label for="status" class="block text-sm font-medium text-gray-700">
-                                    Status Saat Ini:
-                                    @php
-                                    $badgeColor = [
-                                    'pending' => 'bg-yellow-100 text-yellow-800',
-                                    'confirmed' => 'bg-green-100 text-green-800',
-                                    'completed' => 'bg-blue-100 text-blue-800',
-                                    'cancelled' => 'bg-red-100 text-red-800'
-                                    ][$booking->status] ?? 'bg-gray-100 text-gray-800';
-                                    @endphp
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $badgeColor }}">{{ ucfirst($booking->status) }}</span>
-                                </label>
-                                <select name="status" id="status" class="mt-2 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm" required>
-                                    <option value="pending" {{ $booking->status == 'pending' ? 'selected' : '' }}>Pending</option>
-                                    <option value="confirmed" {{ $booking->status == 'confirmed' ? 'selected' : '' }}>Confirmed</option>
-                                    <option value="completed" {{ $booking->status == 'completed' ? 'selected' : '' }}>Completed</option>
-                                    <option value="cancelled" {{ $booking->status == 'cancelled' ? 'selected' : '' }}>Cancelled</option>
-                                </select>
+                                <label class="block font-medium mb-1">Nominal DP</label>
+                                <input type="number" name="dp_amount" required class="w-full border rounded px-3 py-2">
                             </div>
-                            <button type="submit" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-4 rounded transition-colors duration-200">Simpan Perubahan</button>
-                        </form>
-                        <hr class="my-4 border-t border-gray-300">
-                        <form action="{{ route('bookings.destroy', $booking->id) }}" method="POST" onsubmit="return confirm('Apakah Anda yakin ingin menghapus pesanan ini?');">
-                            @csrf
-                            @method('DELETE')
-                            <button type="submit" class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded transition-colors duration-200">Hapus Pesanan</button>
+                            <div class="mb-4">
+                                <label class="block font-medium mb-1">Bukti Transfer DP</label>
+                                <input type="file" name="dp_proof" accept="image/*" required class="w-full border rounded px-3 py-2">
+                            </div>
+                            <button class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+                                Konfirmasi DP & Kirim WA
+                            </button>
                         </form>
                     </div>
+                @endif
+
+                <!-- TAMPILKAN DP (SAAT BOOKED) -->
+                @if ($booking->status === 'booked')
+                    <div class="bg-white rounded shadow p-6">
+                        <h2 class="text-lg font-bold mb-4">DP Telah Diterima</h2>
+                        <p><strong>Nominal:</strong> Rp{{ number_format($booking->dp_amount, 0, ',', '.') }}</p>
+                        <p class="mt-2 font-semibold">Bukti Transfer:</p>
+                        <img src="{{ asset('storage/' . $booking->dp_proof) }}" class="rounded w-full max-w-sm">
+                    </div>
+                @endif
+
+                <!-- FORM PELUNASAN -->
+                @if ($booking->status === 'booked')
+                    <div class="bg-white rounded shadow p-6">
+                        <h2 class="text-lg font-bold mb-4">Pelunasan</h2>
+                        <form action="{{ route('bookings.completeBooking', $booking->id) }}" method="POST" enctype="multipart/form-data" onsubmit="setTimeout(() => window.location.reload(), 3000)">
+                            @csrf
+                            <div class="mb-4">
+                                <label class="block font-medium mb-1">Nominal Pelunasan</label>
+                                <input type="number" name="final_payment_amount" required class="w-full border rounded px-3 py-2">
+                            </div>
+                            <div class="mb-4">
+                                <label class="block font-medium mb-1">Bukti Pelunasan</label>
+                                <input type="file" name="final_payment_proof" accept="image/*" required class="w-full border rounded px-3 py-2">
+                            </div>
+                            <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                                Selesaikan Pesanan & Kirim WA
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
+                <!-- LAPORAN FINAL -->
+                @if ($booking->status === 'completed')
+                    <div class="bg-white rounded shadow p-6">
+                        <h2 class="text-lg font-bold mb-4">Laporan Pembayaran</h2>
+                        <p><strong>Nominal DP:</strong> Rp{{ number_format($booking->dp_amount, 0, ',', '.') }}</p>
+                        <p><strong>Nominal Pelunasan:</strong> Rp{{ number_format($booking->final_payment_amount, 0, ',', '.') }}</p>
+                        <div class="mt-4">
+                            <p class="font-semibold">Bukti DP:</p>
+                            <img src="{{ asset('storage/' . $booking->dp_proof) }}" class="rounded w-full max-w-sm mb-3">
+                            <p class="font-semibold">Bukti Pelunasan:</p>
+                            <img src="{{ asset('storage/' . $booking->final_payment_proof) }}" class="rounded w-full max-w-sm">
+                        </div>
+                    </div>
+                @endif
+
+                <!-- DELETE -->
+                <div class="bg-white rounded shadow p-6">
+                    <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}" onsubmit="return confirm('Yakin ingin menghapus pesanan ini?')">
+                        @csrf
+                        @method('DELETE')
+                        <button class="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded">Hapus Pesanan</button>
+                    </form>
                 </div>
             </div>
         </div>

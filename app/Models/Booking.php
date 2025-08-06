@@ -18,7 +18,12 @@ class Booking extends Model
         'total_price',
         'notes',
         'status',
+        'dp_amount',
+        'dp_proof',
+        'final_payment_amount',
+        'final_payment_proof',
     ];
+
 
     protected $casts = [
         'booking_date' => 'date',
