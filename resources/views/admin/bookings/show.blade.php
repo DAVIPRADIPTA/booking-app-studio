@@ -19,6 +19,17 @@
             </div>
         @endif
 
+        <!-- Alert: Error Validasi -->
+        @if ($errors->any())
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg mb-6">
+                <ul class="list-disc list-inside">
+                    @foreach ($errors->all() as $error)
+                        <li><strong>{{ $error }}</strong></li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
+
         <!-- Grid Layout -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Kolom Kiri: Informasi Utama -->
@@ -42,7 +53,6 @@
                                 {{ $booking->session_name }}
                             @endif
                         </p>
-
                         <!-- Baby Smash Cake -->
                         @if($booking->session_name === 'baby-smash-cake')
                             <p><strong>Nama Bayi:</strong> {{ $booking->baby_name ?? '-' }}</p>
@@ -60,12 +70,10 @@
                                 @endphp
                             </p>
                         @endif
-
                         <!-- Group Photography -->
                         @if($booking->session_name === 'group-photography')
                             <p><strong>Jumlah Orang:</strong> {{ $booking->group_size ?? '-' }}</p>
                         @endif
-
                         <p><strong>Paket:</strong> {{ $booking->package_name }}</p>
                         <p class="font-semibold text-gray-800"><strong>Total:</strong> Rp{{ number_format($booking->total_price, 0, ',', '.') }}</p>
                         <p><strong>Catatan:</strong> {{ $booking->notes ?? '—' }}</p>
@@ -83,7 +91,6 @@
                             @endforeach
                         </ul>
                     @endif
-
                     @if($booking->selected_extra_items)
                         <p class="font-semibold text-gray-700 mb-2">Extra Item:</p>
                         <ul class="list-disc list-inside text-sm text-gray-700">
@@ -99,6 +106,16 @@
 
             <!-- Kolom Kanan: Aksi Admin -->
             <div class="space-y-6">
+                <!-- Info DP yang Diharapkan -->
+                @if($booking->status === 'waiting')
+                    <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                        <p class="text-xs text-blue-800 font-medium">Nominal DP yang harus dibayar:</p>
+                        <p class="text-lg font-bold text-blue-700 mt-1">
+                            Rp{{ number_format($expectedDpAmount, 0, ',', '.') }} (50%)
+                        </p>
+                    </div>
+                @endif
+
                 <!-- Tombol Refresh Manual -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
                     <h2 class="text-lg font-bold text-gray-800 mb-3">Tindakan Cepat</h2>
@@ -132,11 +149,14 @@
                 <!-- Kirim Konfirmasi WhatsApp (Waiting) -->
                 @if($booking->status === 'waiting')
                     @php
-                        $dpAmount = number_format($booking->total_price / 2, 0, ',', '.');
-                        $message = "Halo kak {$booking->contact_name},\n\n"
+                        $dpAmount = number_format($expectedDpAmount, 0, ',', '.');
+                        $message = "Halo kak {$booking->contact_name},
+"
                             . "Terima kasih, pesanan untuk sesi {$booking->session_name} pada tanggal "
-                            . \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . " pukul {$booking->booking_time} telah kami terima.\n"
-                            . "Mohon transfer DP Rp{$dpAmount} untuk mengamankan jadwal.\n"
+                            . \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . " pukul {$booking->booking_time} telah kami terima.
+"
+                            . "Mohon transfer DP Rp{$dpAmount} untuk mengamankan jadwal.
+"
                             . "Balas dengan bukti transfer ya. Terima kasih!";
                         $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
                         $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
@@ -160,13 +180,21 @@
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Nominal DP (Rp)</label>
+                                    @error('dp_amount')
+                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ $message }}</p>
+                                    @enderror
                                     <input type="number" name="dp_amount" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                           class="w-full border @error('dp_amount') border-red-500 @else border-gray-300 @enderror rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                           value="{{ old('dp_amount') }}"
+                                           placeholder="Masukkan nominal DP">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Bukti Transfer DP</label>
+                                    @error('dp_proof')
+                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ $message }}</p>
+                                    @enderror
                                     <input type="file" name="dp_proof" accept="image/*" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                           class="w-full border @error('dp_proof') border-red-500 @else border-gray-300 @enderror rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <button type="submit"
                                         class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-sm">
@@ -190,20 +218,34 @@
 
                 <!-- Form Pelunasan -->
                 @if($booking->status === 'booked')
+                    @php
+                        $remainingAmount = $booking->total_price - $booking->dp_amount;
+                    @endphp
                     <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                         <h2 class="text-lg font-bold text-gray-800 mb-4">Pelunasan</h2>
+                        <div class="text-xs text-gray-600 mb-3">
+                            Sisa tagihan: <strong>Rp{{ number_format($remainingAmount, 0, ',', '.') }}</strong>
+                        </div>
                         <form action="{{ route('bookings.completeBooking', $booking->id) }}" method="POST" enctype="multipart/form-data">
                             @csrf
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Nominal Pelunasan (Rp)</label>
+                                    @error('final_payment_amount')
+                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ $message }}</p>
+                                    @enderror
                                     <input type="number" name="final_payment_amount" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                           class="w-full border @error('final_payment_amount') border-red-500 @else border-gray-300 @enderror rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                                           value="{{ old('final_payment_amount') }}"
+                                           placeholder="Masukkan nominal pelunasan">
                                 </div>
                                 <div>
                                     <label class="block text-sm font-medium text-gray-700 mb-1">Bukti Pelunasan</label>
+                                    @error('final_payment_proof')
+                                        <p class="text-red-500 text-xs mt-1 font-semibold">{{ $message }}</p>
+                                    @enderror
                                     <input type="file" name="final_payment_proof" accept="image/*" required
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
+                                           class="w-full border @error('final_payment_proof') border-red-500 @else border-gray-300 @enderror rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500">
                                 </div>
                                 <button type="submit"
                                         class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition shadow-sm">
@@ -221,6 +263,9 @@
                         <div class="space-y-3 text-sm text-gray-700">
                             <p><strong>DP:</strong> Rp{{ number_format($booking->dp_amount, 0, ',', '.') }}</p>
                             <p><strong>Pelunasan:</strong> Rp{{ number_format($booking->final_payment_amount, 0, ',', '.') }}</p>
+                            <p class="font-semibold text-gray-800 mt-2">
+                                Total: Rp{{ number_format($booking->dp_amount + $booking->final_payment_amount, 0, ',', '.') }}
+                            </p>
                         </div>
                         <div class="mt-4 space-y-4">
                             <div>
@@ -258,7 +303,6 @@
         function setRefreshOnWa() {
             sessionStorage.setItem('refreshAfterWa', 'true');
         }
-
         document.addEventListener('visibilitychange', function () {
             if (document.visibilityState === 'visible') {
                 const refreshOnReturn = sessionStorage.getItem('refreshAfterWa');

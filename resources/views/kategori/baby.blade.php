@@ -1754,7 +1754,7 @@
                         messageSpan.textContent = `⚠️ Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
                         infoBox.classList.add('limited');
                     } else {
-                        messageSpan.textContent = `✅ Ada ${data.available_times.length} slot yang tersedia.`;
+                        messageSpan.textContent = `Masih ada ${data.available_times.length} slot ( sesi waktu ) yang tersedia.`;
                         infoBox.classList.add('available');
                     }
                 }
