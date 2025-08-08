@@ -45,15 +45,29 @@
                                 </td>
                                 <td class="py-3 px-6">
                                     @php
-                                        $badgeColor = match ($booking->status) {
+                                        // Cek apakah status waiting tapi sudah expired
+                                        $isExpired = $booking->status === 'waiting' && $booking->created_at->lt(now()->subDay());
+                                        $displayStatus = $isExpired ? 'cancelled' : $booking->status;
+
+                                        $badgeColor = match ($displayStatus) {
                                             'waiting' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
                                             'booked' => 'bg-green-100 text-green-800 border-green-200',
                                             'completed' => 'bg-blue-100 text-blue-800 border-blue-200',
+                                            'cancelled' => 'bg-red-100 text-red-800 border-red-200',
                                             default => 'bg-gray-100 text-gray-800 border-gray-200'
                                         };
+
+                                        $label = match ($displayStatus) {
+                                            'waiting' => 'Menunggu DP',
+                                            'booked' => 'Sudah Dibooking',
+                                            'completed' => 'Selesai',
+                                            'cancelled' => 'Dibatalkan',
+                                            default => ucfirst($displayStatus)
+                                        };
                                     @endphp
-                                    <span class="inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border {{ $badgeColor }}">
-                                        {{ ucfirst($booking->status === 'waiting' ? 'Menunggu DP' : ($booking->status === 'booked' ? 'Sudah Dibooking' : 'Selesai')) }}
+                                    <span class="inline-flex px-2.5 py-1 text-xs font-semibold rounded-full border {{ $badgeColor }}"
+                                          title="{{ $isExpired ? 'Dibatalkan otomatis karena DP tidak dibayar dalam 24 jam' : '' }}">
+                                        {{ $label }}
                                     </span>
                                 </td>
                                 <td class="py-3 px-6 text-center">

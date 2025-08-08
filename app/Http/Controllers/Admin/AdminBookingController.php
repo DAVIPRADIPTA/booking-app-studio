@@ -21,6 +21,14 @@ class AdminBookingController extends Controller
     public function show(string $id)
     {
         $booking = Booking::findOrFail($id);
+
+        // 🔁 Auto-cancel: Jika status 'waiting' dan lebih dari 24 jam
+        if ($booking->status === 'waiting' && $booking->created_at->lt(now()->subDay())) {
+            $booking->update(['status' => 'cancelled']);
+            // Refresh agar status baru terbaca
+            $booking->refresh();
+        }
+
         $expectedDpAmount = $booking->total_price * self::DP_PERCENTAGE;
 
         return view('admin.bookings.show', compact('booking', 'expectedDpAmount'));

@@ -106,7 +106,45 @@
 
             <!-- Kolom Kanan: Aksi Admin -->
             <div class="space-y-6">
-                <!-- Info DP yang Diharapkan -->
+
+                <!-- Status & Countdown -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">Status Pesanan</h2>
+                    @php
+                        $badgeColor = match ($booking->status) {
+                            'waiting' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                            'booked' => 'bg-green-100 text-green-800 border-green-200',
+                            'completed' => 'bg-blue-100 text-blue-800 border-blue-200',
+                            'cancelled' => 'bg-red-100 text-red-800 border-red-200',
+                            default => 'bg-gray-100 text-gray-800 border-gray-200'
+                        };
+                    @endphp
+                    <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold border {{ $badgeColor }}">
+                        {{ ucfirst(
+                            $booking->status === 'waiting' ? 'Menunggu DP' :
+                            ($booking->status === 'booked' ? 'Sudah Dibooking' :
+                            ($booking->status === 'completed' ? 'Selesai' : 'Dibatalkan'))
+                        ) }}
+                    </span>
+
+                    <!-- Countdown Timer (Hanya jika status waiting dan belum expired) -->
+                    @if($booking->status === 'waiting' && $booking->created_at->gt(now()->subDay()))
+                        <div class="mt-4 bg-orange-50 border border-orange-200 rounded-lg p-4" id="countdown-container">
+                            <p class="text-xs text-orange-800 font-medium">Waktu untuk bayar DP:</p>
+                            <p class="text-lg font-bold text-orange-700 mt-1" id="countdown-timer">Memuat...</p>
+                            <p class="text-xs text-orange-600 mt-1">Booking akan dibatalkan otomatis jika DP tidak dibayar.</p>
+                        </div>
+                    @endif
+
+                    <!-- Pesan Dibatalkan (Jika status cancelled) -->
+                    @if($booking->status === 'cancelled')
+                        <div class="mt-4 bg-red-50 border border-red-200 rounded-lg p-4 text-center">
+                            <p class="text-sm text-red-700 font-medium">Booking dibatalkan karena melewati batas waktu pembayaran DP.</p>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Info DP yang Diharapkan (Hanya saat waiting) -->
                 @if($booking->status === 'waiting')
                     <div class="bg-blue-50 border border-blue-200 rounded-xl p-4">
                         <p class="text-xs text-blue-800 font-medium">Nominal DP yang harus dibayar:</p>
@@ -116,60 +154,42 @@
                     </div>
                 @endif
 
-                <!-- Tombol Refresh Manual -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 text-center">
-                    <h2 class="text-lg font-bold text-gray-800 mb-3">Tindakan Cepat</h2>
+                <!-- Tindakan Cepat: Refresh & WhatsApp -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-4">
+                    <h2 class="text-lg font-bold text-gray-800">Tindakan Cepat</h2>
+
+                    <!-- Tombol Refresh -->
                     <button 
                         onclick="window.location.reload()" 
-                        class="inline-flex items-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg text-sm transition w-full">
+                        class="w-full inline-flex items-center justify-center gap-2 bg-gray-600 hover:bg-gray-700 text-white font-semibold py-2 px-4 rounded-lg transition">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2A8.001 8.001 0 0020.418 15" />
                         </svg>
                         Refresh Halaman
                     </button>
-                    <p class="text-gray-500 text-xs mt-2">Klik untuk memperbarui status terbaru</p>
-                </div>
 
-                <!-- Status -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-lg font-bold text-gray-800 mb-4">Status Pesanan</h2>
-                    @php
-                        $badgeColor = match ($booking->status) {
-                            'waiting' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                            'booked' => 'bg-green-100 text-green-800 border-green-200',
-                            'completed' => 'bg-blue-100 text-blue-800 border-blue-200',
-                            default => 'bg-gray-100 text-gray-800 border-gray-200'
-                        };
-                    @endphp
-                    <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold border {{ $badgeColor }}">
-                        {{ ucfirst($booking->status === 'waiting' ? 'Menunggu DP' : ($booking->status === 'booked' ? 'Sudah Dibooking' : 'Selesai')) }}
-                    </span>
+                    <!-- Kirim Konfirmasi WhatsApp (Hanya saat waiting) -->
+                    @if($booking->status === 'waiting')
+                        @php
+                            $dpAmount = number_format($expectedDpAmount, 0, ',', '.');
+                            $message = "Halo kak {$booking->contact_name},\n\n"
+                                . "Terima kasih, pesanan untuk sesi {$booking->session_name} pada tanggal "
+                                . \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . " pukul {$booking->booking_time} telah kami terima.\n"
+                                . "Mohon transfer DP Rp{$dpAmount} untuk mengamankan jadwal.\n"
+                                . "Balas dengan bukti transfer ya. Terima kasih!";
+                            $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
+                            $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
+                        @endphp
+                        <a href="{{ $url }}" target="_blank"
+                           onclick="setRefreshOnWa()"
+                           class="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004c-1.03 0-2.01-.199-2.907-.536-1.075-.408-1.995-1.093-2.712-1.979-1.555-1.924-2.291-4.5-1.974-7.052.297-2.398 1.538-4.468 3.43-5.755 1.885-1.28 4.217-1.665 6.396-.987 2.178.678 3.844 2.19 4.76 4.115.92 1.923 1.04 4.11.36 6.146-.68 2.036-2.104 3.719-3.989 4.668-.602.3-1.316.499-2.133.499m7.475-7.45c-.035-1.24-.362-2.416-.955-3.459-.624-1.093-1.489-1.968-2.537-2.569-1.047-.6-2.232-.904-3.434-.876-1.203.028-2.382.385-3.377 1.033-1.002.654-1.786 1.57-2.255 2.649-.47 1.078-.607 2.27-.402 3.436.204 1.167.73 2.245 1.505 3.143.776.898 1.776 1.579 2.907 1.986.66.226 1.35.338 2.044.331.693-.007 1.382-.131 2.03-.371.647-.24 1.23-.59 1.722-1.033.49-.443.879-.969 1.147-1.55.267-.581.407-1.205.41-1.842.003-.637-.13-1.265-.393-1.822"/>
+                            </svg>
+                            Kirim Konfirmasi via WhatsApp
+                        </a>
+                    @endif
                 </div>
-
-                <!-- Kirim Konfirmasi WhatsApp (Waiting) -->
-                @if($booking->status === 'waiting')
-                    @php
-                        $dpAmount = number_format($expectedDpAmount, 0, ',', '.');
-                        $message = "Halo kak {$booking->contact_name},
-"
-                            . "Terima kasih, pesanan untuk sesi {$booking->session_name} pada tanggal "
-                            . \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . " pukul {$booking->booking_time} telah kami terima.
-"
-                            . "Mohon transfer DP Rp{$dpAmount} untuk mengamankan jadwal.
-"
-                            . "Balas dengan bukti transfer ya. Terima kasih!";
-                        $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
-                        $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
-                    @endphp
-                    <a href="{{ $url }}" target="_blank"
-                       onclick="setRefreshOnWa()"
-                       class="block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-xl transition shadow-sm">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 inline mr-2" fill="currentColor" viewBox="0 0 24 24">
-                            <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004c-1.03 0-2.01-.199-2.907-.536-1.075-.408-1.995-1.093-2.712-1.979-1.555-1.924-2.291-4.5-1.974-7.052.297-2.398 1.538-4.468 3.43-5.755 1.885-1.28 4.217-1.665 6.396-.987 2.178.678 3.844 2.19 4.76 4.115.92 1.923 1.04 4.11.36 6.146-.68 2.036-2.104 3.719-3.989 4.668-.602.3-1.316.499-2.133.499m7.475-7.45c-.035-1.24-.362-2.416-.955-3.459-.624-1.093-1.489-1.968-2.537-2.569-1.047-.6-2.232-.904-3.434-.876-1.203.028-2.382.385-3.377 1.033-1.002.654-1.786 1.57-2.255 2.649-.47 1.078-.607 2.27-.402 3.436.204 1.167.73 2.245 1.505 3.143.776.898 1.776 1.579 2.907 1.986.66.226 1.35.338 2.044.331.693-.007 1.382-.131 2.03-.371.647-.24 1.23-.59 1.722-1.033.49-.443.879-.969 1.147-1.55.267-.581.407-1.205.41-1.842.003-.637-.13-1.265-.393-1.822"/>
-                        </svg>
-                        Kirim Konfirmasi via WhatsApp
-                    </a>
-                @endif
 
                 <!-- Form Konfirmasi DP -->
                 @if($booking->status === 'waiting')
@@ -283,20 +303,62 @@
                 @endif
 
                 <!-- Hapus Pesanan -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}"
-                          onsubmit="return confirm('Yakin ingin menghapus pesanan ini? Data tidak dapat dipulihkan.')">
-                        @csrf
-                        @method('DELETE')
-                        <button type="submit"
-                                class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition">
-                            Hapus Pesanan
-                        </button>
-                    </form>
-                </div>
+                @if(!in_array($booking->status, ['completed', 'cancelled']))
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}"
+                              onsubmit="return confirm('Yakin ingin menghapus pesanan ini? Data tidak dapat dipulihkan.')">
+                            @csrf
+                            @method('DELETE')
+                            <button type="submit"
+                                    class="w-full bg-red-500 hover:bg-red-600 text-white font-semibold py-2 px-4 rounded-lg transition">
+                                Hapus Pesanan
+                            </button>
+                        </form>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
+
+    <!-- Countdown Timer Script -->
+    @if($booking->status === 'waiting' && $booking->created_at->gt(now()->subDay()))
+        <script>
+            function startCountdown(expiryTimestamp) {
+                const timerEl = document.getElementById('countdown-timer');
+                const containerEl = document.getElementById('countdown-container');
+
+                const update = () => {
+                    const now = new Date().getTime();
+                    const distance = expiryTimestamp - now;
+
+                    if (distance < 0) {
+                        timerEl.textContent = "Waktu habis";
+                        containerEl.classList.remove('bg-orange-50', 'border-orange-200');
+                        containerEl.classList.add('bg-red-50', 'border-red-200');
+                        timerEl.classList.add('text-red-700');
+                        // Auto-reload setelah 1.5 detik
+                        setTimeout(() => location.reload(), 1500);
+                        return;
+                    }
+
+                    const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+                    const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+                    const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+
+                    timerEl.textContent = `${days}h ${hours}m ${minutes}d ${seconds}d`;
+                };
+
+                update();
+                setInterval(update, 1000);
+            }
+
+            // Hitung expiry: created_at + 1 hari
+            const created = new Date("{{ $booking->created_at }}").getTime();
+            const expiry = created + (24 * 60 * 60 * 1000); // +1 hari
+            startCountdown(expiry);
+        </script>
+    @endif
 
     <!-- Auto Refresh Setelah Kembali dari WhatsApp -->
     <script>
