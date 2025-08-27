@@ -446,7 +446,7 @@
                     </p>
                     <div class="relative w-full flex justify-center">
                         <div class="relative pt-[70px]">
-                            <a href="{{ route('homepage') }}"
+                            <a href="#" onclick="redirectToHomepage(event)"
                                 class="absolute top-0 left-1/2 -translate-x-1/2 inline-flex items-center justify-center gap-2 px-6 py-3 min-w-[180px] min-h-[48px] text-sm font-medium uppercase text-white bg-white/10 border border-white/20 rounded-full backdrop-blur-md hover:bg-white/20 hover:scale-105 hover:shadow-xl transition-all duration-300 group">
                                 Book Session
                                 <svg class="w-4 h-4 transition-transform group-hover:translate-x-1.5" fill="none"
@@ -493,6 +493,20 @@
 
 @push('scripts')
     <script>
+
+        function redirectToHomepage(e) {
+            e.preventDefault();
+            // Cek dari Blade: apakah customer sudah login?
+            const isAuth = @json(auth()->guard('customer')->check() ?? false);
+
+            if (isAuth) {
+                window.location.href = '{{ route('homepage') }}';
+            } else {
+                window.location.href = '{{ route('customer.login') }}';
+            }
+        }
+
+
         document.addEventListener('DOMContentLoaded', function () {
             const slides = document.querySelectorAll('.carousel-slide');
             const dots = document.querySelectorAll('.pagination-dot');
