@@ -14,7 +14,7 @@ class CustomerController extends Controller
     {
         $bookings = Booking::where('customer_id', Auth::guard('customer')->id())
                            ->orderByDesc('created_at')
-                           ->get();
+                           ->paginate(10); // ✅ gunakan paginate agar links() bisa dipakai
 
         return view('customer.bookings.index', compact('bookings'));
     }

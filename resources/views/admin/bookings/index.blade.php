@@ -70,40 +70,22 @@
                                     </span>
                                 </td>
                                 <td class="py-3 px-6 text-center">
-                                    <div class="flex justify-center gap-2">
-                                        <!-- Detail -->
+                                    <div class="flex justify-center space-x-2">
                                         <a href="{{ route('bookings.show', $booking->id) }}"
-                                           class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm">
+                                           class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                                             Detail
                                         </a>
-
-                                        <!-- Dropdown Aksi -->
-                                        <div class="relative">
-                                            <button class="bg-gray-200 px-3 py-1.5 rounded-lg text-sm hover:bg-gray-300"
-                                                onclick="toggleMenu('menu-{{ $booking->id }}')">
-                                                Aksi ▼
-                                            </button>
-                                            <div id="menu-{{ $booking->id }}" class="hidden absolute bg-white shadow-lg rounded-lg mt-2 w-44 z-10">
-                                                @if($booking->status === 'waiting_payment')
-                                                    <form method="POST" action="{{ route('bookings.verifyPayment', $booking->id) }}">
-                                                        @csrf
-                                                        <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-green-600">Verifikasi</button>
-                                                    </form>
-                                                @endif
-                                                @if($booking->status === 'booked')
-                                                    <form method="POST" action="{{ route('bookings.completeBooking', $booking->id) }}">
-                                                        @csrf
-                                                        <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-blue-600">Tandai Selesai</button>
-                                                    </form>
-                                                @endif
-                                                @if(!in_array($booking->status, ['cancelled','completed']))
-                                                    <form method="POST" action="{{ route('bookings.forceCancel', $booking->id) }}">
-                                                        @csrf
-                                                        <button class="block w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600">Batalkan</button>
-                                                    </form>
-                                                @endif
-                                            </div>
-                                        </div>
+                                        @if($booking->status === 'booked')
+                                            <a href="{{ route('bookings.edit', $booking->id) }}"
+                                               class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
+                                                Edit
+                                            </a>
+                                        @else
+                                            <span class="bg-gray-400 text-white px-3 py-1.5 rounded-lg text-sm cursor-not-allowed opacity-50"
+                                                  title="Hanya booking dengan status 'Sudah Dibooking' yang bisa di-edit">
+                                                Edit
+                                            </span>
+                                        @endif
                                     </div>
                                 </td>
                             </tr>
@@ -124,20 +106,4 @@
             {{ $bookings->links('pagination::tailwind') }}
         </div>
     </div>
-
-    <script>
-        function toggleMenu(id) {
-            document.querySelectorAll('[id^="menu-"]').forEach(menu => menu.classList.add('hidden'));
-            document.getElementById(id).classList.toggle('hidden');
-        }
-
-        // klik luar dropdown close
-        window.addEventListener('click', function(e) {
-            document.querySelectorAll('[id^="menu-"]').forEach(menu => {
-                if (!menu.contains(e.target) && !menu.previousElementSibling.contains(e.target)) {
-                    menu.classList.add('hidden');
-                }
-            });
-        });
-    </script>
 </x-layouts.app>

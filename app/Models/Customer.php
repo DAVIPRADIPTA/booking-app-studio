@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -25,15 +26,13 @@ class Customer extends Authenticatable
         'email_verified_at' => 'datetime',
     ];
 
-    // Relasi ke bookings
+    // --- RELASI ---
     public function bookings()
     {
-        return $this->hasMany(Booking::class);
+        return $this->hasMany(Booking::class, 'customer_id');
     }
 
-    /**
-     * Kirim notifikasi reset password ke customer.
-     */
+    // --- NOTIFIKASI RESET PASSWORD ---
     public function sendPasswordResetNotification($token)
     {
         $this->notify(new CustomerResetPasswordNotification($token));

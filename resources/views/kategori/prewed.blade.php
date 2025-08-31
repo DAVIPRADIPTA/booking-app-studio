@@ -435,9 +435,7 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports
-        (-moz - appearance)
-            {
+        @supports (-moz - appearance) {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -1592,7 +1590,68 @@
                         </div>
                     </div>
 
-                    <!-- Extra items (unchanged) -->
+
+                    <!-- Extra Items -->
+                    <!-- Extra Items -->
+                    <div class="extras-section mt-8">
+                        <div class="extras-title text-lg font-semibold mb-4">Extra Item (Tambahan Opsional)</div>
+
+                        <div class="extras-grid grid md:grid-cols-3 gap-6">
+                            {{-- Kategori Cetak Foto --}}
+                            <div class="extras-category">
+                                <div class="category-title font-bold mb-2">Cetak Foto</div>
+                                @foreach($printItems as $item)
+                                    <div class="extra-item flex items-center justify-between p-3 border rounded mb-2">
+                                        <div class="extra-info">
+                                            <div class="extra-name">{{ $item['name'] }}</div>
+                                            <span
+                                                class="extra-price text-sm text-gray-600">Rp{{ number_format($item['price']) }}</span>
+                                        </div>
+                                        <input type="checkbox" class="extra-checkbox" value="{{ $item['id'] }}" {{-- ✅ wajib
+                                            untuk kirim ID --}} data-name="{{ $item['name'] }}"
+                                            data-price="{{ $item['price'] }}"
+                                            aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}">
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Kategori Frame Foto --}}
+                            <div class="extras-category">
+                                <div class="category-title font-bold mb-2">Frame Foto</div>
+                                @foreach($frameItems as $item)
+                                    <div class="extra-item flex items-center justify-between p-3 border rounded mb-2">
+                                        <div class="extra-info">
+                                            <div class="extra-name">{{ $item['name'] }}</div>
+                                            <span
+                                                class="extra-price text-sm text-gray-600">Rp{{ number_format($item['price']) }}</span>
+                                        </div>
+                                        <input type="checkbox" class="extra-checkbox" value="{{ $item['id'] }}" {{-- ✅ kirim ID
+                                            --}} data-name="{{ $item['name'] }}" data-price="{{ $item['price'] }}"
+                                            aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}">
+                                    </div>
+                                @endforeach
+                            </div>
+
+                            {{-- Kategori Tambahan & Layanan --}}
+                            <div class="extras-category">
+                                <div class="category-title font-bold mb-2">Tambahan & Layanan</div>
+                                @foreach($serviceItems as $item)
+                                    <div class="extra-item flex items-center justify-between p-3 border rounded mb-2">
+                                        <div class="extra-info">
+                                            <div class="extra-name">{{ $item['name'] }}</div>
+                                            <span class="extra-price text-sm text-gray-600">
+                                                Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}
+                                            </span>
+                                        </div>
+                                        <input type="checkbox" class="extra-checkbox" value="{{ $item['id'] }}" {{-- ✅ kirim ID
+                                            --}} data-name="{{ $item['name'] }}" data-price="{{ $item['price'] }}"
+                                            aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}">
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
                     <!-- Notes -->
                     <div class="notes-section">
                         <div class="form-group">
@@ -1715,7 +1774,7 @@
                 @foreach($backgroundItems as $item)
                     '{{ $item->id }}',
                 @endforeach
-        ];
+                            ];
 
             const packageBackgrounds = {
                 'prewed1': { maxBackgrounds: 2, availableBackgrounds: prewedBackgroundIds },
@@ -1900,9 +1959,16 @@
             ------------------------- */
             extraCheckboxes.forEach(cb => {
                 cb.addEventListener('change', function () {
-                    const item = { name: this.dataset.name, price: parseInt(this.dataset.price || 0, 10) || 0 };
-                    if (this.checked) selectedExtras.push(item);
-                    else selectedExtras = selectedExtras.filter(x => x.name !== item.name);
+                    const item = {
+                        id: parseInt(this.value, 10),  // ✅ sekarang dapat ID
+                        name: this.dataset.name,
+                        price: parseInt(this.dataset.price || 0, 10) || 0
+                    };
+                    if (this.checked) {
+                        selectedExtras.push(item);
+                    } else {
+                        selectedExtras = selectedExtras.filter(x => x.id !== item.id);
+                    }
                     updateTotalPrice();
                 });
             });
@@ -1915,7 +1981,7 @@
             }
 
             function formatPrice(price) {
-                return `RP.${Number(price).toLocaleString('id-ID')}-`;
+                return `Rp${Number(price).toLocaleString('id-ID')}`;
             }
 
             /* -------------------------
@@ -2032,8 +2098,6 @@
 
                 try {
                     const fd = new FormData(bookingForm);
-
-                    // Normalize phone
                     const rawPhone = (fd.get('whatsapp_number') || '').toString().trim();
                     const normalizedPhone = normalizePhone(rawPhone);
 
@@ -2045,12 +2109,10 @@
                         session_name: 'prewed',
                         package_name: selectedPackage?.name || '',
                         selected_backgrounds: selectedBackgrounds.map(b => parseInt(b.id, 10)),
-                        selected_extra_items: selectedExtras.map(e => e.name),
+                        selected_extra_items: selectedExtras.map(e => e.id), // ✅ sekarang kirim ID ke Laravel
                         total_price: Number(totalPriceElement.getAttribute('data-total'))
                             || (basePrice + selectedExtras.reduce((s, i) => s + (i.price || 0), 0)),
                         notes: fd.get('notes') || null,
-
-                        // 👇 WAJIB biar lolos validasi Laravel
                         status: 'waiting_payment'
                     };
 
@@ -2065,7 +2127,6 @@
                     });
 
                     const result = await resp.json().catch(() => ({}));
-
                     if (resp.ok) {
                         window.location.href = result.redirect_url || '/homepage';
                     } else {
@@ -2081,6 +2142,12 @@
                     setLoading(false);
                 }
             });
+
+
+            if (resp.status === 409) {
+                showNotification(result.message || 'Slot sudah diambil', 'error');
+                return;
+            }
 
 
             function normalizePhone(raw) {

@@ -3,13 +3,26 @@
         <!-- Header -->
         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <h1 class="text-2xl font-bold text-gray-800">Detail Pesanan #{{ $booking->id }}</h1>
-            <a href="{{ route('bookings.index') }}"
-               class="inline-flex items-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                </svg>
-                <span>Kembali ke Daftar Pesanan</span>
-            </a>
+            <div class="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                <a href="{{ route('bookings.index') }}"
+                    class="inline-flex items-center justify-center gap-2 bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition w-full sm:w-auto">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                        stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                    <span>Kembali ke Daftar Pesanan</span>
+                </a>
+                @if($booking->status !== 'cancelled')
+                    <a href="{{ route('bookings.edit', $booking->id) }}"
+                        class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition w-full sm:w-auto">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        <span>Edit Pesanan</span>
+                    </a>
+                @endif
+            </div>
         </div>
 
         <!-- Main Content -->
@@ -29,16 +42,16 @@
                             <p class="font-medium">{{ $booking->whatsapp_number }}</p>
                         </div>
                         @if($booking->baby_name)
-                        <div>
-                            <p class="text-gray-500 text-sm">Nama Bayi</p>
-                            <p class="font-medium">{{ $booking->baby_name }}</p>
-                        </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Nama Bayi</p>
+                                <p class="font-medium">{{ $booking->baby_name }}</p>
+                            </div>
                         @endif
                         @if($booking->baby_age)
-                        <div>
-                            <p class="text-gray-500 text-sm">Usia Bayi</p>
-                            <p class="font-medium">{{ $booking->baby_age }}</p>
-                        </div>
+                            <div>
+                                <p class="text-gray-500 text-sm">Usia Bayi</p>
+                                <p class="font-medium">{{ $booking->baby_age }}</p>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -49,11 +62,13 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                             <p class="text-gray-500 text-sm">Sesi</p>
-                            <p class="font-medium">{{ $booking->formatted_session_name }}</p>
+                            <p class="font-medium">{{ $booking->formatted_session_name ?? $booking->session_name }}</p>
                         </div>
                         <div>
                             <p class="text-gray-500 text-sm">Tanggal</p>
-                            <p class="font-medium">{{ $booking->booking_date->translatedFormat('d F Y') }}</p>
+                            <p class="font-medium">
+                                {{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') }}
+                            </p>
                         </div>
                         <div>
                             <p class="text-gray-500 text-sm">Jam</p>
@@ -72,37 +87,55 @@
 
                 <!-- Selected Items -->
                 @if(!empty($booking->selected_backgrounds) || !empty($booking->selected_extra_items))
-                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <h2 class="text-lg font-bold text-gray-800 mb-4">Item yang Dipilih</h2>
-                    
-                    @if(!empty($booking->selected_backgrounds))
-                    <div class="mb-6">
-                        <h3 class="font-semibold text-gray-700 mb-2">Background</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            @foreach($booking->selected_backgrounds as $bg)
-                            <div class="flex items-center p-2 bg-gray-50 rounded-lg">
-                                <span>{{ $bg['name'] }}</span>
-                                <span class="ml-auto text-gray-500">Rp{{ number_format($bg['price'], 0, ',', '.') }}</span>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                        <h2 class="text-lg font-bold text-gray-800 mb-4">Item yang Dipilih</h2>
 
-                    @if(!empty($booking->selected_extra_items))
-                    <div>
-                        <h3 class="font-semibold text-gray-700 mb-2">Item Tambahan</h3>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            @foreach($booking->selected_extra_items as $item)
-                            <div class="flex items-center p-2 bg-gray-50 rounded-lg">
-                                <span>{{ $item['name'] }}</span>
-                                <span class="ml-auto text-gray-500">Rp{{ number_format($item['price'], 0, ',', '.') }}</span>
+                        <!-- Backgrounds -->
+                        @if(!empty($booking->selected_backgrounds))
+                            <div class="mb-6">
+                                <h3 class="font-semibold text-gray-700 mb-3">Background yang Dipilih</h3>
+                                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                                    @foreach($booking->selected_backgrounds as $bg)
+                                        <div class="bg-gray-50 rounded-lg border overflow-hidden">
+                                            <div class="w-full aspect-square">
+                                                @if(!empty($bg['image']))
+                                                    <img src="{{ asset('storage/' . $bg['image']) }}"
+                                                        alt="{{ $bg['name'] ?? 'Background' }}"
+                                                        class="w-full h-full object-cover">
+                                                @else
+                                                    <div class="w-full h-full flex items-center justify-center bg-gray-200 text-gray-500">
+                                                        Tidak ada gambar
+                                                    </div>
+                                                @endif
+                                            </div>
+                                            <div class="p-2 text-center">
+                                                <span class="text-sm font-medium text-gray-700">
+                                                    {{ $bg['name'] ?? 'Background' }}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
-                            @endforeach
-                        </div>
+                        @endif
+
+                        <!-- Extras -->
+                        @if(!empty($booking->selected_extra_items))
+                            <div>
+                                <h3 class="font-semibold text-gray-700 mb-3">Item Tambahan</h3>
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                    @foreach($booking->selected_extra_items as $item)
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg border">
+                                            <span class="font-medium">{{ $item['name'] ?? 'Item' }}</span>
+                                            <span class="text-gray-600">
+                                                Rp{{ number_format($item['price'] ?? 0, 0, ',', '.') }}
+                                            </span>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        @endif
                     </div>
-                    @endif
-                </div>
                 @endif
             </div>
 
@@ -111,14 +144,34 @@
                 <!-- Status Info -->
                 <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <h2 class="text-lg font-bold text-gray-800 mb-4">Status Pesanan</h2>
-                    <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold border 
-                        {{ $booking->status_color }}">
-                        {{ $booking->status_label }}
+
+                    @php
+                        $badgeColor = match ($booking->status) {
+                            'waiting_payment' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
+                            'pending_verification' => 'bg-orange-100 text-orange-800 border-orange-200',
+                            'booked' => 'bg-green-100 text-green-800 border-green-200',
+                            'completed' => 'bg-blue-100 text-blue-800 border-blue-200',
+                            'cancelled' => 'bg-red-100 text-red-800 border-red-200',
+                            default => 'bg-gray-100 text-gray-800 border-gray-200'
+                        };
+
+                        $label = match ($booking->status) {
+                            'waiting_payment' => 'Menunggu Pembayaran',
+                            'pending_verification' => 'Menunggu Verifikasi',
+                            'booked' => 'Sudah Dibooking',
+                            'completed' => 'Selesai',
+                            'cancelled' => 'Dibatalkan',
+                            default => ucfirst($booking->status)
+                        };
+                    @endphp
+
+                    <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold border {{ $badgeColor }}">
+                        {{ $label }}
                     </span>
 
                     @if($booking->status === 'waiting_payment')
                         <div class="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100 text-sm text-amber-700">
-                            Customer memiliki <strong>{{ $booking->getRemainingTimeFormatted() }}</strong> 
+                            Customer memiliki <strong>{{ $booking->getRemainingTimeFormatted() }}</strong>
                             untuk menyelesaikan pembayaran.
                         </div>
                     @endif
@@ -144,15 +197,15 @@
                         </div>
 
                         @if($booking->payment_proof)
-                        <div>
-                            <p class="text-gray-500 text-sm mb-2">Bukti Pembayaran</p>
-                            <img src="{{ Storage::url($booking->payment_proof) }}" 
-                                 class="w-full rounded-lg border" alt="Bukti Pembayaran">
-                            <a href="{{ Storage::url($booking->payment_proof) }}" target="_blank"
-                               class="mt-2 inline-block text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">
-                                Lihat / Download
-                            </a>
-                        </div>
+                            <div>
+                                <p class="text-gray-500 text-sm mb-2">Bukti Pembayaran</p>
+                                <img src="{{ asset('storage/' . $booking->payment_proof) }}" class="w-full rounded-lg border"
+                                    alt="Bukti Pembayaran">
+                                <a href="{{ asset('storage/' . $booking->payment_proof) }}" target="_blank"
+                                    class="mt-2 inline-block text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">
+                                    Lihat / Download
+                                </a>
+                            </div>
                         @endif
                     </div>
                 </div>
@@ -165,7 +218,7 @@
                             <form method="POST" action="{{ route('bookings.forceCancel', $booking->id) }}">
                                 @csrf
                                 <button type="submit"
-                                        class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
                                     Batalkan Sekarang
                                 </button>
                             </form>
@@ -173,16 +226,30 @@
                             <form method="POST" action="{{ route('bookings.verifyPayment', $booking->id) }}">
                                 @csrf
                                 <button type="submit"
-                                        class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg">
+                                    class="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg">
                                     Verifikasi & Konfirmasi
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('bookings.cancelBooking', $booking->id) }}">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
+                                    Batalkan Pesanan
                                 </button>
                             </form>
                         @elseif($booking->status === 'booked')
                             <form method="POST" action="{{ route('bookings.completeBooking', $booking->id) }}">
                                 @csrf
                                 <button type="submit"
-                                        class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg">
+                                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 rounded-lg">
                                     Tandai Selesai
+                                </button>
+                            </form>
+                            <form method="POST" action="{{ route('bookings.cancelBooking', $booking->id) }}">
+                                @csrf
+                                <button type="submit"
+                                    class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
+                                    Batalkan Pesanan
                                 </button>
                             </form>
                         @endif
