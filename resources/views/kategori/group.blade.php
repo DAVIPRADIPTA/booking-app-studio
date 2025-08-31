@@ -4,28 +4,28 @@
 @push('styles')
     <style>
         /* ========================================
-       DOKUMENTASI KODE HALAMAN GROUP PHOTOGRAPHY
-       ========================================
+           DOKUMENTASI KODE HALAMAN GROUP PHOTOGRAPHY
+           ========================================
 
-       Halaman ini berisi sistem booking group photography dengan fitur:
-       - Pemilihan paket (Plain, Grande, Royal)
-       - Dynamic background berdasarkan jenis sesi
-       - Extra items dengan kalkulasi harga otomatis
-       - Modal syarat & ketentuan yang responsif
-       - Integrasi WhatsApp untuk booking
-       - Form validation lengkap
-       - Responsive design untuk semua perangkat
+           Halaman ini berisi sistem booking group photography dengan fitur:
+           - Pemilihan paket (Plain, Grande, Royal)
+           - Dynamic background berdasarkan jenis sesi
+           - Extra items dengan kalkulasi harga otomatis
+           - Modal syarat & ketentuan yang responsif
+           - Integrasi WhatsApp untuk booking
+           - Form validation lengkap
+           - Responsive design untuk semua perangkat
 
-       Background System:
-       - Family: family/1-6
-       - Maternity: maternity/1-7
-       - Graduation: wisuda/1-6
-       - Friends/Personal: family/1-3
-       ======================================== */
+           Background System:
+           - Family: family/1-6
+           - Maternity: maternity/1-7
+           - Graduation: wisuda/1-6
+           - Friends/Personal: family/1-3
+           ======================================== */
 
         /* ========================================
-       1. BASE STYLES & TYPOGRAPHY
-       ======================================== */
+           1. BASE STYLES & TYPOGRAPHY
+           ======================================== */
 
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
@@ -48,8 +48,8 @@
         }
 
         /* ========================================
-       2. LAYOUT & CONTAINER
-       ======================================== */
+           2. LAYOUT & CONTAINER
+           ======================================== */
 
         .main-container {
             min-height: 100vh;
@@ -95,8 +95,8 @@
         }
 
         /* ========================================
-       3. HERO SECTION
-       ======================================== */
+           3. HERO SECTION
+           ======================================== */
 
         .hero-section {
             text-align: center;
@@ -151,8 +151,8 @@
         }
 
         /* ========================================
-       4. CONTENT GRID & PRICING
-       ======================================== */
+           4. CONTENT GRID & PRICING
+           ======================================== */
 
         .content-grid {
             display: flex;
@@ -190,8 +190,8 @@
         }
 
         /* ========================================
-       5. PACKAGE CARDS
-       ======================================== */
+           5. PACKAGE CARDS
+           ======================================== */
 
         .package-section {
             display: flex;
@@ -321,8 +321,8 @@
         }
 
         /* ========================================
-       6. BOOKING FORM
-       ======================================== */
+           6. BOOKING FORM
+           ======================================== */
 
         .booking-section {
             width: 100%;
@@ -458,7 +458,7 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-                .form-input[type="date"]::-webkit-calendar-picker-indicator {
+        .form-input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
             /* jadikan ikon putih */
             opacity: 0.9;
@@ -473,7 +473,9 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports (-moz - appearance) {
+        @supports
+        (-moz - appearance)
+            {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -482,8 +484,8 @@
 
 
         /* ========================================
-       7. BACKGROUND SELECTION - DYNAMIC
-       ======================================== */
+           7. BACKGROUND SELECTION - DYNAMIC
+           ======================================== */
 
         .background-section {
             margin-bottom: clamp(2rem, 4vw, 2.8rem);
@@ -691,8 +693,8 @@
         }
 
         /* ========================================
-       8. EXTRA ITEMS SECTION
-       ======================================== */
+           8. EXTRA ITEMS SECTION
+           ======================================== */
 
         .extras-section {
             margin-bottom: clamp(2rem, 4vw, 2.8rem);
@@ -803,8 +805,8 @@
         }
 
         /* ========================================
-       9. NOTES & TEXTAREA
-       ======================================== */
+           9. NOTES & TEXTAREA
+           ======================================== */
 
         .notes-section {
             margin-bottom: clamp(3rem, 5vw, 4rem);
@@ -857,8 +859,8 @@
         }
 
         /* ========================================
-       10. PRICING & TOTAL
-       ======================================== */
+           10. PRICING & TOTAL
+           ======================================== */
 
         .total-payment-section {
             margin-bottom: clamp(2.5rem, 4vw, 3rem);
@@ -895,8 +897,8 @@
         }
 
         /* ========================================
-       11. SUBMIT BUTTON & ACTIONS
-       ======================================== */
+           11. SUBMIT BUTTON & ACTIONS
+           ======================================== */
 
         .submit-section {
             display: flex;
@@ -1079,8 +1081,8 @@
         }
 
         /* ========================================
-       12. SUCCESS & ERROR MESSAGES
-       ======================================== */
+           12. SUCCESS & ERROR MESSAGES
+           ======================================== */
 
         .success-message {
             background: linear-gradient(135deg,
@@ -1115,8 +1117,8 @@
         }
 
         /* ========================================
-       13. TERMS & CONDITIONS MODAL
-       ======================================== */
+           13. TERMS & CONDITIONS MODAL
+           ======================================== */
 
         .terms-modal-overlay {
             position: fixed;
@@ -1409,8 +1411,8 @@
         }
 
         /* ========================================
-       14. RESPONSIVE BREAKPOINTS
-       ======================================== */
+           14. RESPONSIVE BREAKPOINTS
+           ======================================== */
 
         @media (max-width: 768px) {
             .terms-modal-actions {
@@ -1468,8 +1470,8 @@
         }
 
         /* ========================================
-       15. ACCESSIBILITY & UTILITIES
-       ======================================== */
+           15. ACCESSIBILITY & UTILITIES
+           ======================================== */
 
         .sr-only {
             position: absolute;
@@ -1497,8 +1499,8 @@
         }
 
         /* ========================================
-       16. PERFORMANCE OPTIMIZATIONS
-       ======================================== */
+           16. PERFORMANCE OPTIMIZATIONS
+           ======================================== */
 
         * {
             will-change: auto;
@@ -1690,7 +1692,7 @@
                             <div id="sessionType-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
-                       <!-- Input Tanggal -->
+                        <!-- Input Tanggal -->
                         <div class="form-group">
                             <label for="date" class="form-label">Tanggal Pemotretan</label>
                             <input type="date" id="date" name="date" required class="form-input"
@@ -1904,7 +1906,7 @@
 @push('scripts')
     <script>
 
-         async function fetchAvailableTimes() {
+        async function fetchAvailableTimes() {
             const dateInput = document.getElementById('date');
             const timeSelect = document.getElementById('time');
             const infoBox = document.getElementById('time-availability-info');
@@ -2125,12 +2127,12 @@
                             const imagePath = `/storage/${background.image}`;
 
                             backgroundDiv.innerHTML = `
-                        <img src="${imagePath}" 
-                             alt="${background.name}" 
-                             class="background-image" 
-                             loading="lazy">
-                        <div class="background-name">${background.name}</div>
-                    `;
+                            <img src="${imagePath}" 
+                                 alt="${background.name}" 
+                                 class="background-image" 
+                                 loading="lazy">
+                            <div class="background-name">${background.name}</div>
+                        `;
 
                             // Tambahkan event listeners seperti sebelumnya
                             backgroundDiv.addEventListener('click', handleBackgroundSelection);
@@ -2559,72 +2561,78 @@
 
             // Terms submit button handler
             function formatPhoneNumber(number) {
-    if (!number) return '';
-    const cleaned = number.replace(/\D/g, '');
-    if (cleaned.startsWith('0')) {
-        return '+62' + cleaned.slice(1);
-    } else if (cleaned.startsWith('62')) {
-        return '+' + cleaned;
-    } else if (cleaned.startsWith('+62')) {
-        return cleaned;
-    }
-    return '+62' + cleaned;
-}
-
-termsSubmitBtn.addEventListener('click', async () => {
-    if (!termsCheckbox.checked) return;
-
-    hideTermsModal();
-
-    isFormSubmitting = true;
-    setSubmitButtonLoading(true);
-
-    try {
-        const formData = new FormData(bookingForm);
-        const data = {
-            contact_name: formData.get('contactName'),
-            whatsapp_number: formatPhoneNumber(formData.get('phone')),
-            booking_date: formData.get('date'),
-            booking_time: formData.get('time'),
-            session_name: formData.get('sessionType'),
-            package_name: selectedPackage.name,
-            selected_backgrounds: selectedBackgrounds,
-            selected_extra_items: selectedExtras,
-            total_price: basePrice + selectedExtras.reduce((sum, item) => sum + item.price, 0),
-            notes: formData.get('notes'),
-        };
-
-        const response = await fetch('/booking', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-            },
-            body: JSON.stringify(data),
-        });
-
-        const result = await response.json();
-
-        if (response.ok) {
-            showSuccessMessage();
-            resetForm();
-            await sendWhatsAppMessage();
-        } else {
-            let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
-            if (response.status === 422) {
-                errorMessage = 'Mohon perbaiki kesalahan pada form.';
+                if (!number) return '';
+                const cleaned = number.replace(/\D/g, '');
+                if (cleaned.startsWith('0')) {
+                    return '+62' + cleaned.slice(1);
+                } else if (cleaned.startsWith('62')) {
+                    return '+' + cleaned;
+                } else if (cleaned.startsWith('+62')) {
+                    return cleaned;
+                }
+                return '+62' + cleaned;
             }
-            showNotification(errorMessage, 'error');
-            console.error('API Error:', result.error || result.errors);
-        }
-    } catch (error) {
-        showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-        console.error('Form submission error:', error);
-    } finally {
-        isFormSubmitting = false;
-        setSubmitButtonLoading(false);
-    }
-});
+
+            // ...existing code...
+
+            termsSubmitBtn.addEventListener('click', async () => {
+                if (!termsCheckbox.checked) return;
+
+                hideTermsModal();
+
+                isFormSubmitting = true;
+                setSubmitButtonLoading(true);
+
+                try {
+                    const formData = new FormData(bookingForm);
+                    const data = {
+                        contact_name: formData.get('contactName'),
+                        whatsapp_number: formatPhoneNumber(formData.get('phone')),
+                        booking_date: formData.get('date'),
+                        booking_time: formData.get('time'),
+                        session_name: formData.get('sessionType'),
+                        package_name: selectedPackage.name,
+                        selected_backgrounds: selectedBackgrounds,
+                        selected_extra_items: selectedExtras,
+                        total_price: basePrice + selectedExtras.reduce((sum, item) => sum + item.price, 0),
+                        notes: formData.get('notes'),
+                        group_size: formData.get('groupSize'),
+                    };
+
+                    const response = await fetch('/booking', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                        },
+                        body: JSON.stringify(data),
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.redirect_url) {
+                        showSuccessMessage();
+                        setTimeout(() => {
+                            window.location.href = result.redirect_url;
+                        }, 1200); // Redirect ke halaman pembayaran
+                    } else {
+                        let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
+                        if (response.status === 422) {
+                            errorMessage = 'Mohon perbaiki kesalahan pada form.';
+                        }
+                        showNotification(errorMessage, 'error');
+                        console.error('API Error:', result.error || result.errors);
+                    }
+                } catch (error) {
+                    showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+                    console.error('Form submission error:', error);
+                } finally {
+                    isFormSubmitting = false;
+                    setSubmitButtonLoading(false);
+                }
+            });
+
+            // ...existing code...
 
 
             /* ========================================
@@ -2750,68 +2758,68 @@ termsSubmitBtn.addEventListener('click', async () => {
              * @param {FormData} formData - Data dari form
              * @returns {string} Formatted message untuk WhatsApp
              */
-           function generateWhatsAppMessage(formData) {
-    const timeNames = {
-        '10:00': '10.00 WIB',
-        '11:00': '11.00 WIB',
-        '12:00': '12.00 WIB',
-        '13:00': '13.00 WIB',
-        '14:00': '14.00 WIB',
-        '15:00': '15.00 WIB',
-        '16:00': '16.00 WIB'
-    };
+            function generateWhatsAppMessage(formData) {
+                const timeNames = {
+                    '10:00': '10.00 WIB',
+                    '11:00': '11.00 WIB',
+                    '12:00': '12.00 WIB',
+                    '13:00': '13.00 WIB',
+                    '14:00': '14.00 WIB',
+                    '15:00': '15.00 WIB',
+                    '16:00': '16.00 WIB'
+                };
 
-    const sessionTypeNames = {
-        'family': 'Family',
-        'graduation': 'Graduation',
-        'maternity': 'Maternity'
-    };
+                const sessionTypeNames = {
+                    'family': 'Family',
+                    'graduation': 'Graduation',
+                    'maternity': 'Maternity'
+                };
 
-    const name = formData.get('contactName') || '-';
-    const phoneRaw = formData.get('phone') || '-';
-    const phone = phoneRaw.replace(/^0/, '+62'); // Ubah 08xx jadi +628xx
-    const groupSize = formData.get('groupSize') || '-';
-    const sessionType = sessionTypeNames[formData.get('sessionType')] || '-';
-    const date = formData.get('date') || '-';
-    const time = timeNames[formData.get('time')] || '-';
-    const notes = formData.get('notes') || 'Tidak ada';
+                const name = formData.get('contactName') || '-';
+                const phoneRaw = formData.get('phone') || '-';
+                const phone = phoneRaw.replace(/^0/, '+62'); // Ubah 08xx jadi +628xx
+                const groupSize = formData.get('groupSize') || '-';
+                const sessionType = sessionTypeNames[formData.get('sessionType')] || '-';
+                const date = formData.get('date') || '-';
+                const time = timeNames[formData.get('time')] || '-';
+                const notes = formData.get('notes') || 'Tidak ada';
 
-    const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
-    const extrasText = selectedExtras.length > 0
-        ? selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n')
-        : 'Tidak ada';
+                const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
+                const extrasText = selectedExtras.length > 0
+                    ? selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n')
+                    : 'Tidak ada';
 
-    const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
-    const totalPrice = basePrice + extrasTotal;
+                const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
+                const totalPrice = basePrice + extrasTotal;
 
-    return `BOOKING GROUP PHOTOGRAPHY – PEACE PICTURE STUDIO
+                return `BOOKING GROUP PHOTOGRAPHY – PEACE PICTURE STUDIO
 
-Nama Kontak       : ${name}
-No. WhatsApp      : ${phone}
-Jumlah Orang      : ${groupSize}
-Jenis Sesi        : ${sessionType}
+    Nama Kontak       : ${name}
+    No. WhatsApp      : ${phone}
+    Jumlah Orang      : ${groupSize}
+    Jenis Sesi        : ${sessionType}
 
-Paket             : ${selectedPackage.name}
-Harga Paket       : ${formatPrice(basePrice)}
+    Paket             : ${selectedPackage.name}
+    Harga Paket       : ${formatPrice(basePrice)}
 
-Background        : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
+    Background        : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
 
-Tanggal Sesi      : ${date}
-Waktu Sesi        : ${time}
+    Tanggal Sesi      : ${date}
+    Waktu Sesi        : ${time}
 
-Tambahan Item     : 
-${extrasText}
+    Tambahan Item     : 
+    ${extrasText}
 
-Catatan Tambahan  : ${notes}
+    Catatan Tambahan  : ${notes}
 
-Total Harga       : ${formatPrice(totalPrice)}
+    Total Harga       : ${formatPrice(totalPrice)}
 
-Saya telah membaca dan menyetujui Syarat & Ketentuan dari Peace Picture Studio.
+    Saya telah membaca dan menyetujui Syarat & Ketentuan dari Peace Picture Studio.
 
---------------------------------------------------
-Terima kasih telah memilih Peace Picture Studio.
-Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
-}
+    --------------------------------------------------
+    Terima kasih telah memilih Peace Picture Studio.
+    Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
+            }
 
 
             /* ========================================
@@ -2904,19 +2912,19 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
                 };
 
                 notification.style.cssText = `
-                position: fixed;
-                top: 2rem;
-                right: 2rem;
-                background: ${bgColor[type] || bgColor.info};
-                color: white;
-                padding: 1rem 1.5rem;
-                border-radius: 0.75rem;
-                backdrop-filter: blur(10px);
-                z-index: 1000;
-                font-weight: 500;
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                animation: slideInRight 0.3s ease-out;
-            `;
+                    position: fixed;
+                    top: 2rem;
+                    right: 2rem;
+                    background: ${bgColor[type] || bgColor.info};
+                    color: white;
+                    padding: 1rem 1.5rem;
+                    border-radius: 0.75rem;
+                    backdrop-filter: blur(10px);
+                    z-index: 1000;
+                    font-weight: 500;
+                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                    animation: slideInRight 0.3s ease-out;
+                `;
 
                 document.body.appendChild(notification);
 
@@ -2955,16 +2963,16 @@ Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
         // Tambah CSS animations untuk notifications
         const style = document.createElement('style');
         style.textContent = `
-    @keyframes slideInRight {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
-    }
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
 
-    @keyframes slideOutRight {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
-    }
-    `;
+        @keyframes slideOutRight {
+            from { transform: translateX(0); opacity: 1; }
+            to { transform: translateX(100%); opacity: 0; }
+        }
+        `;
         document.head.appendChild(style);
 
         /* ========================================

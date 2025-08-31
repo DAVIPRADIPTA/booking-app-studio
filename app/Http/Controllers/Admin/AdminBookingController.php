@@ -2,145 +2,187 @@
 
 namespace App\Http\Controllers\Admin;
 
-use App\Models\Booking;
 use App\Http\Controllers\Controller;
+use App\Models\Booking;
+use App\Models\Customer;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use Carbon\Carbon;
 
 class AdminBookingController extends Controller
 {
-    const DP_PERCENTAGE = 0.5; // 50% dari total harga
-
+    /**
+     * List semua booking.
+     */
     public function index()
     {
-        $bookings = Booking::latest()->paginate(15);
+        $bookings = Booking::latest()->get();
         return view('admin.bookings.index', compact('bookings'));
     }
 
-    public function show(string $id)
+    /**
+     * Tampilkan detail booking.
+     */
+    public function show($id)
     {
         $booking = Booking::findOrFail($id);
-
-        // 🔁 Auto-cancel: Jika status 'waiting' dan lebih dari 24 jam
-        if ($booking->status === 'waiting' && $booking->created_at->lt(now()->subDay())) {
-            $booking->update(['status' => 'cancelled']);
-            // Refresh agar status baru terbaca
-            $booking->refresh();
-        }
-
-        $expectedDpAmount = $booking->total_price * self::DP_PERCENTAGE;
-
-        return view('admin.bookings.show', compact('booking', 'expectedDpAmount'));
+        return view('admin.bookings.show', compact('booking'));
     }
 
-    public function confirmDp(Request $request, $id)
+    /**
+     * Form tambah booking manual.
+     */
+    public function create()
     {
-        $booking = Booking::findOrFail($id);
-        $expectedDpAmount = $booking->total_price * self::DP_PERCENTAGE;
+        $customers = Customer::all();
+        return view('admin.bookings.create', compact('customers'));
+    }
 
+    /**
+     * Simpan booking manual dari admin.
+     */
+    public function store(Request $request)
+    {
         $request->validate([
-            'dp_amount' => 'required|numeric|min:1',
-            'dp_proof' => 'required|image|max:2048',
-        ], [
-            'dp_amount.required' => 'Nominal DP wajib diisi.',
-            'dp_amount.numeric' => 'Nominal DP harus berupa angka.',
-            'dp_amount.min' => 'Nominal DP harus lebih dari 0.',
-            'dp_proof.required' => 'Bukti transfer DP wajib diunggah.',
-            'dp_proof.image' => 'File bukti harus berupa gambar.',
-            'dp_proof.max' => 'Ukuran file maksimal 2MB.',
+            'customer_id'        => 'required|exists:customers,id',
+            'contact_name'       => 'required|string|max:100',
+            'whatsapp_number'    => 'required|string|max:20',
+            'booking_date'       => 'required|date',
+            'booking_time'       => 'required|string|max:20',
+            'session_name'       => 'required|string|max:100',
+            'package_name'       => 'required|string|max:100',
+            'total_price'        => 'required|numeric|min:0',
+            'payment_method'     => 'required|in:cash,transfer',
+            'status'             => 'required|in:waiting_payment,booked',
+            'payment_proof'      => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
         ]);
 
-        if ($request->dp_amount != $expectedDpAmount) {
-            return back()->withErrors([
-                'dp_amount' => "Nominal DP harus tepat Rp" . number_format($expectedDpAmount, 0, ',', '.') . " (50% dari total harga)."
-            ])->withInput();
+        // 🔒 Cek bentrok slot agar tidak double booking
+        $exists = Booking::where('booking_date', $request->booking_date)
+            ->where('booking_time', $request->booking_time)
+            ->whereIn('status', ['waiting_payment','pending_verification','booked'])
+            ->exists();
+
+        if ($exists) {
+            return back()->with('errorMessage', 'Slot sudah terisi, pilih waktu lain.');
         }
 
-        $path = $request->file('dp_proof')->store('bukti_dp', 'public');
+        // 🔒 Kalau transfer + langsung booked → wajib upload bukti transfer
+        if ($request->payment_method === 'transfer' && $request->status === 'booked' && !$request->hasFile('payment_proof')) {
+            return back()->with('errorMessage', 'Harus upload bukti transfer jika status langsung Booked.');
+        }
+
+        $paymentProofPath = null;
+        if ($request->hasFile('payment_proof')) {
+            $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+        }
+
+        $booking = Booking::create([
+            'customer_id' => $request->customer_id,
+            'contact_name' => $request->contact_name,
+            'whatsapp_number' => $request->whatsapp_number,
+            'booking_date' => $request->booking_date,
+            'booking_time' => $request->booking_time,
+            'session_name' => $request->session_name,
+            'package_name' => $request->package_name,
+            'selected_backgrounds' => $request->selected_backgrounds ?? [],
+            'selected_extra_items' => $request->selected_extra_items ?? [],
+            'total_price' => $request->total_price,
+            'status' => $request->status,
+            'payment_method' => $request->payment_method,
+            'payment_proof' => $paymentProofPath,
+            'payment_deadline' => $request->status === 'waiting_payment' ? now()->addMinutes(10) : null,
+        ]);
+
+        return redirect()->route('admin.bookings.index')->with('successMessage', 'Booking berhasil ditambahkan.');
+    }
+
+    /**
+     * Verifikasi pembayaran customer.
+     */
+    public function verifyPayment($id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if ($booking->status !== 'pending_verification') {
+            return back()->with('errorMessage', 'Pesanan ini tidak menunggu verifikasi.');
+        }
+
+        $booking->update(['status' => 'booked']);
+        return back()->with('successMessage', 'Pembayaran berhasil diverifikasi.');
+    }
+
+    /**
+     * Batalkan booking (permintaan customer).
+     */
+    public function cancelBooking($id)
+    {
+        $booking = Booking::findOrFail($id);
+        if ($booking->status === 'cancelled') {
+            return back()->with('errorMessage', 'Pesanan sudah dibatalkan sebelumnya.');
+        }
 
         $booking->update([
-            'dp_amount' => $request->dp_amount,
-            'dp_proof' => $path,
-            'status' => 'booked',
+            'status' => 'cancelled',
+            'auto_cancelled_at' => now(),
+            'cancellation_reason' => 'Dibatalkan oleh admin sesuai permintaan customer.',
         ]);
 
-        session()->flash('success', 'DP berhasil dikonfirmasi. Silakan kirim pesan ke pelanggan.');
-
-        $message = "Halo kak {$booking->contact_name},\n\n"
-            . "Terima kasih, DP kamu untuk sesi {$booking->session_name} pada tanggal "
-            . Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . " pukul {$booking->booking_time} telah kami terima.\n"
-            . "Pesananmu sudah dikonfirmasi ✅ Sampai jumpa di hari H!";
-
-        $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
-        if (str_starts_with($whatsappNumber, '0')) {
-            $whatsappNumber = '62' . substr($whatsappNumber, 1);
-        }
-
-        $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
-
-        return redirect()->away($url);
+        return back()->with('successMessage', 'Pesanan berhasil dibatalkan.');
     }
 
-    public function completeBooking(Request $request, $id)
+    /**
+     * Paksa batalkan booking (admin override).
+     */
+    public function forceCancel($id)
     {
         $booking = Booking::findOrFail($id);
-        $expectedFinalAmount = $booking->total_price - $booking->dp_amount;
-
-        $request->validate([
-            'final_payment_amount' => 'required|numeric|min:1',
-            'final_payment_proof' => 'required|image|max:2048',
-        ], [
-            'final_payment_amount.required' => 'Nominal pelunasan wajib diisi.',
-            'final_payment_amount.numeric' => 'Nominal pelunasan harus berupa angka.',
-            'final_payment_amount.min' => 'Nominal pelunasan harus lebih dari 0.',
-            'final_payment_proof.required' => 'Bukti pelunasan wajib diunggah.',
-            'final_payment_proof.image' => 'File bukti harus berupa gambar.',
-            'final_payment_proof.max' => 'Ukuran file maksimal 2MB.',
-        ]);
-
-        if ($request->final_payment_amount != $expectedFinalAmount) {
-            return back()->withErrors([
-                'final_payment_amount' => "Nominal pelunasan harus tepat Rp" . number_format($expectedFinalAmount, 0, ',', '.') . " (total - DP)."
-            ])->withInput();
-        }
-
-        $path = $request->file('final_payment_proof')->store('bukti_pelunasan', 'public');
-
         $booking->update([
-            'final_payment_amount' => $request->final_payment_amount,
-            'final_payment_proof' => $path,
-            'status' => 'completed',
+            'status' => 'cancelled',
+            'auto_cancelled_at' => now(),
+            'cancellation_reason' => 'Booking dibatalkan oleh admin.',
         ]);
 
-        session()->flash('success', 'Pelunasan berhasil dikonfirmasi.');
-
-        $message = "Halo kak {$booking->contact_name},\n\n"
-            . "Kami telah menerima pelunasan untuk sesi {$booking->session_name} pada tanggal "
-            . Carbon::parse($booking->booking_date)->translatedFormat('d F Y') . ".\n"
-            . "Terima kasih telah mempercayakan layanan kami. See you next time! ❤️";
-
-        $whatsappNumber = preg_replace('/[^0-9]/', '', $booking->whatsapp_number);
-        if (str_starts_with($whatsappNumber, '0')) {
-            $whatsappNumber = '62' . substr($whatsappNumber, 1);
-        }
-
-        $url = 'https://wa.me/' . $whatsappNumber . '?text=' . urlencode($message);
-
-        return redirect()->away($url);
+        return back()->with('successMessage', 'Pesanan berhasil dibatalkan paksa.');
     }
 
-    public function destroy(Booking $booking)
+    /**
+     * Tandai booking selesai.
+     */
+    public function completeBooking($id)
     {
-        if ($booking->dp_proof && Storage::disk('public')->exists($booking->dp_proof)) {
-            Storage::disk('public')->delete($booking->dp_proof);
-        }
-        if ($booking->final_payment_proof && Storage::disk('public')->exists($booking->final_payment_proof)) {
-            Storage::disk('public')->delete($booking->final_payment_proof);
+        $booking = Booking::findOrFail($id);
+        if ($booking->status !== 'booked') {
+            return back()->with('errorMessage', 'Pesanan belum bisa ditandai selesai.');
         }
 
-        $booking->delete();
+        $booking->update(['status' => 'completed']);
+        return back()->with('successMessage', 'Pesanan berhasil ditandai selesai.');
+    }
 
-        return redirect()->route('bookings.index')->with('success', 'Pesanan berhasil dihapus.');
+    /**
+     * Proses pembatalan + refund.
+     */
+    public function processCancellation(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        $request->validate([
+            'refund_amount' => 'required|numeric|min:0',
+            'refund_proof' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        ]);
+
+        $refundPath = null;
+        if ($request->hasFile('refund_proof')) {
+            $refundPath = $request->file('refund_proof')->store('refund_proofs', 'public');
+        }
+
+        $booking->update([
+            'status' => 'cancelled',
+            'refund_amount' => $request->refund_amount,
+            'refund_proof' => $refundPath,
+            'auto_cancelled_at' => now(),
+            'cancellation_reason' => 'Dibatalkan dan refund diproses oleh admin.',
+        ]);
+
+        return back()->with('successMessage', 'Refund berhasil diproses.');
     }
 }

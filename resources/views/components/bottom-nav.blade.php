@@ -195,7 +195,6 @@
                     <span class="nav-text text-xs font-medium uppercase tracking-wider">Back</span>
                 </a>
 
-                {{-- Tautan Home, aktif saat rute adalah 'home' --}}
                 <a href="{{ route('home') }}"
                     class="nav-item {{ Request::routeIs('home') ? 'active' : 'text-white/80 hover:text-white' }}"
                     aria-label="Go to home" aria-current="{{ Request::routeIs('home') ? 'page' : 'false' }}">
@@ -207,7 +206,6 @@
                     <span class="nav-text text-xs font-medium uppercase tracking-wider">Home</span>
                 </a>
 
-                {{-- Tautan Info, aktif saat rute adalah 'info' --}}
                 <a href="{{ route('info') }}"
                     class="nav-item {{ Request::routeIs('info') ? 'active' : 'text-white/80 hover:text-white' }}"
                     aria-label="View information" aria-current="{{ Request::routeIs('info') ? 'page' : 'false' }}">
@@ -221,7 +219,6 @@
 
                 @auth('customer')
                     <div x-data="{ open: false }" class="relative group">
-                        {{-- Tombol dropdown, aktif jika rute adalah 'customer.profile' atau 'customer.password.edit' --}}
                         <button @click="open = !open" @click.away="open = false"
                             class="nav-item text-white/80 hover:text-white hover:bg-white/10 {{ Request::routeIs('customer.profile') ? 'active' : '' }}" 
                             aria-expanded="false"
@@ -247,7 +244,6 @@
                             <div class="dropdown-header">Akun Saya</div>
                             <div class="dropdown-divider"></div>
 
-                            {{-- Mengubah tombol menjadi tautan yang aktif ke halaman profil --}}
                             <a href="{{ route('customer.profile') }}"
                                 class="dropdown-item {{ Request::routeIs('customer.profile') ? 'active' : '' }}"
                                 aria-current="{{ Request::routeIs('customer.profile') ? 'page' : 'false' }}">
@@ -262,14 +258,15 @@
                                 <span>Pengaturan Akun</span>
                             </a>
 
-                            {{-- Ini adalah tautan untuk Riwayat Pemesanan yang masih dinonaktifkan --}}
-                            <button type="button" class="dropdown-item disabled" aria-disabled="true">
+                            {{-- Tautan Riwayat Pemesanan aktif --}}
+                            <a href="{{ route('customer.bookings') }}"
+                                class="dropdown-item {{ Request::routeIs('customer.bookings') ? 'active' : '' }}">
                                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5">
                                     <path stroke-linecap="round" stroke-linejoin="round"
                                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                                 </svg>
                                 <span>Riwayat Pemesanan</span>
-                            </button>
+                            </a>
 
                             <div class="dropdown-divider"></div>
 
@@ -286,7 +283,6 @@
                         </div>
                     </div>
                 @else
-                    {{-- Tautan Login, aktif saat rute adalah 'customer.login' --}}
                     <a href="{{ route('customer.login') }}"
                         class="nav-item {{ Request::routeIs('customer.login') ? 'active' : 'text-white/80 hover:text-white' }}">
                         <svg class="transition-transform hover:scale-110" fill="none" stroke="currentColor"

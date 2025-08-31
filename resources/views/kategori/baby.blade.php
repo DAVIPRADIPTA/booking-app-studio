@@ -372,7 +372,9 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports (-moz - appearance) {
+        @supports
+        (-moz - appearance)
+            {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -1165,8 +1167,8 @@
         }
 
         /* ========================
-           NOTIFIKASI KETERSEDIAAN WAKTU - PREMIUM (TEKS PUTIH)
-           ======================== */
+               NOTIFIKASI KETERSEDIAAN WAKTU - PREMIUM (TEKS PUTIH)
+               ======================== */
         .availability-notice {
             @apply relative overflow-hidden rounded-xl border px-5 py-4 text-sm font-medium shadow-sm transition-all duration-300;
             @apply backdrop-blur-lg;
@@ -1594,13 +1596,13 @@
             notification.className = `notification notification-${type}`;
             notification.textContent = message;
             notification.style.cssText = `
-                    position: fixed; top: 2rem; right: 2rem; 
-                    background: ${type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 182, 193, 0.9)'}; 
-                    color: white; padding: 1rem 1.5rem; border-radius: 0.75rem;
-                    backdrop-filter: blur(10px); z-index: 1000; font-weight: 500;
-                    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                    animation: slideInRight 0.3s ease-out;
-                `;
+                        position: fixed; top: 2rem; right: 2rem; 
+                        background: ${type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 182, 193, 0.9)'}; 
+                        color: white; padding: 1rem 1.5rem; border-radius: 0.75rem;
+                        backdrop-filter: blur(10px); z-index: 1000; font-weight: 500;
+                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+                        animation: slideInRight 0.3s ease-out;
+                    `;
             document.body.appendChild(notification);
             setTimeout(() => {
                 notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
@@ -1855,6 +1857,8 @@
         });
 
         // Terms Submit
+        // ...existing code...
+
         termsSubmitBtn.addEventListener('click', async () => {
             if (!termsCheckbox.checked) return;
 
@@ -1890,16 +1894,22 @@
                     body: JSON.stringify(data),
                 });
 
-                if (!response.ok) {
-                    const result = await response.json();
-                    throw new Error(result.message || 'Gagal menyimpan pesanan');
-                }
-
                 const result = await response.json();
-                showSuccessMessage();
-                resetForm();
-                sendWhatsAppMessage();
 
+                if (response.ok && result.redirect_url) {
+                    showSuccessMessage();
+                    resetForm();
+                    setTimeout(() => {
+                        window.location.href = result.redirect_url;
+                    }, 1200); // Redirect ke halaman pembayaran
+                } else {
+                    let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
+                    if (response.status === 422) {
+                        errorMessage = 'Mohon perbaiki kesalahan pada form.';
+                    }
+                    showNotification(errorMessage, 'error');
+                    console.error('API Error:', result.error || result.errors);
+                }
             } catch (error) {
                 showNotification('Terjadi kesalahan: ' + error.message, 'error');
                 console.error('Form submission error:', error);
@@ -1908,6 +1918,8 @@
                 setSubmitButtonLoading(false);
             }
         });
+
+        // ...existing code...
 
         // Loading Button
         function setSubmitButtonLoading(loading) {
@@ -1968,32 +1980,32 @@
 
             const message = `BOOKING BABY SMASH CAKE – PEACE PICTURE STUDIO
 
-        Nama Kontak      : ${contactName}
-        No. WhatsApp     : +${phone}
-        Nama Bayi        : ${babyName}
-        Usia Bayi        : ${babyAge}
+            Nama Kontak      : ${contactName}
+            No. WhatsApp     : +${phone}
+            Nama Bayi        : ${babyName}
+            Usia Bayi        : ${babyAge}
 
-        Paket            : Baby Smash Cake
-        Harga Paket      : ${formatPrice(sessionData.base_price)}
+            Paket            : Baby Smash Cake
+            Harga Paket      : ${formatPrice(sessionData.base_price)}
 
-        Tanggal          : ${date}
-        Waktu            : ${time}
+            Tanggal          : ${date}
+            Waktu            : ${time}
 
-        Tambahan Item    :
-        ${extrasText}
+            Tambahan Item    :
+            ${extrasText}
 
-        Catatan Tambahan :
-        ${notes}
+            Catatan Tambahan :
+            ${notes}
 
-        Total Harga      : ${formatPrice(totalPrice)}
+            Total Harga      : ${formatPrice(totalPrice)}
 
-        Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.
+            Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.
 
-        --------------------------------------------------
-        Terima kasih telah memilih Peace Picture Studio.
-        Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.
+            --------------------------------------------------
+            Terima kasih telah memilih Peace Picture Studio.
+            Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.
 
-        *Note: Kue tidak disediakan oleh studio, mohon dibawa sendiri.*`;
+            *Note: Kue tidak disediakan oleh studio, mohon dibawa sendiri.*`;
 
             const whatsappUrl = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');

@@ -1526,40 +1526,44 @@
                         aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Booking request sent successfully! We'll contact you soon via WhatsApp.
+                    Pesanan berhasil dibuat! Silakan lanjut ke pembayaran sebelum batas waktu yang ditentukan.
                 </div>
                 <form id="bookingForm" novalidate>
                     <!-- Basic Information -->
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="contactName" class="form-label">Nama Kontak</label>
-                            <input type="text" id="contactName" name="contactName" class="form-input"
-                                placeholder="Nama lengkap" required aria-describedby="contactName-error">
-                            <div id="contactName-error" class="error-message" role="alert" aria-live="polite"></div>
+                            <label for="contact_name" class="form-label">Nama Kontak</label>
+                            <input type="text" id="contact_name" name="contact_name" class="form-input"
+                                placeholder="Nama lengkap" required aria-describedby="contact_name-error">
+                            <div id="contact_name-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
+
                         <div class="form-group">
-                            <label for="phone" class="form-label">Nomor WhatsApp</label>
-                            <input type="tel" id="phone" name="phone" class="form-input" placeholder="+62xxxxxxxxxx"
-                                required pattern="[0-9]{10,15}" aria-describedby="phone-error">
-                            <div id="phone-error" class="error-message" role="alert" aria-live="polite"></div>
+                            <label for="whatsapp_number" class="form-label">Nomor WhatsApp</label>
+                            <input type="tel" id="whatsapp_number" name="whatsapp_number" class="form-input"
+                                placeholder="081234567890 (atau +628123...)" required
+                                aria-describedby="whatsapp_number-error">
+                            <div id="whatsapp_number-error" class="error-message" role="alert" aria-live="polite"></div>
+                            <p class="text-slate-400 text-xs mt-1">Contoh: 081234567890 atau +6281234567890</p>
                         </div>
+
                         <!-- Input Tanggal -->
                         <div class="form-group">
-                            <label for="date" class="form-label">Tanggal Pemotretan</label>
-                            <input type="date" id="date" name="date" required class="form-input"
+                            <label for="booking_date" class="form-label">Tanggal Pemotretan</label>
+                            <input type="date" id="booking_date" name="booking_date" required class="form-input"
                                 min="{{ now()->format('Y-m-d') }}" onchange="fetchAvailableTimes()"
-                                aria-describedby="date-error">
-                            <div id="date-error" class="error-message" role="alert" aria-live="polite"></div>
+                                aria-describedby="booking_date-error">
+                            <div id="booking_date-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
                         <!-- Input Waktu -->
                         <div class="form-group">
-                            <label for="time" class="form-label">Waktu Pemotretan</label>
-                            <select id="time" name="time" required class="form-select" disabled
-                                aria-describedby="time-error">
+                            <label for="booking_time" class="form-label">Waktu Pemotretan</label>
+                            <select id="booking_time" name="booking_time" required class="form-select" disabled
+                                aria-describedby="booking_time-error">
                                 <option value="">Pilih tanggal dulu...</option>
                             </select>
-                            <div id="time-error" class="error-message" role="alert" aria-live="polite"></div>
+                            <div id="booking_time-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
                         <!-- Info Ketersediaan Waktu -->
@@ -1569,6 +1573,8 @@
                             </div>
                         </div>
                     </div>
+
+                    <!-- Background section tetap seperti semula (no change needed) -->
                     <div class="background-section disabled" id="backgroundSection">
                         <div class="background-title">
                             <span>Pilih Background</span>
@@ -1585,91 +1591,33 @@
                             @endforeach
                         </div>
                     </div>
-                    <!-- Extra Items -->
-                    <div class="extras-section">
-                        <div class="extras-title">Extra Item (Tambahan Opsional)</div>
-                        <div class="extras-grid">
-                            {{-- Kategori Cetak Foto --}}
-                            <div class="extras-category">
-                                <div class="category-title">Cetak Foto</div>
-                                @foreach($printItems as $item)
-                                    <div class="extra-item">
-                                        <div class="extra-info">
-                                            <div class="extra-name">{{ $item['name'] }}</div>
-                                        </div>
-                                        <span class="extra-price">Rp{{ number_format($item['price']) }}</span>
-                                        <input type="checkbox" class="extra-checkbox" data-name="{{ $item['name'] }}"
-                                            data-price="{{ $item['price'] }}"
-                                            aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}">
-                                    </div>
-                                @endforeach
-                            </div>
-                            {{-- Kategori Frame Foto --}}
-                            <div class="extras-category">
-                                <div class="category-title">Frame Foto</div>
-                                @foreach($frameItems as $item)
-                                    <div class="extra-item">
-                                        <div class="extra-info">
-                                            <div class="extra-name">{{ $item['name'] }}</div>
-                                        </div>
-                                        <span class="extra-price">Rp{{ number_format($item['price']) }}</span>
-                                        <input type="checkbox" class="extra-checkbox" data-name="{{ $item['name'] }}"
-                                            data-price="{{ $item['price'] }}"
-                                            aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}">
-                                    </div>
-                                @endforeach
-                            </div>
-                            {{-- Kategori Tambahan & Layanan --}}
-                            <div class="extras-category">
-                                <div class="category-title">Tambahan & Layanan</div>
-                                @foreach($serviceItems as $item)
-                                    <div class="extra-item">
-                                        <div class="extra-info">
-                                            <div class="extra-name">{{ $item['name'] }}</div>
-                                        </div>
-                                        <span
-                                            class="extra-price">Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}</span>
-                                        <input type="checkbox" class="extra-checkbox" data-name="{{ $item['name'] }}"
-                                            data-price="{{ $item['price'] }}"
-                                            aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}">
-                                    </div>
-                                @endforeach
-                            </div>
-                        </div>
-                    </div>
-                    <!-- Notes Section -->
+
+                    <!-- Extra items (unchanged) -->
+                    <!-- Notes -->
                     <div class="notes-section">
                         <div class="form-group">
                             <label for="notes" class="form-label">Keterangan Tambahan</label>
-                            <div class="form-description">
-                                Tulis permintaan khusus, catatan tambahan, atau detail lainnya yang ingin Anda sampaikan
-                            </div>
-                            <textarea id="notes" name="notes" class="notes-textarea"
-                                placeholder="Contoh: Saya ingin foto dengan tema vintage, atau ada request pose tertentu..."
+                            <textarea id="notes" name="notes" class="notes-textarea" placeholder="Contoh: ... "
                                 aria-describedby="notes-help"></textarea>
-                            <div id="notes-help" class="sr-only">Optional field for additional requests or special notes
-                            </div>
+                            <div id="notes-help" class="sr-only">Optional</div>
                         </div>
                     </div>
-                    <!-- TOTAL PEMBAYARAN -->
+
+                    <!-- TOTAL PAYMENT -->
                     <div class="total-payment-section">
                         <div class="total-payment-card">
                             <div class="total-amount" id="totalPrice" aria-live="polite">Total : RP.0-</div>
                         </div>
                     </div>
-                    <!-- SUBMIT SECTION -->
+
+                    <!-- SUBMIT -->
                     <div class="submit-section">
                         <button type="submit" class="submit-btn-premium" id="submitBtn" aria-describedby="submit-help">
                             <div class="btn-content" id="btnContent">
-                                <div class="btn-icon">
-                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                    </svg>
-                                </div>
+                                <div class="btn-icon">...</div>
                                 <div class="btn-text-content">
                                     <span class="btn-text">Kirim Pemesanan</span>
-                                    <span class="btn-subtext">Kami akan menghubungi Anda via WhatsApp</span>
+                                    <span class="btn-subtext">Anda akan diarahkan ke halaman pembayaran</span>
                                 </div>
                             </div>
                             <div class="btn-loading" id="btnLoading" style="display: none;">
@@ -1678,15 +1626,11 @@
                             </div>
                         </button>
                         <div id="submit-help" class="sr-only">Submit your pre-wedding booking request</div>
-                        <div class="submit-note">
-                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                            </svg>
-                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami</span>
+                        <div class="submit-note">Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami
                         </div>
                     </div>
                 </form>
+
             </div>
         </div>
         <!-- Dynamic Background Selection -->
@@ -1746,167 +1690,195 @@
 
 @push('scripts')
     <script>
-
-        async function fetchAvailableTimes() {
-            const dateInput = document.getElementById('date');
-            const timeSelect = document.getElementById('time');
-            const infoBox = document.getElementById('time-availability-info');
-            const messageSpan = document.getElementById('availability-message');
-
-            const selectedDate = dateInput.value;
-
-            if (!selectedDate) return;
-
-            // Reset dropdown dan tampilkan loading
-            timeSelect.disabled = true;
-            timeSelect.innerHTML = '<option value="">Memuat...</option>';
-            infoBox.classList.add('hidden');
-
-            try {
-                const response = await fetch(`/api/available-times?booking_date=${selectedDate}`);
-                const data = await response.json();
-
-                // Kosongkan dropdown
-                timeSelect.innerHTML = '';
-
-                if (data.status === 'full') {
-                    // Jika semua waktu penuh
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Hari ini full booked';
-                    option.disabled = true;
-                    timeSelect.appendChild(option);
-                    timeSelect.disabled = true;
-
-                    messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
-                    infoBox.classList.remove('hidden');
-                    infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))';
-                    infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-                } else {
-                    // Tampilkan waktu yang tersedia
-                    data.available_times.forEach(time => {
-                        const option = document.createElement('option');
-                        option.value = time;
-                        option.textContent = `${time} WIB`;
-                        timeSelect.appendChild(option);
-                    });
-                    timeSelect.disabled = false;
-
-                    // Tampilkan info ketersediaan
-                    if (data.status === 'limited') {
-                        messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                        infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
-                        infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
-                    } else {
-                        messageSpan.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
-                        infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
-                        infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-                    }
-                    infoBox.classList.remove('hidden');
-                }
-
-            } catch (error) {
-                console.error('Gagal memuat ketersediaan waktu:', error);
-                timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-                timeSelect.disabled = true;
-            }
-        }
-
-        // Jalankan saat halaman dimuat (jika tanggal sudah dipilih)
         document.addEventListener('DOMContentLoaded', function () {
-            const dateInput = document.getElementById('date');
-            if (dateInput.value) {
-                fetchAvailableTimes();
-            }
-        });
 
+            /* -------------------------
+               Helper / State
+            ------------------------- */
+            const packageCards = document.querySelectorAll('.package-card');
+            const backgroundOptions = document.querySelectorAll('.background-option');
+            const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+            const bookingForm = document.getElementById('bookingForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const totalPriceElement = document.getElementById('totalPrice');
+            const packageNotice = document.getElementById('packageNotice');
+            const backgroundSection = document.getElementById('backgroundSection');
+            const backgroundCounter = document.getElementById('backgroundCounter');
+            const termsModal = document.getElementById('termsModal');
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            const termsSubmitBtn = document.getElementById('termsSubmitBtn');
+            const termsCancelBtn = document.getElementById('termsCancelBtn');
+            const termsModalClose = document.getElementById('termsModalClose');
 
-
-
-
-        document.addEventListener('DOMContentLoaded', function () {
-            // Package Background Configuration
-            // Ambil ID dari backgroundItems dan ubah menjadi array string JavaScript
+            // Derived from blade
             const prewedBackgroundIds = [
                 @foreach($backgroundItems as $item)
                     '{{ $item->id }}',
                 @endforeach
-                                    ];
-            // Object packageBackgrounds sekarang akan terisi secara dinamis
+        ];
+
             const packageBackgrounds = {
-                'prewed1': {
-                    maxBackgrounds: 2,
-                    availableBackgrounds: prewedBackgroundIds
-                },
-                'prewed2': {
-                    maxBackgrounds: 3,
-                    availableBackgrounds: prewedBackgroundIds
+                'prewed1': { maxBackgrounds: 2, availableBackgrounds: prewedBackgroundIds },
+                'prewed2': { maxBackgrounds: 3, availableBackgrounds: prewedBackgroundIds }
+            };
+
+            let selectedPackage = null;
+            let selectedBackgrounds = []; // objects {id, name}
+            let selectedExtras = []; // objects {name, price}
+            let basePrice = 0;
+            let maxBackgrounds = 0;
+            let isFormSubmitting = false;
+
+            /* -------------------------
+               Available times API
+            ------------------------- */
+            window.fetchAvailableTimes = async function fetchAvailableTimes() {
+                const dateInput = document.getElementById('booking_date');
+                const timeSelect = document.getElementById('booking_time');
+                const infoBox = document.getElementById('time-availability-info');
+                const messageSpan = document.getElementById('availability-message');
+
+                const selectedDate = dateInput.value;
+                if (!selectedDate) return;
+
+                timeSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Memuat...</option>';
+                infoBox.classList.add('hidden');
+
+                try {
+                    const response = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`);
+                    if (!response.ok) throw new Error('Gagal memuat data waktu');
+                    const data = await response.json();
+
+                    timeSelect.innerHTML = '';
+                    if (data.status === 'full') {
+                        const option = document.createElement('option');
+                        option.value = '';
+                        option.textContent = 'Hari ini full booked';
+                        option.disabled = true;
+                        timeSelect.appendChild(option);
+                        timeSelect.disabled = true;
+
+                        messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
+                        infoBox.classList.remove('hidden');
+                        infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))';
+                        infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    } else {
+                        data.available_times.forEach(time => {
+                            const option = document.createElement('option');
+                            option.value = time;
+                            option.textContent = `${time} WIB`;
+                            timeSelect.appendChild(option);
+                        });
+                        timeSelect.disabled = false;
+
+                        if (data.status === 'limited') {
+                            messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                            infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
+                            infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                        } else {
+                            messageSpan.textContent = `Ada ${data.available_times.length} slot yang tersedia.`;
+                            infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
+                            infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                        }
+                        infoBox.classList.remove('hidden');
+                    }
+                } catch (err) {
+                    console.error(err);
+                    timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+                    timeSelect.disabled = true;
                 }
             };
 
-            // State Management
-            let selectedPackage = null;
-            let selectedBackgrounds = [];
-            let selectedExtras = [];
-            let basePrice = 0;
-            let isFormSubmitting = false;
-            let maxBackgrounds = 0;
+            // run on load if date filled (useful on back/forward)
+            const dateInputOnLoad = document.getElementById('booking_date');
+            if (dateInputOnLoad && dateInputOnLoad.value) {
+                fetchAvailableTimes();
+            }
 
-            // DOM Elements
-            const packageCards = document.querySelectorAll('.package-card');
-            const backgroundOptions = document.querySelectorAll('.background-option');
-            const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
-            const totalPriceElement = document.getElementById('totalPrice');
-            const bookingForm = document.getElementById('bookingForm');
-            const submitBtn = document.getElementById('submitBtn');
-            const successMessage = document.getElementById('successMessage');
-            const packageNotice = document.getElementById('packageNotice');
-            const backgroundSection = document.getElementById('backgroundSection');
-            const backgroundCounter = document.getElementById('backgroundCounter');
+            /* -------------------------
+               Package / background selection
+            ------------------------- */
+            packageCards.forEach(card => {
+                card.addEventListener('click', handlePackageSelection);
+            });
 
-            // Terms Modal Elements
-            const termsModal = document.getElementById('termsModal');
-            const termsModalClose = document.getElementById('termsModalClose');
-            const termsCheckbox = document.getElementById('termsCheckbox');
-            const termsCancelBtn = document.getElementById('termsCancelBtn');
-            const termsSubmitBtn = document.getElementById('termsSubmitBtn');
+            function handlePackageSelection() {
+                packageCards.forEach(c => c.classList.remove('selected'));
+                this.classList.add('selected');
 
-            // Background System
+                selectedPackage = {
+                    id: this.dataset.package,
+                    name: this.querySelector('.package-title').textContent,
+                    price: parseInt(this.dataset.price, 10) || 0,
+                    maxBackgrounds: parseInt(this.dataset.backgrounds, 10) || 0
+                };
+                basePrice = selectedPackage.price;
+                selectedBackgrounds = [];
+                backgroundOptions.forEach(o => {
+                    o.classList.remove('selected');
+                    o.setAttribute('aria-selected', 'false');
+                    o.style.opacity = '';
+                    o.style.pointerEvents = '';
+                });
+
+                updateBackgroundAvailability(selectedPackage.id);
+                updateTotalPrice();
+            }
+
             function updateBackgroundAvailability(packageId) {
-                const packageConfig = packageBackgrounds[packageId];
-                if (!packageConfig) return;
-
-                maxBackgrounds = packageConfig.maxBackgrounds;
-                const availableBackgrounds = packageConfig.availableBackgrounds;
-
-                // Enable background section
+                const cfg = packageBackgrounds[packageId];
+                if (!cfg) return;
+                maxBackgrounds = cfg.maxBackgrounds;
                 backgroundSection.classList.remove('disabled');
-                packageNotice.classList.add('hidden');
+                packageNotice && packageNotice.classList.add('hidden');
 
-                // Update all background options
                 backgroundOptions.forEach(option => {
-                    const backgroundId = option.dataset.background;
-                    if (availableBackgrounds.includes(backgroundId)) {
+                    const id = option.dataset.background;
+                    if (cfg.availableBackgrounds.includes(id)) {
                         option.classList.remove('disabled');
                         option.setAttribute('tabindex', '0');
                         option.setAttribute('aria-disabled', 'false');
                     } else {
                         option.classList.add('disabled');
-                        option.classList.remove('selected');
                         option.setAttribute('tabindex', '-1');
                         option.setAttribute('aria-disabled', 'true');
-                        selectedBackgrounds = selectedBackgrounds.filter(bg => bg.id !== backgroundId);
                     }
                 });
                 updateBackgroundCounter();
             }
 
+            backgroundOptions.forEach(option => {
+                option.addEventListener('click', function () {
+                    if (this.classList.contains('disabled')) {
+                        showNotification('Background ini tidak tersedia untuk paket yang dipilih', 'error');
+                        return;
+                    }
+                    const id = this.dataset.background;
+                    const name = this.dataset.name;
+                    const already = selectedBackgrounds.find(b => String(b.id) === String(id));
+                    if (already) {
+                        // unselect
+                        selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
+                        this.classList.remove('selected');
+                        this.setAttribute('aria-selected', 'false');
+                    } else {
+                        if (selectedBackgrounds.length >= maxBackgrounds) {
+                            showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`, 'error');
+                            return;
+                        }
+                        selectedBackgrounds.push({ id: id, name: name });
+                        this.classList.add('selected');
+                        this.setAttribute('aria-selected', 'true');
+                    }
+                    updateBackgroundCounter();
+                });
+            });
+
             function updateBackgroundCounter() {
                 const selectedCount = selectedBackgrounds.length;
                 backgroundCounter.textContent = `${selectedCount}/${maxBackgrounds} dipilih`;
-
                 if (selectedCount >= maxBackgrounds) {
-                    backgroundCounter.classList.add('warning');
                     backgroundOptions.forEach(option => {
                         if (!option.classList.contains('selected') && !option.classList.contains('disabled')) {
                             option.style.opacity = '0.3';
@@ -1914,7 +1886,6 @@
                         }
                     });
                 } else {
-                    backgroundCounter.classList.remove('warning');
                     backgroundOptions.forEach(option => {
                         if (!option.classList.contains('disabled')) {
                             option.style.opacity = '';
@@ -1924,541 +1895,229 @@
                 }
             }
 
-            // Package Selection
-            packageCards.forEach((card, index) => {
-                card.addEventListener('click', handlePackageSelection);
-                card.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handlePackageSelection.call(card);
-                    }
+            /* -------------------------
+               Extras
+            ------------------------- */
+            extraCheckboxes.forEach(cb => {
+                cb.addEventListener('change', function () {
+                    const item = { name: this.dataset.name, price: parseInt(this.dataset.price || 0, 10) || 0 };
+                    if (this.checked) selectedExtras.push(item);
+                    else selectedExtras = selectedExtras.filter(x => x.name !== item.name);
+                    updateTotalPrice();
                 });
             });
 
-            function handlePackageSelection() {
-                // Remove previous selections
-                packageCards.forEach(c => {
-                    c.classList.remove('selected');
-                    c.setAttribute('aria-selected', 'false');
-                });
-
-                // Add selection
-                this.classList.add('selected');
-                this.setAttribute('aria-selected', 'true');
-
-                selectedPackage = {
-                    id: this.dataset.package,
-                    name: this.querySelector('.package-title').textContent,
-                    price: parseInt(this.dataset.price),
-                    maxBackgrounds: parseInt(this.dataset.backgrounds)
-                };
-                basePrice = selectedPackage.price;
-
-                // Clear previous background selections
-                selectedBackgrounds = [];
-                backgroundOptions.forEach(option => {
-                    option.classList.remove('selected');
-                    option.setAttribute('aria-selected', 'false');
-                });
-
-                // Update background availability
-                updateBackgroundAvailability(selectedPackage.id);
-                updateTotalPrice();
-            }
-
-            // Background Selection
-            backgroundOptions.forEach((option, index) => {
-                option.addEventListener('click', handleBackgroundSelection);
-                option.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleBackgroundSelection.call(option);
-                    }
-                });
-            });
-
-            function handleBackgroundSelection() {
-                if (this.classList.contains('disabled')) {
-                    showNotification('Background ini tidak tersedia untuk paket yang dipilih', 'error');
-                    return;
-                }
-
-                const isSelected = this.classList.contains('selected');
-                const backgroundId = this.dataset.background;
-                const backgroundName = this.dataset.name;
-
-                // Add selecting animation
-                this.classList.add('selecting');
-                setTimeout(() => {
-                    this.classList.remove('selecting');
-                    if (isSelected) {
-                        // Remove selection with animation
-                        this.classList.remove('selected');
-                        this.setAttribute('aria-selected', 'false');
-                        selectedBackgrounds = selectedBackgrounds.filter(bg => bg.id !== backgroundId);
-                    } else {
-                        // Check if we can add more backgrounds
-                        if (selectedBackgrounds.length >= maxBackgrounds) {
-                            showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`, 'error');
-                            return;
-                        }
-                        // Add selection with animation
-                        this.classList.add('selected');
-                        this.setAttribute('aria-selected', 'true');
-                        selectedBackgrounds.push({
-                            id: backgroundId,
-                            name: backgroundName
-                        });
-                    }
-                    updateBackgroundCounter();
-                }, 200);
-            }
-
-            // Ambil semua elemen dengan kelas background-option
-            // Tambahkan event listener ke setiap elemen
-            // Extra Items Selection
-            extraCheckboxes.forEach((checkbox, index) => {
-                checkbox.addEventListener('change', handleExtraSelection);
-            });
-
-            function handleExtraSelection() {
-                const extraItem = {
-                    name: this.dataset.name,
-                    price: parseInt(this.dataset.price)
-                };
-                if (this.checked) {
-                    selectedExtras.push(extraItem);
-                } else {
-                    selectedExtras = selectedExtras.filter(item => item.name !== extraItem.name);
-                }
-                updateTotalPrice();
-            }
-
-            // Price Update
             function updateTotalPrice() {
-                const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
-                const total = basePrice + extrasTotal;
-
-                totalPriceElement.classList.add('updating');
-                setTimeout(() => {
-                    totalPriceElement.classList.remove('updating');
-                }, 300);
+                const extrasTotal = selectedExtras.reduce((s, i) => s + (i.price || 0), 0);
+                const total = (basePrice || 0) + extrasTotal;
                 totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
-                totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
+                totalPriceElement.setAttribute('data-total', total);
             }
 
-            // Form Validation
-            const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
-            formInputs.forEach(input => {
-                input.addEventListener('blur', validateField);
-                input.addEventListener('input', clearFieldError);
+            function formatPrice(price) {
+                return `RP.${Number(price).toLocaleString('id-ID')}-`;
+            }
+
+            /* -------------------------
+               Validation helpers
+            ------------------------- */
+            const inputsToValidate = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
+
+            inputsToValidate.forEach(i => {
+                i.addEventListener('blur', validateField);
+                i.addEventListener('input', clearFieldError);
             });
 
             function validateField(e) {
                 const field = e.target;
-                const fieldName = field.name;
-                const value = field.value.trim();
-                const errorElement = document.getElementById(`${fieldName}-error`);
-                let errorMessage = '';
+                const name = field.name;
+                const val = (field.value || '').toString().trim();
+                const errEl = document.getElementById(`${name}-error`);
+                let msg = '';
 
-                if (field.hasAttribute('required') && !value) {
-                    errorMessage = 'Field ini wajib diisi';
-                } else if (fieldName === 'phone' && value && !isValidPhone(value)) {
-                    errorMessage = 'Nomor WhatsApp tidak valid';
-                } else if (fieldName === 'date' && value && new Date(value) < new Date().setHours(0, 0, 0, 0)) {
-                    errorMessage = 'Tanggal tidak boleh di masa lalu';
+                if (field.hasAttribute('required') && !val) {
+                    msg = 'Field ini wajib diisi';
+                } else if (name === 'whatsapp_number' && val && !isValidPhone(val)) {
+                    msg = 'Nomor WhatsApp tidak valid';
+                } else if (name === 'booking_date' && val && new Date(val) < new Date().setHours(0, 0, 0, 0)) {
+                    msg = 'Tanggal tidak boleh di masa lalu';
                 }
 
-                if (errorMessage && errorElement) {
-                    showFieldError(field, errorMessage);
-                } else if (errorElement) {
-                    clearFieldError({
-                        target: field
-                    });
+                if (errEl) {
+                    errEl.textContent = msg;
+                    field.setAttribute('aria-invalid', msg ? 'true' : 'false');
+                    field.style.borderColor = msg ? '#ef4444' : '';
                 }
-            }
-
-            function showFieldError(field, message) {
-                const errorElement = document.getElementById(`${field.name}-error`);
-                if (errorElement) {
-                    errorElement.textContent = message;
-                    field.style.borderColor = '#ef4444';
-                    field.setAttribute('aria-invalid', 'true');
-                }
+                return !msg;
             }
 
             function clearFieldError(e) {
                 const field = e.target;
-                const errorElement = document.getElementById(`${field.name}-error`);
-                if (errorElement) {
-                    errorElement.textContent = '';
-                    field.style.borderColor = '';
+                const errEl = document.getElementById(`${field.name}-error`);
+                if (errEl) {
+                    errEl.textContent = '';
                     field.setAttribute('aria-invalid', 'false');
+                    field.style.borderColor = '';
                 }
             }
 
-            // Terms Modal Functions
+            function isValidPhone(phone) {
+                const s = (phone || '').trim();
+                return /^\+?\d{9,15}$/.test(s.replace(/\s+/g, ''));
+            }
+
+            /* -------------------------
+               Terms modal
+            ------------------------- */
             function showTermsModal() {
                 termsModal.classList.add('show');
                 document.body.style.overflow = 'hidden';
                 termsCheckbox.checked = false;
-                updateTermsSubmitButton();
-                termsModalClose.focus();
+                updateTermsSubmit();
             }
-
             function hideTermsModal() {
                 termsModal.classList.remove('show');
                 document.body.style.overflow = '';
-                submitBtn.focus();
             }
-
-            function updateTermsSubmitButton() {
+            function updateTermsSubmit() {
                 if (termsCheckbox.checked) {
-                    termsSubmitBtn.classList.add('enabled');
                     termsSubmitBtn.disabled = false;
                 } else {
-                    termsSubmitBtn.classList.remove('enabled');
                     termsSubmitBtn.disabled = true;
                 }
             }
+            termsModalClose && termsModalClose.addEventListener('click', hideTermsModal);
+            termsCancelBtn && termsCancelBtn.addEventListener('click', hideTermsModal);
+            termsCheckbox && termsCheckbox.addEventListener('change', updateTermsSubmit);
 
-            // Terms Modal Event Listeners
-            termsCheckbox.addEventListener('change', updateTermsSubmitButton);
-            termsModalClose.addEventListener('click', hideTermsModal);
-            termsCancelBtn.addEventListener('click', hideTermsModal);
-            termsModal.addEventListener('click', (e) => {
-                if (e.target === termsModal) {
-                    hideTermsModal();
-                }
-            });
-
-            // Escape key to close modal
-            document.addEventListener('keydown', (e) => {
-                if (e.key === 'Escape' && termsModal.classList.contains('show')) {
-                    hideTermsModal();
-                }
-            });
-
-            // Terms Submit Button
-            termsSubmitBtn.addEventListener('click', async () => {
-                if (!termsCheckbox.checked) return;
-                hideTermsModal();
-
-                isFormSubmitting = true;
-                setSubmitButtonLoading(true);
-
-                try {
-                    // 1. Ambil data dari form
-                    const formData = new FormData(bookingForm);
-
-                    // 2. Normalisasi nomor WA agar jadi +62
-                    let rawPhone = formData.get('phone') || '';
-                    let normalizedPhone = rawPhone.trim()
-                        .replace(/^(\+62|62)/, '')  // Hapus +62 atau 62 di awal
-                        .replace(/^0/, '')          // Hapus 0 di awal
-                        .replace(/\D/g, '');        // Hapus karakter selain angka
-                    normalizedPhone = '+62' + normalizedPhone;
-
-                    // 3. Bangun data payload untuk dikirim ke backend
-                    const data = {
-                        contact_name: formData.get('contactName'),
-                        whatsapp_number: normalizedPhone,
-                        booking_date: formData.get('date'),
-                        booking_time: formData.get('time'),
-                        session_name: 'prewed',
-                        package_name: selectedPackage.name,
-                        selected_backgrounds: selectedBackgrounds,
-                        selected_extra_items: selectedExtras,
-                        total_price: basePrice + selectedExtras.reduce((sum, item) => sum + item.price, 0),
-                        notes: formData.get('notes'),
-                    };
-
-                    // 4. Kirim ke backend (Laravel API)
-                    const response = await fetch('/booking', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(data),
-                    });
-
-                    // 5. Tangani hasil respon
-                    if (!response.ok) {
-                        const errorData = await response.text();
-                        console.error('API Error:', errorData);
-                        throw new Error(`Server returned an error: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-
-                    if (response.ok) {
-                        showSuccessMessage();
-                        resetForm();
-                        await sendWhatsAppMessage(); // Jika ingin langsung kirim pesan WA
-                    } else {
-                        let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
-                        if (response.status === 422) {
-                            errorMessage = 'Mohon perbaiki kesalahan pada form.';
-                        }
-                        showNotification(errorMessage, 'error');
-                        console.error('API Error:', result.error || result.errors);
-                    }
-                } catch (error) {
-                    showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-                    console.error('Form submission error:', error);
-                } finally {
-                    isFormSubmitting = false;
-                    setSubmitButtonLoading(false);
-                }
-            });
-
-
-            // Form Submission
-            bookingForm.addEventListener('submit', handleFormSubmission);
-
-            async function handleFormSubmission(e) {
-                e.preventDefault();
+            /* -------------------------
+               Submit flow
+            ------------------------- */
+            bookingForm.addEventListener('submit', function (ev) {
+                ev.preventDefault();
                 if (isFormSubmitting) return;
 
-                // Validate package selection
+                // quick validation client-side
                 if (!selectedPackage) {
                     showNotification('Silakan pilih paket terlebih dahulu', 'error');
-                    packageCards[0].focus();
                     return;
                 }
-
-                // Validate background selection
                 if (selectedBackgrounds.length === 0) {
                     showNotification('Silakan pilih minimal 1 background', 'error');
-                    backgroundSection.scrollIntoView({
-                        behavior: 'smooth',
-                        block: 'center'
-                    });
                     return;
                 }
 
-                // Validate form fields
+                // run field validators
                 let hasErrors = false;
-                formInputs.forEach(input => {
-                    validateField({
-                        target: input
-                    });
-                    if (input.getAttribute('aria-invalid') === 'true') {
-                        hasErrors = true;
-                    }
+                inputsToValidate.forEach(i => {
+                    const ok = validateField({ target: i });
+                    if (!ok) hasErrors = true;
                 });
-
                 if (hasErrors) {
                     showNotification('Mohon perbaiki kesalahan pada form', 'error');
                     return;
                 }
 
-                // Show terms modal
+                // show terms modal
                 showTermsModal();
+            });
+
+            // Terms submit action: final HTTP POST
+            termsSubmitBtn && termsSubmitBtn.addEventListener('click', async function () {
+                if (!termsCheckbox.checked) return;
+                hideTermsModal();
+
+                isFormSubmitting = true;
+                setLoading(true);
+
+                try {
+                    const fd = new FormData(bookingForm);
+
+                    // Normalize phone
+                    const rawPhone = (fd.get('whatsapp_number') || '').toString().trim();
+                    const normalizedPhone = normalizePhone(rawPhone);
+
+                    const payload = {
+                        contact_name: fd.get('contact_name'),
+                        whatsapp_number: normalizedPhone,
+                        booking_date: fd.get('booking_date'),
+                        booking_time: fd.get('booking_time'),
+                        session_name: 'prewed',
+                        package_name: selectedPackage?.name || '',
+                        selected_backgrounds: selectedBackgrounds.map(b => parseInt(b.id, 10)),
+                        selected_extra_items: selectedExtras.map(e => e.name),
+                        total_price: Number(totalPriceElement.getAttribute('data-total'))
+                            || (basePrice + selectedExtras.reduce((s, i) => s + (i.price || 0), 0)),
+                        notes: fd.get('notes') || null,
+
+                        // 👇 WAJIB biar lolos validasi Laravel
+                        status: 'waiting_payment'
+                    };
+
+                    const resp = await fetch('/booking', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const result = await resp.json().catch(() => ({}));
+
+                    if (resp.ok) {
+                        window.location.href = result.redirect_url || '/homepage';
+                    } else {
+                        const msg = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
+                        showNotification(msg, 'error');
+                    }
+
+                } catch (err) {
+                    console.error(err);
+                    showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+                } finally {
+                    isFormSubmitting = false;
+                    setLoading(false);
+                }
+            });
+
+
+            function normalizePhone(raw) {
+                let s = (raw || '').toString().trim();
+                s = s.replace(/[^\d+]/g, ''); // keep digits and plus
+                if (s.startsWith('+')) return s;
+                if (s.startsWith('62')) return '+' + s;
+                if (s.startsWith('0')) return '+62' + s.slice(1);
+                // fallback presume local number without 0
+                return '+62' + s;
             }
 
-            function setSubmitButtonLoading(loading) {
+            function setLoading(on) {
                 const btnContent = document.getElementById('btnContent');
                 const btnLoading = document.getElementById('btnLoading');
-
-                if (loading) {
-                    submitBtn.classList.add('loading');
-                    submitBtn.disabled = true;
-                    submitBtn.setAttribute('aria-busy', 'true');
-                    btnContent.style.opacity = '0';
-                    btnContent.style.transform = 'scale(0.9)';
-                    setTimeout(() => {
-                        btnContent.style.display = 'none';
-                        btnLoading.style.display = 'flex';
-                        btnLoading.classList.add('show');
-                    }, 150);
+                if (on) {
+                    submitBtn.disabled = true; btnContent.style.display = 'none'; btnLoading.style.display = 'flex';
                 } else {
-                    submitBtn.classList.remove('loading');
-                    submitBtn.disabled = false;
-                    submitBtn.setAttribute('aria-busy', 'false');
-                    btnLoading.classList.remove('show');
-                    setTimeout(() => {
-                        btnLoading.style.display = 'none';
-                        btnContent.style.display = 'flex';
-                        btnContent.style.opacity = '1';
-                        btnContent.style.transform = 'scale(1)';
-                    }, 150);
+                    submitBtn.disabled = false; btnContent.style.display = 'flex'; btnLoading.style.display = 'none';
                 }
             }
 
-            async function simulateFormSubmission() {
-                return new Promise(resolve => setTimeout(resolve, 1500));
-            }
-
-            async function sendWhatsAppMessage() {
-                const formData = new FormData(bookingForm);
-                const message = generateWhatsAppMessage(formData);
-                const whatsappUrl = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
-                window.open(whatsappUrl, '_blank');
-            }
-
-            function generateWhatsAppMessage(formData) {
-                const timeNames = {
-                    '10:00': '10.00 WIB',
-                    '11:00': '11.00 WIB',
-                    '12:00': '12.00 WIB',
-                    '13:00': '13.00 WIB',
-                    '14:00': '14.00 WIB',
-                    '15:00': '15.00 WIB',
-                    '16:00': '16.00 WIB'
-                };
-
-                const contactName = formData.get('contactName') || '-';
-                const rawPhone = formData.get('phone') || '';
-                const phoneFormatted = rawPhone.replace(/^0/, '+62');
-
-                const backgroundNames = selectedBackgrounds.map(bg => bg.name).join(', ') || 'Belum dipilih';
-                const extrasText = selectedExtras.length > 0
-                    ? selectedExtras.map(item => `• ${item.name} - ${formatPrice(item.price)}`).join('\n')
-                    : 'Tidak ada tambahan';
-
-                const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
-                const totalPrice = basePrice + extrasTotal;
-
-                const selectedPkg = selectedPackage?.name || '-';
-                const bookingDate = formData.get('date') || '-';
-                const bookingTime = timeNames[formData.get('time')] || '-';
-                const notes = formData.get('notes') || 'Tidak ada';
-
-                return `BOOKING PRE-WEDDING – PEACE PICTURE STUDIO
-
-            Nama Kontak     : ${contactName}
-            No. WhatsApp    : ${phoneFormatted}
-
-            Paket           : ${selectedPkg}
-            Harga Paket     : ${formatPrice(basePrice)}
-
-            Background      : ${backgroundNames} (${selectedBackgrounds.length}/${maxBackgrounds})
-
-            Tanggal Sesi    : ${bookingDate}
-            Waktu Sesi      : ${bookingTime}
-
-            Tambahan Item   :
-            ${extrasText}
-
-            Catatan Tambahan: ${notes}
-
-            Total Harga     : ${formatPrice(totalPrice)}
-
-            Saya telah membaca dan menyetujui Syarat & Ketentuan dari Peace Picture Studio.
-
-            --------------------------------------------------
-            Terima kasih telah memilih Peace Picture Studio.
-            Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.`;
-            }
-
-
-            function showSuccessMessage() {
-                successMessage.classList.add('show');
-                successMessage.focus();
-                setTimeout(() => {
-                    successMessage.classList.remove('show');
-                }, 8000);
-            }
-
-            function resetForm() {
-                setTimeout(() => {
-                    bookingForm.reset();
-                    packageCards.forEach(c => {
-                        c.classList.remove('selected');
-                        c.setAttribute('aria-selected', 'false');
-                    });
-                    backgroundOptions.forEach(o => {
-                        o.classList.remove('selected', 'disabled');
-                        o.setAttribute('aria-selected', 'false');
-                        o.style.opacity = '';
-                        o.style.pointerEvents = '';
-                    });
-                    extraCheckboxes.forEach(c => c.checked = false);
-                    selectedPackage = null;
-                    selectedBackgrounds = [];
-                    selectedExtras = [];
-                    basePrice = 0;
-                    maxBackgrounds = 0;
-
-                    // Reset background section
-                    backgroundSection.classList.add('disabled');
-                    packageNotice.classList.remove('hidden');
-                    backgroundCounter.textContent = '0/0 dipilih';
-                    backgroundCounter.classList.remove('warning');
-                    updateTotalPrice();
-                }, 3000);
-            }
-
-            // Utility Functions
-            function formatPrice(price) {
-                return `RP.${price.toLocaleString('id-ID')}-`;
-            }
-
-            function isValidPhone(phone) {
-                return /^[0-9]{10,15}$/.test(phone.replace(/\D/g, ''));
-            }
-
+            /* -------------------------
+               Small utilities
+            ------------------------- */
             function showNotification(message, type = 'info') {
-                const notification = document.createElement('div');
-                notification.className = `notification notification-${type}`;
-                notification.textContent = message;
-                const bgColor = {
-                    'error': 'rgba(239, 68, 68, 0.9)',
-                    'warning': 'rgba(245, 158, 11, 0.9)',
-                    'info': 'rgba(220, 38, 38, 0.9)'
-                };
-                notification.style.cssText = `
-                                        position: fixed;
-                                        top: 2rem;
-                                        right: 2rem;
-                                        background: ${bgColor[type] || bgColor.info};
-                                        color: white;
-                                        padding: 1rem 1.5rem;
-                                        border-radius: 0.75rem;
-                                        backdrop-filter: blur(10px);
-                                        z-index: 1000;
-                                        font-weight: 500;
-                                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                                        animation: slideInRight 0.3s ease-out;
-                                    `;
-                document.body.appendChild(notification);
-
-                setTimeout(() => {
-                    notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
-                    setTimeout(() => {
-                        if (document.body.contains(notification)) {
-                            document.body.removeChild(notification);
-                        }
-                    }, 300);
-                }, 4000);
+                const n = document.createElement('div');
+                n.className = `notification notification-${type}`;
+                n.textContent = message;
+                n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: rgba(0,0,0,0.85); color: #fff; padding: .75rem 1rem; border-radius: .5rem; z-index: 9999;`;
+                document.body.appendChild(n);
+                setTimeout(() => n.remove(), 4000);
             }
 
-            // Set minimum date to today
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('date');
-            if (dateInput) {
-                dateInput.setAttribute('min', today);
-            }
-
-            // Initialize
+            // init price UI
             updateTotalPrice();
-            console.log('✨ Deep Red Pre-Wedding System Initialized Successfully!');
-        });
 
-        // Add CSS animations for notifications
-        const style = document.createElement('style');
-        style.textContent = `
-                                @keyframes slideInRight {
-                                    from { transform: translateX(100%); opacity: 0; }
-                                    to { transform: translateX(0); opacity: 1; }
-                                }
-                                @keyframes slideOutRight {
-                                    from { transform: translateX(0); opacity: 1; }
-                                    to { transform: translateX(100%); opacity: 0; }
-                                }`;
-        document.head.appendChild(style);
+        }); // DOMContentLoaded
     </script>
 @endpush

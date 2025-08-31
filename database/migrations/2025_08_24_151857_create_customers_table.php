@@ -18,16 +18,6 @@ return new class extends Migration
             $table->string('whatsapp_number')->nullable();
             $table->timestamps();
         });
-
-        // Update tabel bookings agar relasi ke customers
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->unsignedBigInteger('customer_id')->after('id');
-
-            $table->foreign('customer_id')
-                  ->references('id')
-                  ->on('customers')
-                  ->onDelete('cascade'); // Jika customer dihapus, booking ikut terhapus
-        });
     }
 
     /**
@@ -35,11 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('bookings', function (Blueprint $table) {
-            $table->dropForeign(['customer_id']);
-            $table->dropColumn('customer_id');
-        });
-
         Schema::dropIfExists('customers');
     }
 };

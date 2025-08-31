@@ -8,32 +8,31 @@ use App\Http\Controllers\Admin\AdminBookingController;
 use App\Http\Controllers\Admin\BackgroundController;
 use App\Http\Controllers\Admin\ExtraItemsController;
 use App\Http\Controllers\BookingAvailabilityController;
+use App\Http\Controllers\CustomerAuthController;
+use App\Http\Controllers\CustomerPasswordController;
+use App\Http\Controllers\CustomerController; // ✅ ditambah, biar rapih
 use App\Models\Background;
 use App\Models\ExtraItem;
 use App\Models\TermsAndCondition;
 use Livewire\Volt\Volt;
-use App\Http\Controllers\CustomerAuthController;
-use App\Http\Controllers\CustomerPasswordController;
 
 // ========================
-// RUTE UNTUK CUSTOMER
+// LANDING PAGE & INFO (tanpa login)
 // ========================
 
-// Welcome (tanpa login)
 Route::get('/', fn() => view('welcome'))->name('home');
 
-// Halaman Syarat & Ketentuan Customer (TERMS)
 Route::get('/customer/terms', function () {
     $terms = TermsAndCondition::all();
     return view('web.customer.terms', compact('terms'));
 })->name('customer.terms');
 
-// Halaman Privacy Policy Customer (PRIVACY)
-Route::get('/customer/privacy', function () {
-    return view('web.customer.privacy');
-})->name('customer.privacy');
+Route::get('/customer/privacy', fn() => view('web.customer.privacy'))->name('customer.privacy');
 
-// Customer Auth
+// ========================
+// CUSTOMER AUTH (login/register/forgot password)
+// ========================
+
 Route::prefix('customer')->group(function () {
     Route::controller(CustomerAuthController::class)->group(function () {
         Route::get('login', 'login')->name('customer.login');
@@ -45,35 +44,48 @@ Route::prefix('customer')->group(function () {
 
     // Forgot / Reset password untuk customer
     Route::get('forgot-password', [CustomerPasswordController::class, 'showForgotForm'])
-         ->name('customer.forgot-password');
-
+        ->name('customer.forgot-password');
     Route::post('forgot-password', [CustomerPasswordController::class, 'sendResetLink'])
-         ->name('customer.forgot-password.send');
-
+        ->name('customer.forgot-password.send');
     Route::get('reset-password/{token}', [CustomerPasswordController::class, 'showResetForm'])
-         ->name('customer.reset-password');
-
+        ->name('customer.reset-password');
     Route::post('reset-password', [CustomerPasswordController::class, 'reset'])
-         ->name('customer.reset-password.update');
+        ->name('customer.reset-password.update');
 });
 
 // ========================
-// SEMUA HALAMAN CUSTOMER HARUS LOGIN DULU
+// HALAMAN CUSTOMER (HARUS LOGIN)
 // ========================
 
 Route::middleware(['customer.auth'])->group(function () {
+    // Booking
+    Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
+    Route::get('/booking/{booking}/payment', [BookingController::class, 'payment'])
+        ->where('booking', '[0-9]+')
+        ->name('booking.payment');
+    Route::post('/booking/{booking}/upload-proof', [BookingController::class, 'uploadProof'])
+        ->where('booking', '[0-9]+')
+        ->name('booking.uploadProof');
+    Route::get('/booking/{booking}/check-status', [BookingController::class, 'checkStatus'])
+        ->where('booking', '[0-9]+')
+        ->name('booking.checkStatus');
+
+    // Pages
     Route::get('/homepage', fn() => view('homepage'))->name('homepage');
     Route::get('/info-more', fn() => view('info'))->name('info');
-    Route::post('/booking', [BookingController::class, 'store']);
-    
-    // Rute untuk Pengaturan Akun (sudah login)
+
+    // Riwayat booking
+    Route::get('/riwayat-pemesanan', [CustomerController::class, 'bookings'])->name('customer.bookings');
+
+    // Pengaturan Akun
     Route::get('/customer/profile', [CustomerAuthController::class, 'profile'])->name('customer.profile');
     Route::put('/customer/profile/update', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
-    
-    // Rute Ubah Password
     Route::get('/customer/password/edit', [CustomerPasswordController::class, 'editPassword'])->name('customer.password.edit');
     Route::put('/customer/password/update', [CustomerPasswordController::class, 'updatePassword'])->name('customer.password.update');
-    
+
+    // ========================
+    // KATEGORI (Paket Booking)
+    // ========================
     Route::get('/kategori/prewed', function () {
         return view('kategori.prewed', [
             'printItems' => ExtraItem::where('category', 'cetak-foto')->where('is_active', true)->get(),
@@ -104,20 +116,30 @@ Route::middleware(['customer.auth'])->group(function () {
 });
 
 // ========================
-// RUTE ADMIN (LOGIN BREEZE) - TIDAK TERSENTUH
+// ADMIN AREA (HARUS LOGIN BREEZE)
 // ========================
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
-    Route::resource('backgrounds', BackgroundController::class);
-    Route::resource('bookings', AdminBookingController::class)->except(['create', 'store', 'edit']);
-    Route::post('/bookings/{id}/confirm-dp', [AdminBookingController::class, 'confirmDp'])->name('bookings.confirmDp');
+    
+    // Manajemen booking (admin)
+    Route::resource('bookings', AdminBookingController::class)->except(['edit']);
+    Route::post('/bookings/{id}/verify-payment', [AdminBookingController::class, 'verifyPayment'])->name('bookings.verifyPayment');
+    Route::post('/bookings/{id}/cancel-booking', [AdminBookingController::class, 'cancelBooking'])->name('bookings.cancelBooking');
+    Route::post('/bookings/{id}/force-cancel', [AdminBookingController::class, 'forceCancel'])->name('bookings.forceCancel');
     Route::post('/bookings/{id}/complete-booking', [AdminBookingController::class, 'completeBooking'])->name('bookings.completeBooking');
+    Route::post('/bookings/{id}/process-cancellation', [AdminBookingController::class, 'processCancellation'])->name('bookings.processCancellation');
+
+    // Resource lainnya
+    Route::resource('backgrounds', BackgroundController::class);
     Route::resource('extra-items', ExtraItemsController::class);
     Route::resource('terms', TermsAndConditionController::class);
 });
 
-// Settings via Volt
+// ========================
+// SETTINGS (ADMIN) via Volt
+// ========================
+
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
@@ -125,8 +147,14 @@ Route::middleware(['auth'])->group(function () {
     Volt::route('settings/appearance', 'settings.appearance')->name('settings.appearance');
 });
 
+// ========================
 // API
+// ========================
+
 Route::get('/api/available-times', [BookingAvailabilityController::class, 'getAvailableTimes'])->name('api.available.times');
 
-// Auth Routes (Admin Breeze)
+// ========================
+// AUTH ROUTES (ADMIN BREEZE)
+// ========================
+
 require __DIR__ . '/auth.php';
