@@ -78,7 +78,7 @@
         </div>
     </div>
 
-    {{-- If not editable: show notice and stop --}}
+    {{-- Jika status bukan booked, tampilkan notice dan jangan tampilkan form --}}
     @if($booking->status !== 'booked')
         <div class="card">
             <p class="small">Booking ini berstatus <strong>{{ $booking->status }}</strong>. Untuk keamanan, editing lewat halaman ini tidak diperbolehkan.</p>
@@ -86,8 +86,7 @@
                 <a href="{{ route('bookings.show', $booking->id) }}" class="btn btn-ghost">Lihat Detail</a>
             </div>
         </div>
-        @return
-    @endif
+    @else
 
     <div class="layout">
         {{-- LEFT: form (mirip create) --}}
@@ -146,8 +145,13 @@
 
                     <div>
                         <label class="small">Waktu Pemotretan</label>
+                        {{-- <-- Important: ensure select has the current booking time as a real option/value so JS comparisons work --}}
                         <select id="booking_time" name="booking_time" class="input" required>
-                            <option value="">{{ old('booking_time', $booking->booking_time) ?: 'Pilih tanggal terlebih dahulu' }}</option>
+                            @if(old('booking_time', $booking->booking_time))
+                                <option value="{{ old('booking_time', $booking->booking_time) }}">{{ old('booking_time', $booking->booking_time) }} WIB</option>
+                            @else
+                                <option value="">{{ 'Pilih tanggal terlebih dahulu' }}</option>
+                            @endif
                         </select>
                         <div id="time-availability-info" class="availability-info"></div>
                         @error('booking_time') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
@@ -212,7 +216,19 @@
                         {{-- filled by JS --}}
                     </div>
 
-                    <input type="hidden" name="selected_backgrounds" id="selected_backgrounds" value='{{ old('selected_backgrounds') ? json_encode(old('selected_backgrounds')) : json_encode($selectedBackgrounds ?? []) }}'>
+                    @php
+                        // Normalize $selectedBackgrounds to array of IDs for JS (string)
+                        $selectedBgIds = [];
+                        if(!empty($selectedBackgrounds ?? [])) {
+                            foreach($selectedBackgrounds as $sb) {
+                                if(is_array($sb) && isset($sb['id'])) $selectedBgIds[] = (string)$sb['id'];
+                                elseif(is_object($sb) && isset($sb->id)) $selectedBgIds[] = (string)$sb->id;
+                                else $selectedBgIds[] = (string)$sb;
+                            }
+                        }
+                    @endphp
+
+                    <input type="hidden" name="selected_backgrounds" id="selected_backgrounds" value='{{ old('selected_backgrounds') ? json_encode(old('selected_backgrounds')) : json_encode($selectedBgIds) }}'>
 
                     <div class="small" style="margin-top:8px">* Pilih minimal 1 background jika paket mewajibkan.</div>
                     @error('selected_backgrounds') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
@@ -284,7 +300,7 @@
                 <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
                     <div>
                         <div class="small">Total (server authoritative)</div>
-                        <div id="totalPriceDisplay" style="font-weight:700; font-size:1.1rem; color:var(--red)">{{ number_format(old('total_price', $booking->total_price),0,',','.') ? 'IDR '. number_format(old('total_price', $booking->total_price),0,',','.') : 'IDR 0' }}</div>
+                        <div id="totalPriceDisplay" style="font-weight:700; font-size:1.1rem; color:var(--red)">{{ 'IDR ' . number_format(old('total_price', $booking->total_price ?? 0),0,',','.') }}</div>
                     </div>
 
                     <div class="actions">
@@ -294,7 +310,7 @@
                 </div>
 
                 {{-- hidden server total (still send) --}}
-                <input type="hidden" name="total_price" id="hidden_total_price" value="{{ old('total_price', $booking->total_price) }}">
+                <input type="hidden" name="total_price" id="hidden_total_price" value="{{ old('total_price', $booking->total_price ?? 0) }}">
             </div>
         </form>
 
@@ -331,18 +347,20 @@
             </div>
         </aside>
     </div>
+
+    @endif {{-- end status check --}}
 </div>
 @endsection
 
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
-    // State and DOM refs (kept similar to create script for parity)
+    // State and DOM refs
     let selectedPackage = null;
     let basePrice = 0;
     let maxBackgrounds = 0;
     let packageCategory = '';
-    let selectedBackgrounds = @json($selectedBackgrounds ?? []);
+    let selectedBackgrounds = @json($selectedBgIds ?? []);
     selectedBackgrounds = Array.isArray(selectedBackgrounds) ? selectedBackgrounds.map(String) : [];
     let selectedExtras = @json($selectedExtraItems ?? []);
     selectedExtras = Array.isArray(selectedExtras) ? selectedExtras.map(String) : [];
@@ -363,6 +381,11 @@ document.addEventListener('DOMContentLoaded', function () {
     const uploadProofSection = document.getElementById('uploadProofSection');
     const totalPriceDisplay = document.getElementById('totalPriceDisplay');
     const hiddenTotalPrice = document.getElementById('hidden_total_price');
+
+    // server-original values (used to allow partial edits)
+    const originalBookingDate = @json(old('booking_date', $booking->booking_date ?? ''));
+    const originalBookingTime = @json(old('booking_time', $booking->booking_time ?? ''));
+    const originalPackageName = @json(old('package_name', $booking->package_name ?? ''));
 
     // helper
     const idr = (n) => 'IDR ' + new Intl.NumberFormat('id-ID').format(n || 0);
@@ -390,13 +413,11 @@ document.addEventListener('DOMContentLoaded', function () {
 
         packageNameInput.value = selectedPackage;
         sessionNameInput.value = computeSessionName(selectedPackage);
-        // update visible display
         if (sessionNameDisplay) sessionNameDisplay.textContent = sessionNameInput.value;
 
         maxBgLabel.textContent = maxBackgrounds;
         bgCounter.textContent = selectedBackgrounds.length;
         if (maxBackgrounds === 0) {
-            // hide background container content if no bg allowed
             bgContainer.innerHTML = '<div class="small">Paket ini tidak membutuhkan pemilihan background.</div>';
             selectedBackgrounds = [];
             updateSelectedBackgroundsInput();
@@ -404,7 +425,6 @@ document.addEventListener('DOMContentLoaded', function () {
             renderBackgroundsByCategory(packageCategory);
         }
 
-        // update preview total
         updateTotalPreview();
     }
 
@@ -415,7 +435,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return 'Photoshoot Session';
     }
 
-    // Backgrounds data provided by Blade (same variable names as create)
+    // Backgrounds data provided by Blade
     const babySmashBackgrounds = @json($babySmashBackgrounds ?? []);
     const plainBackgrounds = @json($plainBackgrounds ?? []);
     const grandeBackgrounds = @json($grandeBackgrounds ?? []);
@@ -466,7 +486,6 @@ document.addEventListener('DOMContentLoaded', function () {
             bgContainer.appendChild(div);
         });
 
-        // update counters
         document.querySelectorAll('.background-option').forEach(el => {
             const id = el.dataset.id;
             if (selectedBackgrounds.includes(id)) el.classList.add('selected');
@@ -488,8 +507,9 @@ document.addEventListener('DOMContentLoaded', function () {
             }
             selectedBackgrounds.push(id);
             el.classList.add('selected');
-            // pulse
-            el.animate([{ boxShadow: '0 0 0 0 rgba(220,38,38,0.3)' }, { boxShadow: '0 0 0 10px rgba(220,38,38,0)' }], { duration: 600 });
+            try {
+                el.animate([{ boxShadow: '0 0 0 0 rgba(220,38,38,0.3)' }, { boxShadow: '0 0 0 10px rgba(220,38,38,0)' }], { duration: 600 });
+            } catch (e) { /* ignore if animate not supported */ }
         }
         bgCounter.textContent = selectedBackgrounds.length;
         updateSelectedBackgroundsInput();
@@ -514,7 +534,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
         const total = (basePrice || 0) + extrasTotal;
         totalPriceDisplay.textContent = idr(total);
-        hiddenTotalPrice.value = total; // server will re-calc, but keep in sync
+        hiddenTotalPrice.value = total;
     }
 
     // package click binding
@@ -530,7 +550,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
-    // fetch available times (same behavior as create -> kept compatible)
+    // fetch available times
     let availableTimes = [];
     async function fetchAvailableTimes() {
         const date = bookingDateInput.value;
@@ -565,17 +585,17 @@ document.addEventListener('DOMContentLoaded', function () {
                     bookingTimeSelect.appendChild(opt);
                 });
                 // restore old time if match
-                const oldTime = "{{ old('booking_time', $booking->booking_time) }}";
+                const oldTime = @json(old('booking_time', $booking->booking_time));
                 if (oldTime && availableTimes.includes(oldTime)) {
                     bookingTimeSelect.value = oldTime;
                 } else {
-                    // if current booking time is not in availableTimes (rare), keep it as first option
-                    if ("{{ $booking->booking_time }}" && !availableTimes.includes("{{ $booking->booking_time }}")) {
+                    const currentBookingTime = @json($booking->booking_time);
+                    if (currentBookingTime && !availableTimes.includes(currentBookingTime)) {
                         const cur = document.createElement('option');
-                        cur.value = "{{ $booking->booking_time }}";
-                        cur.textContent = "{{ $booking->booking_time }} WIB (current)";
+                        cur.value = currentBookingTime;
+                        cur.textContent = `${currentBookingTime} WIB (current)`;
                         bookingTimeSelect.prepend(cur);
-                        bookingTimeSelect.value = "{{ $booking->booking_time }}";
+                        bookingTimeSelect.value = currentBookingTime;
                     }
                 }
 
@@ -591,6 +611,7 @@ document.addEventListener('DOMContentLoaded', function () {
             timeAvailabilityInfo.className = 'availability-info';
             timeAvailabilityInfo.textContent = 'Gagal memuat slot waktu. Coba lagi nanti.';
             timeAvailabilityInfo.style.display = 'block';
+            availableTimes = [];
         }
     }
 
@@ -599,25 +620,49 @@ document.addEventListener('DOMContentLoaded', function () {
         if (bookingDateInput.value) fetchAvailableTimes();
     }
 
-    // final validations on submit (prevent slot conflict & background requirement)
+    // submit: only enforce availability check if date/time actually changed from original
     const form = document.getElementById('adminBookingForm');
     if (form) {
         form.addEventListener('submit', function (e) {
-            // package selected?
+            // basic package presence
             if (!packageNameInput.value) {
                 e.preventDefault(); alert('Pilih paket terlebih dahulu.'); return;
             }
+
             // background requirement
             if (maxBackgrounds > 0 && selectedBackgrounds.length === 0) {
                 e.preventDefault(); alert('Pilih minimal 1 background sesuai paket.'); return;
             }
-            // ensure chosen time is available (client-side check)
-            const chosenTime = bookingTimeSelect.value;
+
+            // determine whether user changed date/time
             const chosenDate = bookingDateInput.value;
-            if (chosenDate && chosenTime && availableTimes.length && !availableTimes.includes(chosenTime)) {
+            const chosenTime = bookingTimeSelect.value;
+
+            const dateChanged = String(chosenDate || '') !== String(originalBookingDate || '');
+            const timeChanged = String(chosenTime || '') !== String(originalBookingTime || '');
+
+            // if neither date nor time changed, skip availability validation (allows editing name only)
+            if (!dateChanged && !timeChanged) {
+                updateSelectedBackgroundsInput();
+                return; // allow submit
+            }
+
+            // if date or time changed, ensure both chosen
+            if (!chosenDate || !chosenTime) {
+                e.preventDefault(); alert('Pilih tanggal dan waktu yang valid.'); return;
+            }
+
+            // if date changed and availableTimes not loaded or empty -> block (can't trust)
+            if (dateChanged && availableTimes.length === 0) {
+                e.preventDefault(); alert('Slot waktu belum dimuat atau hari penuh. Silakan pilih tanggal lain.'); return;
+            }
+
+            // if availableTimes present and chosenTime not included -> block
+            if (availableTimes.length && !availableTimes.includes(chosenTime)) {
                 e.preventDefault(); alert('Waktu yang dipilih tidak tersedia. Mohon pilih waktu lain dari daftar.'); return;
             }
-            // update hidden selected backgrounds
+
+            // update hidden selected backgrounds before submit
             updateSelectedBackgroundsInput();
         });
     }

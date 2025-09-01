@@ -147,23 +147,20 @@
                     <h2 class="text-lg font-bold text-gray-800 mb-4">Status Pesanan</h2>
 
                     @php
-                        $badgeColor = match ($booking->status) {
-                            'waiting_payment' => 'bg-yellow-100 text-yellow-800 border-yellow-200',
-                            'pending_verification' => 'bg-orange-100 text-orange-800 border-orange-200',
-                            'booked' => 'bg-green-100 text-green-800 border-green-200',
-                            'completed' => 'bg-blue-100 text-blue-800 border-blue-200',
-                            'cancelled' => 'bg-red-100 text-red-800 border-red-200',
-                            default => 'bg-gray-100 text-gray-800 border-gray-200'
-                        };
+                        // Use array mapping for PHP 7.4+ compatibility (avoids `match` requirement)
+                        $badgeMap = [
+                            'waiting_payment' => ['color' => 'bg-yellow-100 text-yellow-800 border-yellow-200', 'label' => 'Menunggu Pembayaran'],
+                            'pending_verification' => ['color' => 'bg-orange-100 text-orange-800 border-orange-200', 'label' => 'Menunggu Verifikasi'],
+                            'booked' => ['color' => 'bg-green-100 text-green-800 border-green-200', 'label' => 'Sudah Dibooking'],
+                            'completed' => ['color' => 'bg-blue-100 text-blue-800 border-blue-200', 'label' => 'Selesai'],
+                            'cancelled' => ['color' => 'bg-red-100 text-red-800 border-red-200', 'label' => 'Dibatalkan'],
+                        ];
 
-                        $label = match ($booking->status) {
-                            'waiting_payment' => 'Menunggu Pembayaran',
-                            'pending_verification' => 'Menunggu Verifikasi',
-                            'booked' => 'Sudah Dibooking',
-                            'completed' => 'Selesai',
-                            'cancelled' => 'Dibatalkan',
-                            default => ucfirst($booking->status)
-                        };
+                        $defaultBadge = ['color' => 'bg-gray-100 text-gray-800 border-gray-200', 'label' => ucfirst($booking->status)];
+
+                        $badge = $badgeMap[$booking->status] ?? $defaultBadge;
+                        $badgeColor = $badge['color'];
+                        $label = $badge['label'];
                     @endphp
 
                     <span class="inline-flex px-3 py-1 rounded-full text-sm font-semibold border {{ $badgeColor }}">
@@ -214,8 +211,6 @@
                                     Metode pembayaran: <strong>Transfer</strong>. Namun belum ada bukti transfer yang diunggah.
                                 </div>
                             @endif
-                        @else
-                            {{-- Jika metode bukan transfer (mis. cash) maka tidak menampilkan area bukti sama sekali --}}
                         @endif
 
                     </div>

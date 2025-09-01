@@ -10,7 +10,7 @@ use App\Http\Controllers\Admin\ExtraItemsController;
 use App\Http\Controllers\BookingAvailabilityController;
 use App\Http\Controllers\CustomerAuthController;
 use App\Http\Controllers\CustomerPasswordController;
-use App\Http\Controllers\CustomerController; // ✅ ditambah, biar rapih
+use App\Http\Controllers\CustomerController;
 use App\Models\Background;
 use App\Models\ExtraItem;
 use App\Models\TermsAndCondition;
@@ -120,10 +120,10 @@ Route::middleware(['customer.auth'])->group(function () {
 // ========================
 
 Route::middleware(['auth', 'verified'])->group(function () {
+    // Dashboard (controller di App\Http\Controllers\DashboardController)
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
 
     // Manajemen booking (admin)
-    // HAPUS ->except(['edit']) agar route edit aktif
     Route::resource('bookings', AdminBookingController::class);
 
     // Route untuk cancel booking dan operasi terkait

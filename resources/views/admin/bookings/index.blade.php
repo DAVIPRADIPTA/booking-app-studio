@@ -74,18 +74,23 @@
             <div class="flex justify-between items-center mt-3">
                 <div class="flex items-center gap-2">
                     <label class="text-xs text-gray-600 mr-2">Sort</label>
+
+                    {{-- Default sort di sini diset ke created_at_desc (Dibuat: baru → lama) --}}
+                    @php $currentSort = request('sort_by', 'created_at_desc'); @endphp
+
                     <select name="sort_by" class="border rounded px-3 py-2 text-sm">
-                        <option value="booking_date_desc" {{ request('sort_by') === 'booking_date_desc' ? 'selected' : '' }}>Tanggal (baru → lama)</option>
-                        <option value="booking_date_asc" {{ request('sort_by') === 'booking_date_asc' ? 'selected' : '' }}>Tanggal (lama → baru)</option>
-                        <option value="created_at_desc" {{ request('sort_by') === 'created_at_desc' ? 'selected' : '' }}>Dibuat (baru → lama)</option>
-                        <option value="created_at_asc" {{ request('sort_by') === 'created_at_asc' ? 'selected' : '' }}>Dibuat (lama → baru)</option>
+                        <option value="created_at_desc" {{ $currentSort === 'created_at_desc' ? 'selected' : '' }}>Dibuat (baru → lama)</option>
+                        <option value="created_at_asc" {{ $currentSort === 'created_at_asc' ? 'selected' : '' }}>Dibuat (lama → baru)</option>
+                        <option value="booking_date_desc" {{ $currentSort === 'booking_date_desc' ? 'selected' : '' }}>Tanggal Booking (baru → lama)</option>
+                        <option value="booking_date_asc" {{ $currentSort === 'booking_date_asc' ? 'selected' : '' }}>Tanggal Booking (lama → baru)</option>
                     </select>
 
                     <label class="text-xs text-gray-600 ml-4 mr-2">Per halaman</label>
+                    @php $perPage = (int) request('per_page', 10); @endphp
                     <select name="per_page" class="border rounded px-3 py-2 text-sm">
-                        <option value="10" {{ request('per_page',10) == 10 ? 'selected' : ''}}>10</option>
-                        <option value="25" {{ request('per_page') == 25 ? 'selected' : ''}}>25</option>
-                        <option value="50" {{ request('per_page') == 50 ? 'selected' : ''}}>50</option>
+                        <option value="10" {{ $perPage === 10 ? 'selected' : '' }}>10</option>
+                        <option value="25" {{ $perPage === 25 ? 'selected' : '' }}>25</option>
+                        <option value="50" {{ $perPage === 50 ? 'selected' : '' }}>50</option>
                     </select>
                 </div>
 
@@ -103,7 +108,13 @@
                 <div class="text-lg font-semibold">{{ $bookings->total() }}</div>
             </div>
             @php
-                $statuses = ['waiting_payment'=>'Menunggu Pembayaran','pending_verification'=>'Menunggu Verifikasi','booked'=>'Dibooking','completed'=>'Selesai','cancelled'=>'Dibatalkan'];
+                $statuses = [
+                    'waiting_payment' => 'Menunggu Pembayaran',
+                    'pending_verification' => 'Menunggu Verifikasi',
+                    'booked' => 'Dibooking',
+                    'completed' => 'Selesai',
+                    'cancelled' => 'Dibatalkan'
+                ];
             @endphp
             @foreach($statuses as $key => $label)
                 <div class="bg-white p-3 rounded shadow text-sm">
@@ -131,7 +142,10 @@
                         @forelse ($bookings as $booking)
                             <tr class="border-b border-gray-200 hover:bg-gray-50 transition duration-150">
                                 <td class="py-3 px-6 font-medium text-gray-800">#{{ $booking->id }}</td>
-                                <td class="py-3 px-6">{{ $booking->contact_name }}<div class="text-xs text-gray-400">{{ $booking->whatsapp_number }}</div></td>
+                                <td class="py-3 px-6">
+                                    {{ $booking->contact_name }}
+                                    <div class="text-xs text-gray-400">{{ $booking->whatsapp_number }}</div>
+                                </td>
                                 <td class="py-3 px-6">{{ $booking->package_name }}</td>
                                 <td class="py-3 px-6">
                                     {{ \Carbon\Carbon::parse($booking->booking_date)->translatedFormat('d F Y') }}
@@ -168,6 +182,7 @@
                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">
                                             Detail
                                         </a>
+
                                         @if($booking->status === 'booked')
                                             <a href="{{ route('bookings.edit', $booking->id) }}"
                                                class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg text-sm transition-colors">

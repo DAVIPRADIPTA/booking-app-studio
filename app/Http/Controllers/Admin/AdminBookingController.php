@@ -13,18 +13,16 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Validator;
 
 class AdminBookingController extends Controller
 {
-    /**
-     * ✅ List semua booking (dengan filter & search)
-     */
     /**
      * List semua booking (dengan filter & search)
      */
     public function index(Request $request)
     {
-        // Basic query with optional relations
         $query = Booking::query();
 
         // quick search on contact_name, whatsapp_number, package_name
@@ -55,21 +53,22 @@ class AdminBookingController extends Controller
             $query->whereDate('booking_date', '<=', $request->date_to);
         }
 
-        // sorting (default newest booking_date desc then id)
-        $sortBy = $request->get('sort_by', 'booking_date_desc');
+        // **sorting** (DEFAULT: created_at desc — Dibuat baru -> lama)
+        $sortBy = $request->get('sort_by', 'created_at_desc');
         switch ($sortBy) {
             case 'booking_date_asc':
                 $query->orderBy('booking_date', 'asc')->orderBy('booking_time', 'asc');
+                break;
+            case 'booking_date_desc':
+                $query->orderBy('booking_date', 'desc')->orderBy('booking_time', 'desc');
                 break;
             case 'created_at_asc':
                 $query->orderBy('created_at', 'asc');
                 break;
             case 'created_at_desc':
-                $query->orderBy('created_at', 'desc');
-                break;
             default:
-                // default booking_date desc
-                $query->orderBy('booking_date', 'desc')->orderBy('booking_time', 'desc');
+                // default: created_at desc
+                $query->orderBy('created_at', 'desc');
                 break;
         }
 
@@ -77,7 +76,7 @@ class AdminBookingController extends Controller
         $perPage = (int) $request->get('per_page', 10);
         if ($perPage <= 0) $perPage = 10;
 
-        // stats: counts by status (for quick badges in UI)
+        // stats: counts by status
         $statusCounts = Booking::selectRaw('status, count(*) as cnt')
             ->groupBy('status')
             ->pluck('cnt', 'status')
@@ -96,9 +95,8 @@ class AdminBookingController extends Controller
         return view('admin.bookings.index', compact('bookings', 'statusCounts', 'packages'));
     }
 
-
     /**
-     * ✅ Tampilkan detail booking
+     * Tampilkan detail booking
      */
     public function show($id)
     {
@@ -107,7 +105,7 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Form tambah booking manual
+     * Form tambah booking manual
      */
     public function create()
     {
@@ -129,30 +127,17 @@ class AdminBookingController extends Controller
         $frameItems = $extraItems->where('category', 'frame-foto')->values();
         $serviceItems = $extraItems->where('category', 'tambahan-layanan')->values();
 
-        // Pastikan selected_backgrounds selalu berupa array
+        // Normalize old inputs for blade/js
         $selectedBackgrounds = old('selected_backgrounds', []);
         if (is_string($selectedBackgrounds)) {
-            try {
-                $selectedBackgrounds = json_decode($selectedBackgrounds, true);
-                if (!is_array($selectedBackgrounds)) {
-                    $selectedBackgrounds = [];
-                }
-            } catch (\Exception $e) {
-                $selectedBackgrounds = [];
-            }
+            $tmp = json_decode($selectedBackgrounds, true);
+            $selectedBackgrounds = is_array($tmp) ? $tmp : [];
         }
 
-        // Pastikan selected_extra_items selalu berupa array
         $selectedExtraItems = old('selected_extra_items', []);
         if (is_string($selectedExtraItems)) {
-            try {
-                $selectedExtraItems = json_decode($selectedExtraItems, true);
-                if (!is_array($selectedExtraItems)) {
-                    $selectedExtraItems = [];
-                }
-            } catch (\Exception $e) {
-                $selectedExtraItems = [];
-            }
+            $tmp = json_decode($selectedExtraItems, true);
+            $selectedExtraItems = is_array($tmp) ? $tmp : [];
         }
 
         // Available times for default date (used to populate the time select initially)
@@ -179,7 +164,7 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Form edit booking - HANYA UNTUK STATUS 'booked'
+     * Form edit booking - HANYA UNTUK STATUS 'booked'
      */
     public function edit($id)
     {
@@ -209,19 +194,16 @@ class AdminBookingController extends Controller
         $frameItems = $extraItems->where('category', 'frame-foto')->values();
         $serviceItems = $extraItems->where('category', 'tambahan-layanan')->values();
 
-        // Pastikan selected_backgrounds selalu berupa array
+        // selected backgrounds & extras from booking (normalized)
         $selectedBackgrounds = $booking->selected_backgrounds ?? [];
-        if (!is_array($selectedBackgrounds)) {
-            $selectedBackgrounds = [];
-        }
+        if (!is_array($selectedBackgrounds)) $selectedBackgrounds = [];
 
-        // Pastikan selected_extra_items selalu berupa array
         $selectedExtraItems = [];
         if (!empty($booking->selected_extra_items)) {
             $selectedExtraItems = collect($booking->selected_extra_items)->pluck('id')->toArray();
         }
 
-        // Available times based on booking date (so admin form can show correct slots)
+        // Available times based on booking date
         $defaultDate = old('booking_date', $booking->booking_date ?? Carbon::now()->toDateString());
         $availableTimes = Booking::getAvailableTimes($defaultDate);
 
@@ -246,7 +228,12 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Update booking - HANYA UNTUK STATUS 'booked'
+     * Update booking - HANYA UNTUK STATUS 'booked'
+     *
+     * Mendukung partial update:
+     * - Hanya field yang dikirim akan di-update.
+     * - Cek slot bentrok hanya kalau tanggal atau jam berubah.
+     * - File payment_proof hanya menimpa jika ada upload baru.
      */
     public function update(Request $request, $id)
     {
@@ -258,155 +245,155 @@ class AdminBookingController extends Controller
                 ->with('errorMessage', '❌ Hanya booking dengan status "Sudah Dibooking" yang bisa di-edit.');
         }
 
-        // Normalisasi nomor WhatsApp
-        $normalizedPhone = $this->normalizePhone($request->whatsapp_number);
-        $request->merge(['whatsapp_number' => $normalizedPhone]);
-
-        // Validasi dasar dengan penambahan validasi tanggal
-        try {
-            $request->validate([
-                'customer_id'          => 'required|exists:customers,id',
-                'contact_name'         => 'required|string|max:100',
-                'whatsapp_number'      => 'required|string|max:20',
-                'booking_date'         => 'required|date|after_or_equal:today',
-                'booking_time'         => 'required|string',
-                'session_name'         => 'required|string|max:100',
-                'package_name'         => 'required|string|max:100',
-                'payment_method'       => 'required|in:cash,transfer',
-                'selected_backgrounds' => strtolower($request->package_name) === 'baby smash cake' || strtolower($request->package_name) === 'babysmash' ? 'nullable' : 'required',
-                'selected_extra_items' => 'nullable',
-                'payment_proof'        => $request->payment_method === 'transfer' ? 'nullable|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
-                'baby_name'            => 'nullable|string|max:255',
-                'baby_age'             => 'nullable|string|max:50',
-            ]);
-        } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($e->errors());
+        // jika nomor WA dikirim -> normalisasi
+        if ($request->filled('whatsapp_number')) {
+            $normalizedPhone = $this->normalizePhone($request->input('whatsapp_number'));
+            $request->merge(['whatsapp_number' => $normalizedPhone]);
         }
 
-        // Validasi booking_time harus termasuk daftar jam yang valid
-        $allTimes = Booking::getAllTimes();
-        if (!in_array($request->booking_time, $allTimes)) {
-            return back()->withInput()->with('errorMessage', 'Waktu booking tidak valid.')->withInput();
+        // Tentukan paket target (incoming atau fallback ke existing)
+        $incomingPackage = $request->has('package_name') ? (string) $request->input('package_name') : (string) $booking->package_name;
+        $isBabySmash = in_array(Str::lower($incomingPackage), ['baby smash cake', 'babysmash']);
+
+        // Rules 'sometimes' agar partial update dimungkinkan
+        $rules = [
+            'customer_id'     => 'sometimes|exists:customers,id',
+            'contact_name'    => 'sometimes|string|max:100',
+            'whatsapp_number' => 'sometimes|string|max:20',
+            'booking_date'    => 'sometimes|date|after_or_equal:today',
+            'booking_time'    => 'sometimes|string',
+            'session_name'    => 'sometimes|string|max:100',
+            'package_name'    => 'sometimes|string|max:100',
+            'payment_method'  => 'sometimes|in:cash,transfer',
+            'selected_extra_items' => 'sometimes',
+            // payment_proof only validated if a new file is uploaded
+            'payment_proof'   => $request->hasFile('payment_proof') ? 'image|mimes:jpg,jpeg,png|max:2048' : 'sometimes',
+            'baby_name'       => 'sometimes|nullable|string|max:255',
+            'baby_age'        => 'sometimes|nullable|string|max:50',
+            'selected_backgrounds' => 'sometimes',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+
+        if ($validator->fails()) {
+            return back()->withInput()->withErrors($validator->errors());
         }
 
-        // ✅ Cek jadwal bentrok - gunakan helper model (kecualikan booking yang sedang diupdate)
-        if (!Booking::isSlotAvailable($request->booking_date, $request->booking_time, $id)) {
-            return back()->with('errorMessage', '❌ Slot sudah terisi, silakan pilih waktu lain.')
-                ->withInput();
-        }
-
-        // ✅ Hitung ulang total harga di server - SAMA DENGAN FRONTEND
-        $packagePrice = $this->getPackagePrice($request->package_name);
-
-        // Ambil harga dari database untuk extra items, jangan dari request
-        $extraItemsPrice = 0;
-        $extras = [];
-
-        if ($request->filled('selected_extra_items')) {
-            // Pastikan selected_extra_items adalah array
-            $selectedExtraItems = is_string($request->selected_extra_items) ?
-                json_decode($request->selected_extra_items, true) :
-                $request->selected_extra_items;
-
-            if (!is_array($selectedExtraItems)) {
-                $selectedExtraItems = [];
+        // booking_time validity if provided
+        if ($request->has('booking_time')) {
+            $allTimes = Booking::getAllTimes();
+            if (!in_array($request->booking_time, $allTimes)) {
+                return back()->withInput()->with('errorMessage', 'Waktu booking tidak valid.');
             }
-
-            $extras = ExtraItem::whereIn('id', $selectedExtraItems)
-                ->get(['id', 'name', 'price'])
-                ->map(function ($item) use (&$extraItemsPrice) {
-                    $extraItemsPrice += (int) $item->price;
-                    return [
-                        'id'    => $item->id,
-                        'name'  => $item->name,
-                        'price' => (int) $item->price,
-                    ];
-                })->values()->toArray();
         }
 
-        $totalPrice = $packagePrice + $extraItemsPrice;
+        // check slot availability only if date or time changed (and both provided)
+        $dateChanged = $request->has('booking_date') && $request->input('booking_date') != $booking->booking_date;
+        $timeChanged = $request->has('booking_time') && $request->input('booking_time') != $booking->booking_time;
+        if (($dateChanged || $timeChanged) && $request->filled('booking_date') && $request->filled('booking_time')) {
+            if (!Booking::isSlotAvailable($request->booking_date, $request->booking_time, $id)) {
+                return back()->withInput()->with('errorMessage', '❌ Slot sudah terisi, silakan pilih waktu lain.');
+            }
+        }
 
-        // ✅ Upload bukti transfer jika ada
-        $paymentProofPath = $booking->payment_proof; // Pertahankan bukti lama jika tidak ada yang baru
+        // Extras handling: if provided in request, fetch from DB, otherwise keep existing
+        $extras = $booking->selected_extra_items ?? [];
+        $extrasChanged = false;
+        if ($request->has('selected_extra_items')) {
+            $extras = $this->fetchExtrasByIds($request->input('selected_extra_items', []));
+            $extrasChanged = true;
+        }
+
+        // Package price: use incomingPackage (either new or existing)
+        $packagePrice = $this->getPackagePrice($incomingPackage);
+        $packageChanged = $request->has('package_name') && $request->input('package_name') != $booking->package_name;
+
+        // Compute totalPrice if package or extras changed; otherwise, keep existing total
+        if ($packageChanged || $extrasChanged) {
+            $extraItemsPrice = array_sum(array_map(function ($e) { return (int) ($e['price'] ?? 0); }, $extras));
+            $totalPrice = $packagePrice + $extraItemsPrice;
+        } else {
+            $totalPrice = $booking->total_price ?? 0;
+        }
+
+        // Handle payment_proof upload: keep old if not uploaded
+        $paymentProofPath = $booking->payment_proof;
         if ($request->hasFile('payment_proof')) {
-            // Hapus bukti lama jika ada
-            if ($booking->payment_proof) {
-                Storage::disk('public')->delete($booking->payment_proof);
-            }
-            $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+            $paymentProofPath = $this->storeUploadedFile($request->file('payment_proof'), 'payment_proofs', $booking->payment_proof);
         }
 
-        // ✅ Background terpilih - SAMA DENGAN BookingController
-        $backgrounds = [];
-        $maxBackgrounds = $this->getMaxBackgrounds($request->package_name);
+        // Backgrounds: if provided, normalize & validate counts; otherwise, keep existing
+        $backgrounds = $booking->selected_backgrounds ?? [];
+        if ($request->has('selected_backgrounds')) {
+            $selectedBackgroundIds = $this->normalizeSelectedIds($request->input('selected_backgrounds', []));
+            $maxBackgrounds = $this->getMaxBackgrounds($incomingPackage);
 
-        // Jika bukan Baby Smash Cake, kita harus memilih background
-        if (strtolower($request->package_name) !== 'baby smash cake' && strtolower($request->package_name) !== 'babysmash') {
-            if ($request->filled('selected_backgrounds')) {
-                // Pastikan selected_backgrounds adalah array
-                $selectedBackgrounds = is_string($request->selected_backgrounds) ?
-                    json_decode($request->selected_backgrounds, true) :
-                    $request->selected_backgrounds;
-
-                if (!is_array($selectedBackgrounds)) {
-                    $selectedBackgrounds = [];
+            if (!in_array(Str::lower($incomingPackage), ['baby smash cake', 'babysmash'])) {
+                if (count($selectedBackgroundIds) < 1) {
+                    return back()->withInput()->with('errorMessage', "❌ Paket {$incomingPackage} harus memilih minimal 1 background.");
                 }
-
-                // Validasi jumlah background sesuai paket
-                if (count($selectedBackgrounds) < 1) {
-                    return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                        ->withInput();
+                if (count($selectedBackgroundIds) > $maxBackgrounds) {
+                    return back()->withInput()->with('errorMessage', "❌ Paket {$incomingPackage} hanya membolehkan maksimal {$maxBackgrounds} background.");
                 }
-
-                if (count($selectedBackgrounds) > $maxBackgrounds) {
-                    return back()->with('errorMessage', "❌ Paket {$request->package_name} hanya membolehkan maksimal {$maxBackgrounds} background.")
-                        ->withInput();
+            }
+            $backgrounds = $this->fetchBackgroundsByIds($selectedBackgroundIds);
+        } else {
+            // jika paket berubah ke paket yang butuh background dan booking sebelumnya tidak punya background -> force admin memilih
+            if ($packageChanged && !in_array(Str::lower($incomingPackage), ['baby smash cake', 'babysmash'])) {
+                $existingBg = $booking->selected_backgrounds ?? [];
+                if (empty($existingBg)) {
+                    return back()->withInput()->with('errorMessage', "❌ Paket {$incomingPackage} memerlukan pemilihan background. Mohon pilih minimal 1 background.");
                 }
-
-                $backgrounds = Background::whereIn('id', $selectedBackgrounds)
-                    ->get(['id', 'name', 'image'])
-                    ->map(fn($bg) => [
-                        'id'    => $bg->id,
-                        'name'  => $bg->name,
-                        'image' => $bg->image,
-                    ])->values()->toArray();
-            } else {
-                return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                    ->withInput();
             }
         }
 
-        // ✅ Update booking - HANYA DATA PEMESANAN, BUKAN STATUS
+        // Build update payload (only include fields that were sent)
+        $updateData = [];
+
+        $maybeFields = [
+            'customer_id', 'contact_name', 'whatsapp_number', 'booking_date', 'booking_time',
+            'session_name', 'package_name', 'payment_method', 'notes', 'baby_name', 'baby_age'
+        ];
+
+        foreach ($maybeFields as $field) {
+            if ($request->has($field)) {
+                $updateData[$field] = $request->input($field);
+            }
+        }
+
+        // add backgrounds / extras if provided
+        if ($request->has('selected_backgrounds')) {
+            $updateData['selected_backgrounds'] = $backgrounds;
+        }
+
+        if ($request->has('selected_extra_items')) {
+            $updateData['selected_extra_items'] = $extras;
+        }
+
+        // set computed total_price if changed
+        if ($packageChanged || $extrasChanged) {
+            $updateData['total_price'] = $totalPrice;
+        }
+
+        // set payment_proof if a new file uploaded
+        if ($request->hasFile('payment_proof')) {
+            $updateData['payment_proof'] = $paymentProofPath;
+        }
+
+        // Perform update inside transaction
         try {
-            $booking->update([
-                'customer_id'          => $request->customer_id,
-                'contact_name'         => $request->contact_name,
-                'whatsapp_number'      => $normalizedPhone,
-                'booking_date'         => $request->booking_date,
-                'booking_time'         => $request->booking_time,
-                'session_name'         => $request->session_name,
-                'package_name'         => $request->package_name,
-                'selected_backgrounds' => $backgrounds,
-                'selected_extra_items' => $extras,
-                'total_price'          => $totalPrice,
-                'payment_method'       => $request->payment_method,
-                'payment_proof'        => $paymentProofPath,
-                'notes'                => $request->notes,
-                'baby_name'            => $request->baby_name,
-                'baby_age'             => $request->baby_age,
-                // Tidak mengupdate status karena harus tetap 'booked'
-            ]);
+            DB::transaction(function () use (&$booking, $updateData) {
+                if (!empty($updateData)) {
+                    $booking->update($updateData);
+                }
+                $booking->refresh();
+            });
 
-            // Ambil data terbaru setelah update
-            $booking->refresh();
-
-            return redirect()->route('bookings.index')
-                ->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diperbarui.');
+            return redirect()->route('bookings.index')->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Admin update booking gagal: ' . $e->getMessage(), [
-                'payload' => $request->all(),
                 'booking_id' => $id,
-                'exception' => $e
+                'exception' => $e,
             ]);
 
             return back()->withInput()->with('errorMessage', 'Terjadi kesalahan saat memperbarui booking. Silakan coba lagi.');
@@ -414,21 +401,16 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Batalkan booking (admin)
-     *
-     * Sekarang: bisa dibatalkan di berbagai status kecuali 'completed' atau 'cancelled'.
-     * Jika frontend tidak mengirimkan `cancellation_reason`, kita pakai fallback message.
+     * Batalkan booking (admin)
      */
     public function cancelBooking(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
-        // Tidak boleh batalkan jika sudah selesai atau sudah dibatalkan
         if (in_array($booking->status, ['completed', 'cancelled'])) {
             return back()->with('errorMessage', '❌ Booking tidak dapat dibatalkan pada status saat ini.');
         }
 
-        // Terima alasan pembatalan jika ada (opsional)
         $request->validate([
             'cancellation_reason' => 'nullable|string|max:255',
         ]);
@@ -463,9 +445,7 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Paksa batalkan booking (admin override)
-     *
-     * Sama seperti cancelBooking tetapi selalu mengizinkan (kecuali sudah 'completed'/'cancelled').
+     * Paksa batalkan booking (admin override)
      */
     public function forceCancel(Request $request, $id)
     {
@@ -509,47 +489,39 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Verifikasi pembayaran
+     * Verifikasi pembayaran
      */
     public function verifyPayment(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
-        // Hanya izinkan verifikasi untuk booking dengan status 'pending_verification'
         if ($booking->status !== 'pending_verification') {
             return back()->with('errorMessage', '❌ Booking tidak dalam status menunggu verifikasi.');
         }
 
-        // Update status menjadi 'booked'
-        $booking->update([
-            'status' => 'booked',
-        ]);
+        $booking->update(['status' => 'booked']);
 
         return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diverifikasi dan dikonfirmasi.');
     }
 
     /**
-     * ✅ Tandai booking selesai
+     * Tandai booking selesai
      */
     public function completeBooking(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
-        // Hanya izinkan menandai selesai untuk booking dengan status 'booked'
         if ($booking->status !== 'booked') {
             return back()->with('errorMessage', '❌ Booking tidak dalam status bisa ditandai selesai.');
         }
 
-        // Update status menjadi 'completed'
-        $booking->update([
-            'status' => 'completed',
-        ]);
+        $booking->update(['status' => 'completed']);
 
         return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil ditandai selesai.');
     }
 
     /**
-     * ✅ Proses pembatalan + refund
+     * Proses pembatalan + refund
      */
     public function processCancellation(Request $request, $id)
     {
@@ -561,202 +533,162 @@ class AdminBookingController extends Controller
             'cancellation_reason' => 'required|string|max:255',
         ]);
 
-        $refundPath = null;
-        if ($request->hasFile('refund_proof')) {
-            $refundPath = $request->file('refund_proof')->store('refund_proofs', 'public');
+        try {
+            DB::transaction(function () use ($booking, $request, &$refundPath) {
+                $refundPath = null;
+                if ($request->hasFile('refund_proof')) {
+                    $refundPath = $this->storeUploadedFile($request->file('refund_proof'), 'refund_proofs', $booking->refund_proof ?? null);
+                }
+
+                $booking->update([
+                    'status' => 'cancelled',
+                    'refund_amount' => $request->refund_amount,
+                    'refund_proof' => $refundPath,
+                    'auto_cancelled_at' => now(),
+                    'cancellation_reason' => $request->cancellation_reason,
+                ]);
+            });
+
+            return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dibatalkan dengan refund.');
+        } catch (\Exception $e) {
+            Log::error('Gagal memproses refund (admin): ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'exception' => $e,
+            ]);
+            return back()->with('errorMessage', 'Terjadi kesalahan saat memproses refund. Silakan coba lagi.');
         }
-
-        $booking->update([
-            'status' => 'cancelled',
-            'refund_amount' => $request->refund_amount,
-            'refund_proof' => $refundPath,
-            'auto_cancelled_at' => now(),
-            'cancellation_reason' => $request->cancellation_reason,
-        ]);
-
-        return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dibatalkan dengan refund.');
     }
 
     /**
-     * ✅ Simpan booking manual dengan validasi & hitung ulang harga
+     * Simpan booking manual dengan validasi & hitung ulang harga
      */
     public function store(Request $request)
     {
         // Normalisasi nomor WhatsApp
-        $normalizedPhone = $this->normalizePhone($request->whatsapp_number);
+        $normalizedPhone = $this->normalizePhone($request->input('whatsapp_number', ''));
         $request->merge(['whatsapp_number' => $normalizedPhone]);
 
-        // Validasi dasar dengan penambahan validasi tanggal
-        try {
-            $request->validate([
-                'customer_id'          => 'required|exists:customers,id',
-                'contact_name'         => 'required|string|max:100',
-                'whatsapp_number'      => 'required|string|max:20',
-                'booking_date'         => 'required|date|after_or_equal:today',
-                'booking_time'         => 'required|string',
-                'session_name'         => 'required|string|max:100',
-                'package_name'         => 'required|string|max:100',
-                'payment_method'       => 'required|in:cash,transfer',
-                'selected_backgrounds' => strtolower($request->package_name) === 'baby smash cake' || strtolower($request->package_name) === 'babysmash' ? 'nullable' : 'required',
-                'selected_extra_items' => 'nullable',
-                'payment_proof'        => $request->payment_method === 'transfer' ? 'required|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
-                'baby_name'            => 'nullable|string|max:255',
-                'baby_age'             => 'nullable|string|max:50',
-            ]);
-        } catch (ValidationException $e) {
-            return back()->withInput()->withErrors($e->errors());
+        $packageName = (string) $request->input('package_name', '');
+        $isBabySmash = in_array(Str::lower($packageName), ['baby smash cake', 'babysmash']);
+
+        $rules = [
+            'customer_id'          => 'required|exists:customers,id',
+            'contact_name'         => 'required|string|max:100',
+            'whatsapp_number'      => 'required|string|max:20',
+            'booking_date'         => 'required|date|after_or_equal:today',
+            'booking_time'         => 'required|string',
+            'session_name'         => 'required|string|max:100',
+            'package_name'         => 'required|string|max:100',
+            'payment_method'       => 'required|in:cash,transfer',
+            'selected_extra_items' => 'nullable',
+            'payment_proof'        => $request->input('payment_method') === 'transfer' ? 'required|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
+            'baby_name'            => 'nullable|string|max:255',
+            'baby_age'             => 'nullable|string|max:50',
+        ];
+
+        $rules['selected_backgrounds'] = $isBabySmash ? 'nullable' : 'required';
+
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            return back()->withInput()->withErrors($validator->errors());
         }
 
-        // Validasi booking_time harus termasuk daftar jam yang valid
+        // Validasi booking_time valid
         $allTimes = Booking::getAllTimes();
         if (!in_array($request->booking_time, $allTimes)) {
             return back()->withInput()->with('errorMessage', 'Waktu booking tidak valid.');
         }
 
-        // ✅ Cek jadwal bentrok (gunakan helper model)
+        // Cek jadwal bentrok
         if (!Booking::isSlotAvailable($request->booking_date, $request->booking_time)) {
-            return back()->with('errorMessage', '❌ Slot sudah terisi, silakan pilih waktu lain.')
-                ->withInput();
+            return back()->with('errorMessage', '❌ Slot sudah terisi, silakan pilih waktu lain.')->withInput();
         }
 
-        // ✅ Hitung ulang total harga di server
+        // Hitung ulang total harga
         $packagePrice = $this->getPackagePrice($request->package_name);
 
-        // Ambil harga dari database untuk extra items
-        $extraItemsPrice = 0;
-        $extras = [];
-
-        if ($request->filled('selected_extra_items')) {
-            // Pastikan selected_extra_items adalah array
-            $selectedExtraItems = is_string($request->selected_extra_items) ?
-                json_decode($request->selected_extra_items, true) :
-                $request->selected_extra_items;
-
-            if (!is_array($selectedExtraItems)) {
-                $selectedExtraItems = [];
-            }
-
-            $extras = ExtraItem::whereIn('id', $selectedExtraItems)
-                ->get(['id', 'name', 'price'])
-                ->map(function ($item) use (&$extraItemsPrice) {
-                    $extraItemsPrice += (int) $item->price;
-                    return [
-                        'id'    => $item->id,
-                        'name'  => $item->name,
-                        'price' => (int) $item->price,
-                    ];
-                })->values()->toArray();
-        }
-
+        // Ambil harga extra items dari DB
+        $extras = $this->fetchExtrasByIds($request->input('selected_extra_items', []));
+        $extraItemsPrice = array_sum(array_map(function ($e) { return (int) ($e['price'] ?? 0); }, $extras));
         $totalPrice = $packagePrice + $extraItemsPrice;
 
-        // ✅ Upload bukti transfer jika ada
+        // Upload bukti transfer jika ada
         $paymentProofPath = null;
-        if ($request->payment_method === 'transfer' && $request->hasFile('payment_proof')) {
-            $paymentProofPath = $request->file('payment_proof')->store('payment_proofs', 'public');
+        if ($request->input('payment_method') === 'transfer' && $request->hasFile('payment_proof')) {
+            $paymentProofPath = $this->storeUploadedFile($request->file('payment_proof'), 'payment_proofs', null);
         }
 
-        // ✅ Background terpilih
+        // Background terpilih
         $backgrounds = [];
         $maxBackgrounds = $this->getMaxBackgrounds($request->package_name);
 
-        // Jika bukan Baby Smash Cake, kita harus memilih background
-        if (strtolower($request->package_name) !== 'baby smash cake' && strtolower($request->package_name) !== 'babysmash') {
-            if ($request->filled('selected_backgrounds')) {
-                // Pastikan selected_backgrounds adalah array
-                $selectedBackgrounds = is_string($request->selected_backgrounds) ?
-                    json_decode($request->selected_backgrounds, true) :
-                    $request->selected_backgrounds;
-
-                if (!is_array($selectedBackgrounds)) {
-                    $selectedBackgrounds = [];
-                }
-
-                // Validasi jumlah background sesuai paket
-                if (count($selectedBackgrounds) < 1) {
-                    return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                        ->withInput();
-                }
-
-                if (count($selectedBackgrounds) > $maxBackgrounds) {
-                    return back()->with('errorMessage', "❌ Paket {$request->package_name} hanya membolehkan maksimal {$maxBackgrounds} background.")
-                        ->withInput();
-                }
-
-                $backgrounds = Background::whereIn('id', $selectedBackgrounds)
-                    ->get(['id', 'name', 'image'])
-                    ->map(fn($bg) => [
-                        'id'    => $bg->id,
-                        'name'  => $bg->name,
-                        'image' => $bg->image,
-                    ])->values()->toArray();
-            } else {
-                return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                    ->withInput();
+        if (!$isBabySmash) {
+            $selectedBackgroundIds = $this->normalizeSelectedIds($request->input('selected_backgrounds', []));
+            if (count($selectedBackgroundIds) < 1) {
+                return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")->withInput();
             }
+            if (count($selectedBackgroundIds) > $maxBackgrounds) {
+                return back()->with('errorMessage', "❌ Paket {$request->package_name} hanya membolehkan maksimal {$maxBackgrounds} background.")->withInput();
+            }
+
+            $backgrounds = $this->fetchBackgroundsByIds($selectedBackgroundIds);
         }
 
-        // ✅ Tentukan status otomatis - SEMUA LANGSUNG BOOKED KARENA ADMIN OFFLINE
-        $status = 'booked'; // Semua langsung booked karena sudah dibayar di tempat
-        $paymentDeadline = null;
-
-        // ✅ Simpan booking
+        // Simpan booking (transaction)
         try {
-            $booking = Booking::create([
-                'user_id'              => auth('web')->id(), // Admin yang membuat booking
-                'customer_id'          => $request->customer_id,
-                'contact_name'         => $request->contact_name,
-                'whatsapp_number'      => $normalizedPhone,
-                'booking_date'         => $request->booking_date,
-                'booking_time'         => $request->booking_time,
-                'session_name'         => $request->session_name,
-                'package_name'         => $request->package_name,
-                'selected_backgrounds' => $backgrounds,
-                'selected_extra_items' => $extras,
-                'total_price'          => $totalPrice,
-                'status'               => $status,
-                'payment_method'       => $request->payment_method,
-                'payment_proof'        => $paymentProofPath,
-                'payment_deadline'     => $paymentDeadline,
-                'notes'                => $request->notes,
-                'baby_name'            => $request->baby_name,
-                'baby_age'             => $request->baby_age,
-            ]);
+            $booking = DB::transaction(function () use ($request, $backgrounds, $extras, $totalPrice, $normalizedPhone, $paymentProofPath) {
+                return Booking::create([
+                    'user_id'              => auth('web')->id(),
+                    'customer_id'          => $request->customer_id,
+                    'contact_name'         => $request->contact_name,
+                    'whatsapp_number'      => $normalizedPhone,
+                    'booking_date'         => $request->booking_date,
+                    'booking_time'         => $request->booking_time,
+                    'session_name'         => $request->session_name,
+                    'package_name'         => $request->package_name,
+                    'selected_backgrounds' => $backgrounds,
+                    'selected_extra_items' => $extras,
+                    'total_price'          => $totalPrice,
+                    'status'               => 'booked', // admin langsung booked
+                    'payment_method'       => $request->payment_method,
+                    'payment_proof'        => $paymentProofPath,
+                    'payment_deadline'     => null,
+                    'notes'                => $request->notes,
+                    'baby_name'            => $request->baby_name,
+                    'baby_age'             => $request->baby_age,
+                ]);
+            });
 
             return redirect()->route('bookings.index')->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil ditambahkan.');
         } catch (\Exception $e) {
-            Log::error('Admin booking gagal: ' . $e->getMessage(), ['payload' => $request->all(), 'exception' => $e]);
+            Log::error('Admin booking gagal: ' . $e->getMessage(), [
+                'exception' => $e,
+            ]);
             return back()->withInput()->with('errorMessage', 'Terjadi kesalahan saat menyimpan booking.');
         }
     }
 
     /**
-     * ✅ HAPUS booking - hanya untuk status 'completed' atau 'cancelled'
-     *
-     * Menghapus file bukti pembayaran/refund jika ada, lalu hapus record.
+     * HAPUS booking - hanya untuk status 'completed' atau 'cancelled'
      */
     public function destroy($id)
     {
         $booking = Booking::findOrFail($id);
 
-        // Hanya izinkan hapus untuk booking yang sudah selesai atau sudah dibatalkan
         if (!in_array($booking->status, ['completed', 'cancelled'])) {
             return back()->with('errorMessage', '❌ Hanya pesanan dengan status "Selesai" atau "Dibatalkan" yang boleh dihapus.');
         }
 
         try {
             DB::transaction(function () use ($booking) {
-                // Hapus file payment_proof jika ada
                 if (!empty($booking->payment_proof) && Storage::disk('public')->exists($booking->payment_proof)) {
                     Storage::disk('public')->delete($booking->payment_proof);
                 }
 
-                // Hapus file refund_proof jika ada
                 if (!empty($booking->refund_proof) && Storage::disk('public')->exists($booking->refund_proof)) {
                     Storage::disk('public')->delete($booking->refund_proof);
                 }
 
-                // Hapus record booking (hard delete). Jika ingin soft delete, gunakan $booking->delete() dengan SoftDeletes di model.
                 $booking->delete();
             });
 
@@ -776,12 +708,11 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Helper untuk dapatkan harga paket
+     * Helper untuk dapatkan harga paket
      */
     private function getPackagePrice($packageName)
     {
-        // Pastikan nama paket sesuai dengan yang di frontend
-        switch (strtolower($packageName)) {
+        switch (Str::lower((string)$packageName)) {
             case 'baby smash cake':
             case 'babysmash':
                 return 550000;
@@ -807,14 +738,14 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Helper untuk dapatkan jumlah maksimal background per paket
+     * Helper untuk dapatkan jumlah maksimal background per paket
      */
     private function getMaxBackgrounds($packageName)
     {
-        switch (strtolower($packageName)) {
+        switch (Str::lower((string)$packageName)) {
             case 'baby smash cake':
             case 'babysmash':
-                return 0; // Tidak boleh pilih background
+                return 0;
             case 'plain':
                 return 1;
             case 'grande':
@@ -837,25 +768,124 @@ class AdminBookingController extends Controller
     }
 
     /**
-     * ✅ Helper untuk normalisasi nomor WhatsApp
+     * Normalisasi nomor WhatsApp
      */
     private function normalizePhone($raw)
     {
         $s = (string)$raw;
         $s = preg_replace('/[^\d+]/', '', $s);
 
-        if (strpos($s, '+') === 0) {
+        if (Str::startsWith($s, '+')) {
             return $s;
         }
 
-        if (strpos($s, '62') === 0) {
+        if (Str::startsWith($s, '62')) {
             return '+' . $s;
         }
 
-        if (strpos($s, '0') === 0) {
+        if (Str::startsWith($s, '0')) {
             return '+62' . substr($s, 1);
         }
 
         return '+62' . $s;
+    }
+
+    /**
+     * Normalisasi input selected ids.
+     * Bisa menerima array, JSON string, or comma separated string.
+     * Mengembalikan array of ints (unique).
+     */
+    private function normalizeSelectedIds($value): array
+    {
+        if (is_null($value)) return [];
+
+        if (is_string($value)) {
+            $value = trim($value);
+            // try json first
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $arr = $decoded;
+            } elseif (Str::contains($value, ',')) {
+                $arr = array_filter(array_map('trim', explode(',', $value)));
+            } else {
+                // single value
+                $arr = [$value];
+            }
+        } elseif (is_array($value)) {
+            $arr = $value;
+        } else {
+            $arr = [$value];
+        }
+
+        $arr = array_values(array_filter($arr, function ($v) {
+            return $v !== null && $v !== '';
+        }));
+
+        $arr = array_map(function ($v) {
+            return is_numeric($v) ? (int)$v : $v;
+        }, $arr);
+
+        // dedupe & ensure ints where possible
+        $arr = array_values(array_unique($arr, SORT_REGULAR));
+
+        return $arr;
+    }
+
+    /**
+     * Ambil extra items dari DB berdasarkan array id.
+     * Mengembalikan array objek ['id','name','price'].
+     */
+    private function fetchExtrasByIds($idsInput = [])
+    {
+        $ids = $this->normalizeSelectedIds($idsInput);
+        if (empty($ids)) return [];
+
+        $items = ExtraItem::whereIn('id', $ids)->get(['id', 'name', 'price']);
+
+        return $items->map(function ($it) {
+            return [
+                'id' => $it->id,
+                'name' => $it->name,
+                'price' => (int)$it->price,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Ambil backgrounds dari DB berdasarkan array id.
+     * Mengembalikan array objek ['id','name','image'].
+     */
+    private function fetchBackgroundsByIds($idsInput = [])
+    {
+        $ids = $this->normalizeSelectedIds($idsInput);
+        if (empty($ids)) return [];
+
+        $bgs = Background::whereIn('id', $ids)->get(['id', 'name', 'image']);
+
+        return $bgs->map(function ($bg) {
+            return [
+                'id'    => $bg->id,
+                'name'  => $bg->name,
+                'image' => $bg->image,
+            ];
+        })->toArray();
+    }
+
+    /**
+     * Simpan file upload ke disk 'public' dan hapus old path jika ada.
+     * Mengembalikan path yang disimpan atau null.
+     */
+    private function storeUploadedFile($file, $folder = 'uploads', $oldPath = null)
+    {
+        try {
+            if ($oldPath && Storage::disk('public')->exists($oldPath)) {
+                Storage::disk('public')->delete($oldPath);
+            }
+            $path = $file->store($folder, 'public');
+            return $path;
+        } catch (\Exception $e) {
+            Log::error("Gagal menyimpan file upload: " . $e->getMessage());
+            return null;
+        }
     }
 }
