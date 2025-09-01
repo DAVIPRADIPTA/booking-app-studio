@@ -435,7 +435,9 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports (-moz - appearance) {
+        @supports
+        (-moz - appearance)
+            {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -1524,44 +1526,40 @@
                         aria-hidden="true">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
                     </svg>
-                    Pesanan berhasil dibuat! Silakan lanjut ke pembayaran sebelum batas waktu yang ditentukan.
+                    Booking request sent successfully! We'll contact you soon via WhatsApp.
                 </div>
                 <form id="bookingForm" novalidate>
                     <!-- Basic Information -->
                     <div class="form-grid">
                         <div class="form-group">
-                            <label for="contact_name" class="form-label">Nama Kontak</label>
-                            <input type="text" id="contact_name" name="contact_name" class="form-input"
-                                placeholder="Nama lengkap" required aria-describedby="contact_name-error">
-                            <div id="contact_name-error" class="error-message" role="alert" aria-live="polite"></div>
+                            <label for="contactName" class="form-label">Nama Kontak</label>
+                            <input type="text" id="contactName" name="contactName" class="form-input"
+                                placeholder="Nama lengkap" required aria-describedby="contactName-error">
+                            <div id="contactName-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
-
                         <div class="form-group">
-                            <label for="whatsapp_number" class="form-label">Nomor WhatsApp</label>
-                            <input type="tel" id="whatsapp_number" name="whatsapp_number" class="form-input"
-                                placeholder="081234567890 (atau +628123...)" required
-                                aria-describedby="whatsapp_number-error">
-                            <div id="whatsapp_number-error" class="error-message" role="alert" aria-live="polite"></div>
-                            <p class="text-slate-400 text-xs mt-1">Contoh: 081234567890 atau +6281234567890</p>
+                            <label for="phone" class="form-label">Nomor WhatsApp</label>
+                            <input type="tel" id="phone" name="phone" class="form-input" placeholder="+62xxxxxxxxxx"
+                                required pattern="[0-9]{10,15}" aria-describedby="phone-error">
+                            <div id="phone-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
-
                         <!-- Input Tanggal -->
                         <div class="form-group">
-                            <label for="booking_date" class="form-label">Tanggal Pemotretan</label>
-                            <input type="date" id="booking_date" name="booking_date" required class="form-input"
+                            <label for="date" class="form-label">Tanggal Pemotretan</label>
+                            <input type="date" id="date" name="date" required class="form-input"
                                 min="{{ now()->format('Y-m-d') }}" onchange="fetchAvailableTimes()"
-                                aria-describedby="booking_date-error">
-                            <div id="booking_date-error" class="error-message" role="alert" aria-live="polite"></div>
+                                aria-describedby="date-error">
+                            <div id="date-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
                         <!-- Input Waktu -->
                         <div class="form-group">
-                            <label for="booking_time" class="form-label">Waktu Pemotretan</label>
-                            <select id="booking_time" name="booking_time" required class="form-select" disabled
-                                aria-describedby="booking_time-error">
+                            <label for="time" class="form-label">Waktu Pemotretan</label>
+                            <select id="time" name="time" required class="form-select" disabled
+                                aria-describedby="time-error">
                                 <option value="">Pilih tanggal dulu...</option>
                             </select>
-                            <div id="booking_time-error" class="error-message" role="alert" aria-live="polite"></div>
+                            <div id="time-error" class="error-message" role="alert" aria-live="polite"></div>
                         </div>
 
                         <!-- Info Ketersediaan Waktu -->
@@ -1571,8 +1569,6 @@
                             </div>
                         </div>
                     </div>
-
-                    <!-- Background section tetap seperti semula (no change needed) -->
                     <div class="background-section disabled" id="backgroundSection">
                         <div class="background-title">
                             <span>Pilih Background</span>
@@ -1589,94 +1585,91 @@
                             @endforeach
                         </div>
                     </div>
-
-
                     <!-- Extra Items -->
-                    <!-- Extra Items -->
-                    <div class="extras-section mt-8">
-                        <div class="extras-title text-lg font-semibold mb-4">Extra Item (Tambahan Opsional)</div>
-
-                        <div class="extras-grid grid md:grid-cols-3 gap-6">
+                    <div class="extras-section">
+                        <div class="extras-title">Extra Item (Tambahan Opsional)</div>
+                        <div class="extras-grid">
                             {{-- Kategori Cetak Foto --}}
                             <div class="extras-category">
-                                <div class="category-title font-bold mb-2">Cetak Foto</div>
+                                <div class="category-title">Cetak Foto</div>
                                 @foreach($printItems as $item)
-                                    <div class="extra-item flex items-center justify-between p-3 border rounded mb-2">
+                                    <div class="extra-item">
                                         <div class="extra-info">
                                             <div class="extra-name">{{ $item['name'] }}</div>
-                                            <span
-                                                class="extra-price text-sm text-gray-600">Rp{{ number_format($item['price']) }}</span>
                                         </div>
-                                        <input type="checkbox" class="extra-checkbox" value="{{ $item['id'] }}" {{-- ✅ wajib
-                                            untuk kirim ID --}} data-name="{{ $item['name'] }}"
+                                        <span class="extra-price">Rp{{ number_format($item['price']) }}</span>
+                                        <input type="checkbox" class="extra-checkbox" data-name="{{ $item['name'] }}"
                                             data-price="{{ $item['price'] }}"
                                             aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}">
                                     </div>
                                 @endforeach
                             </div>
-
                             {{-- Kategori Frame Foto --}}
                             <div class="extras-category">
-                                <div class="category-title font-bold mb-2">Frame Foto</div>
+                                <div class="category-title">Frame Foto</div>
                                 @foreach($frameItems as $item)
-                                    <div class="extra-item flex items-center justify-between p-3 border rounded mb-2">
+                                    <div class="extra-item">
                                         <div class="extra-info">
                                             <div class="extra-name">{{ $item['name'] }}</div>
-                                            <span
-                                                class="extra-price text-sm text-gray-600">Rp{{ number_format($item['price']) }}</span>
                                         </div>
-                                        <input type="checkbox" class="extra-checkbox" value="{{ $item['id'] }}" {{-- ✅ kirim ID
-                                            --}} data-name="{{ $item['name'] }}" data-price="{{ $item['price'] }}"
+                                        <span class="extra-price">Rp{{ number_format($item['price']) }}</span>
+                                        <input type="checkbox" class="extra-checkbox" data-name="{{ $item['name'] }}"
+                                            data-price="{{ $item['price'] }}"
                                             aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}">
                                     </div>
                                 @endforeach
                             </div>
-
                             {{-- Kategori Tambahan & Layanan --}}
                             <div class="extras-category">
-                                <div class="category-title font-bold mb-2">Tambahan & Layanan</div>
+                                <div class="category-title">Tambahan & Layanan</div>
                                 @foreach($serviceItems as $item)
-                                    <div class="extra-item flex items-center justify-between p-3 border rounded mb-2">
+                                    <div class="extra-item">
                                         <div class="extra-info">
                                             <div class="extra-name">{{ $item['name'] }}</div>
-                                            <span class="extra-price text-sm text-gray-600">
-                                                Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}
-                                            </span>
                                         </div>
-                                        <input type="checkbox" class="extra-checkbox" value="{{ $item['id'] }}" {{-- ✅ kirim ID
-                                            --}} data-name="{{ $item['name'] }}" data-price="{{ $item['price'] }}"
+                                        <span
+                                            class="extra-price">Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}</span>
+                                        <input type="checkbox" class="extra-checkbox" data-name="{{ $item['name'] }}"
+                                            data-price="{{ $item['price'] }}"
                                             aria-label="Add {{ $item['name'] }} for Rp{{ number_format($item['price']) }}{{ $item['unit'] ?? '' }}">
                                     </div>
                                 @endforeach
                             </div>
                         </div>
                     </div>
-
-                    <!-- Notes -->
+                    <!-- Notes Section -->
                     <div class="notes-section">
                         <div class="form-group">
                             <label for="notes" class="form-label">Keterangan Tambahan</label>
-                            <textarea id="notes" name="notes" class="notes-textarea" placeholder="Contoh: ... "
+                            <div class="form-description">
+                                Tulis permintaan khusus, catatan tambahan, atau detail lainnya yang ingin Anda sampaikan
+                            </div>
+                            <textarea id="notes" name="notes" class="notes-textarea"
+                                placeholder="Contoh: Saya ingin foto dengan tema vintage, atau ada request pose tertentu..."
                                 aria-describedby="notes-help"></textarea>
-                            <div id="notes-help" class="sr-only">Optional</div>
+                            <div id="notes-help" class="sr-only">Optional field for additional requests or special notes
+                            </div>
                         </div>
                     </div>
-
-                    <!-- TOTAL PAYMENT -->
+                    <!-- TOTAL PEMBAYARAN -->
                     <div class="total-payment-section">
                         <div class="total-payment-card">
                             <div class="total-amount" id="totalPrice" aria-live="polite">Total : RP.0-</div>
                         </div>
                     </div>
-
-                    <!-- SUBMIT -->
+                    <!-- SUBMIT SECTION -->
                     <div class="submit-section">
                         <button type="submit" class="submit-btn-premium" id="submitBtn" aria-describedby="submit-help">
                             <div class="btn-content" id="btnContent">
-                                <div class="btn-icon">...</div>
+                                <div class="btn-icon">
+                                    <svg width="20" height="20" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                    </svg>
+                                </div>
                                 <div class="btn-text-content">
                                     <span class="btn-text">Kirim Pemesanan</span>
-                                    <span class="btn-subtext">Anda akan diarahkan ke halaman pembayaran</span>
+                                    <span class="btn-subtext">Kami akan menghubungi Anda via WhatsApp</span>
                                 </div>
                             </div>
                             <div class="btn-loading" id="btnLoading" style="display: none;">
@@ -1685,11 +1678,15 @@
                             </div>
                         </button>
                         <div id="submit-help" class="sr-only">Submit your pre-wedding booking request</div>
-                        <div class="submit-note">Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami
+                        <div class="submit-note">
+                            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                            </svg>
+                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami</span>
                         </div>
                     </div>
                 </form>
-
             </div>
         </div>
         <!-- Dynamic Background Selection -->
@@ -1748,443 +1745,500 @@
 @endsection
 
 @push('scripts')
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
+<script>
+/*
+  Prewed booking — single, robust script
+  - Exposes window.fetchAvailableTimes (fixes ReferenceError)
+  - Extras: supports data-price, qty, subtotal UI
+  - Sends selected_backgrounds as IDs and selected_extra_items as IDs
+  - Normalizes WA number to +62
+  - Handles server responses (redirect_url expected)
+*/
+(function () {
+    'use strict';
 
-            /* -------------------------
-               Helper / State
-            ------------------------- */
-            const packageCards = document.querySelectorAll('.package-card');
-            const backgroundOptions = document.querySelectorAll('.background-option');
-            const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
-            const bookingForm = document.getElementById('bookingForm');
-            const submitBtn = document.getElementById('submitBtn');
-            const totalPriceElement = document.getElementById('totalPrice');
-            const packageNotice = document.getElementById('packageNotice');
-            const backgroundSection = document.getElementById('backgroundSection');
-            const backgroundCounter = document.getElementById('backgroundCounter');
-            const termsModal = document.getElementById('termsModal');
-            const termsCheckbox = document.getElementById('termsCheckbox');
-            const termsSubmitBtn = document.getElementById('termsSubmitBtn');
-            const termsCancelBtn = document.getElementById('termsCancelBtn');
-            const termsModalClose = document.getElementById('termsModalClose');
+    // ----------------------
+    // Helper utils
+    // ----------------------
+    const parsePrice = v => {
+        if (typeof v === 'number') return v;
+        if (!v && v !== 0) return 0;
+        const s = String(v);
+        const digits = s.replace(/[^\d]/g, '');
+        return digits ? Number(digits) : 0;
+    };
+    const formatPrice = p => `Rp${(Number(p)||0).toLocaleString('id-ID')}`;
+    const normalizePhone = raw => {
+        if (!raw) return '';
+        let s = String(raw).trim().replace(/[^\d+]/g, '');
+        if (s.startsWith('+')) return s;
+        if (s.startsWith('62')) return '+' + s;
+        if (s.startsWith('0')) return '+62' + s.slice(1);
+        return '+62' + s;
+    };
+    const showNotification = (msg, type='info') => {
+        const n = document.createElement('div');
+        n.className = `notification notification-${type}`;
+        n.textContent = msg;
+        const bg = (type==='error') ? 'rgba(239,68,68,.95)' : (type==='warning' ? 'rgba(245,158,11,.95)' : 'rgba(59,130,246,.95)');
+        n.style.cssText = `position:fixed; top:1.2rem; right:1.2rem; background:${bg}; color:#fff; padding:.6rem .9rem; border-radius:.5rem; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.18);`;
+        document.body.appendChild(n);
+        setTimeout(()=>{ n.style.transition='opacity .2s, transform .2s'; n.style.opacity='0'; n.style.transform='translateX(6px)'; setTimeout(()=> n.remove(), 220); }, 3200);
+    };
 
-            // Derived from blade
-            const prewedBackgroundIds = [
-                @foreach($backgroundItems as $item)
-                    '{{ $item->id }}',
-                @endforeach
-                            ];
+    // ----------------------
+    // Blade-provided config
+    // ----------------------
+    const prewedBackgroundIds = [
+        @foreach($backgroundItems as $item)
+            '{{ $item->id }}',
+        @endforeach
+    ];
 
-            const packageBackgrounds = {
-                'prewed1': { maxBackgrounds: 2, availableBackgrounds: prewedBackgroundIds },
-                'prewed2': { maxBackgrounds: 3, availableBackgrounds: prewedBackgroundIds }
-            };
+    const packageBackgrounds = {
+        'prewed1': { maxBackgrounds: 2, availableBackgrounds: prewedBackgroundIds },
+        'prewed2': { maxBackgrounds: 3, availableBackgrounds: prewedBackgroundIds }
+    };
 
-            let selectedPackage = null;
-            let selectedBackgrounds = []; // objects {id, name}
-            let selectedExtras = []; // objects {name, price}
-            let basePrice = 0;
-            let maxBackgrounds = 0;
-            let isFormSubmitting = false;
+    // ----------------------
+    // State & DOM refs
+    // ----------------------
+    let selectedPackage = null; // {id, name, price, maxBackgrounds}
+    let selectedBackgrounds = []; // [{id, name}]
+    let selectedExtras = []; // [{id, name, unitPrice, qty, totalPrice}]
+    let basePrice = 0;
+    let maxBackgrounds = 0;
+    let isFormSubmitting = false;
 
-            /* -------------------------
-               Available times API
-            ------------------------- */
-            window.fetchAvailableTimes = async function fetchAvailableTimes() {
-                const dateInput = document.getElementById('booking_date');
-                const timeSelect = document.getElementById('booking_time');
-                const infoBox = document.getElementById('time-availability-info');
-                const messageSpan = document.getElementById('availability-message');
+    // DOM (guarded)
+    const getEl = (sel) => document.getElementById(sel);
+    const packageCards = document.querySelectorAll('.package-card');
+    const backgroundOptions = document.querySelectorAll('.background-option');
+    const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+    const totalPriceElement = getEl('totalPrice');
+    const bookingForm = getEl('bookingForm');
+    const submitBtn = getEl('submitBtn');
+    const packageNotice = getEl('packageNotice');
+    const backgroundSection = getEl('backgroundSection');
+    const backgroundCounter = getEl('backgroundCounter');
+    const successMessage = getEl('successMessage');
+    const termsModal = getEl('termsModal');
+    const termsCheckbox = getEl('termsCheckbox');
+    const termsSubmitBtn = getEl('termsSubmitBtn');
+    const termsCancelBtn = getEl('termsCancelBtn');
+    const termsModalClose = getEl('termsModalClose');
+    const dateInput = getEl('date');
+    const timeSelect = getEl('time');
+    const timeInfoBox = getEl('time-availability-info');
+    const availabilityMessage = getEl('availability-message');
 
-                const selectedDate = dateInput.value;
-                if (!selectedDate) return;
+    // ----------------------
+    // fetchAvailableTimes (exposed on window)
+    // ----------------------
+    window.fetchAvailableTimes = async function fetchAvailableTimes() {
+        if (!dateInput || !timeSelect) return;
+        const selectedDate = (dateInput.value || '').trim();
+        if (!selectedDate) return;
 
-                timeSelect.disabled = true;
-                timeSelect.innerHTML = '<option value="">Memuat...</option>';
-                infoBox.classList.add('hidden');
+        timeSelect.disabled = true;
+        timeSelect.innerHTML = '<option value="">Memuat...</option>';
+        if (timeInfoBox) { timeInfoBox.classList.add('hidden'); timeInfoBox.style.background=''; timeInfoBox.style.borderColor=''; }
 
-                try {
-                    const response = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`);
-                    if (!response.ok) throw new Error('Gagal memuat data waktu');
-                    const data = await response.json();
+        try {
+            const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers:{ 'Accept':'application/json' }});
+            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+            const data = await resp.json();
 
-                    timeSelect.innerHTML = '';
-                    if (data.status === 'full') {
-                        const option = document.createElement('option');
-                        option.value = '';
-                        option.textContent = 'Hari ini full booked';
-                        option.disabled = true;
-                        timeSelect.appendChild(option);
-                        timeSelect.disabled = true;
-
-                        messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
-                        infoBox.classList.remove('hidden');
-                        infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))';
-                        infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+            timeSelect.innerHTML = '';
+            if (data.status === 'full') {
+                const o = document.createElement('option'); o.value=''; o.textContent='Hari ini full booked'; o.disabled=true; timeSelect.appendChild(o); timeSelect.disabled=true;
+                if (availabilityMessage) availabilityMessage.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
+                if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); timeInfoBox.style.background='linear-gradient(135deg, rgba(239,68,68,.18), rgba(239,68,68,.1))'; timeInfoBox.style.borderColor='rgba(239,68,68,.4)'; }
+            } else {
+                (data.available_times || []).forEach(t => {
+                    const o = document.createElement('option'); o.value=t; o.textContent = `${t} WIB`; timeSelect.appendChild(o);
+                });
+                timeSelect.disabled = false;
+                if (availabilityMessage) {
+                    if (data.status === 'limited') {
+                        availabilityMessage.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                        if (timeInfoBox) timeInfoBox.style.background = 'linear-gradient(135deg, rgba(234,179,8,.18), rgba(234,179,8,.1))';
                     } else {
-                        data.available_times.forEach(time => {
-                            const option = document.createElement('option');
-                            option.value = time;
-                            option.textContent = `${time} WIB`;
-                            timeSelect.appendChild(option);
-                        });
-                        timeSelect.disabled = false;
-
-                        if (data.status === 'limited') {
-                            messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                            infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
-                            infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
-                        } else {
-                            messageSpan.textContent = `Ada ${data.available_times.length} slot yang tersedia.`;
-                            infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
-                            infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-                        }
-                        infoBox.classList.remove('hidden');
+                        availabilityMessage.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
+                        if (timeInfoBox) timeInfoBox.style.background = 'linear-gradient(135deg, rgba(59,130,246,.18), rgba(59,130,246,.1))';
                     }
-                } catch (err) {
-                    console.error(err);
-                    timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-                    timeSelect.disabled = true;
+                    if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); setTimeout(()=> timeInfoBox.classList.add('show'), 50); }
                 }
+            }
+        } catch (err) {
+            console.error('Gagal memuat ketersediaan waktu:', err);
+            timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+            timeSelect.disabled = true;
+            if (timeInfoBox && availabilityMessage) {
+                availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.';
+                timeInfoBox.classList.remove('hidden');
+            }
+        }
+    };
+
+    // Attach change listener in JS (avoid inline onchange)
+    if (dateInput) {
+        dateInput.addEventListener('change', () => window.fetchAvailableTimes());
+        if (dateInput.value) window.fetchAvailableTimes();
+    }
+
+    // ----------------------
+    // Background & package logic
+    // ----------------------
+    function updateBackgroundAvailability(pkgId) {
+        const cfg = packageBackgrounds[pkgId];
+        if (!cfg) return;
+        maxBackgrounds = Number(cfg.maxBackgrounds) || 0;
+        if (backgroundSection) backgroundSection.classList.remove('disabled');
+        if (packageNotice) packageNotice.classList.add('hidden');
+        const avail = cfg.availableBackgrounds || [];
+        backgroundOptions.forEach(o => {
+            const id = o.dataset.background;
+            if (avail.includes(id)) {
+                o.classList.remove('disabled'); o.setAttribute('tabindex','0'); o.setAttribute('aria-disabled','false');
+            } else {
+                o.classList.add('disabled'); o.setAttribute('tabindex','-1'); o.setAttribute('aria-disabled','true'); o.classList.remove('selected');
+                selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
+            }
+        });
+        updateBackgroundCounter();
+    }
+    function updateBackgroundCounter() {
+        const sel = selectedBackgrounds.length;
+        if (backgroundCounter) backgroundCounter.textContent = `${sel}/${maxBackgrounds} dipilih`;
+        if (sel >= maxBackgrounds && maxBackgrounds > 0) {
+            if (backgroundCounter) backgroundCounter.classList.add('warning');
+            backgroundOptions.forEach(o => { if (!o.classList.contains('selected') && !o.classList.contains('disabled')) { o.style.opacity='0.3'; o.style.pointerEvents='none'; }});
+        } else {
+            if (backgroundCounter) backgroundCounter.classList.remove('warning');
+            backgroundOptions.forEach(o => { if (!o.classList.contains('disabled')) { o.style.opacity=''; o.style.pointerEvents=''; }});
+        }
+    }
+
+    packageCards.forEach(card => {
+        card.addEventListener('click', function () {
+            packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected','false'); });
+            this.classList.add('selected'); this.setAttribute('aria-selected','true');
+
+            selectedPackage = {
+                id: this.dataset.package,
+                name: (this.querySelector('.package-title') ? this.querySelector('.package-title').textContent : (this.dataset.package || 'Paket')),
+                price: Number(this.dataset.price || 0),
+                maxBackgrounds: Number(this.dataset.backgrounds || 0)
             };
+            basePrice = Number(selectedPackage.price) || 0;
+            maxBackgrounds = Number(selectedPackage.maxBackgrounds) || 0;
 
-            // run on load if date filled (useful on back/forward)
-            const dateInputOnLoad = document.getElementById('booking_date');
-            if (dateInputOnLoad && dateInputOnLoad.value) {
-                fetchAvailableTimes();
+            // reset backgrounds
+            backgroundOptions.forEach(o => { o.classList.remove('selected'); o.setAttribute('aria-selected','false'); });
+            selectedBackgrounds = [];
+
+            updateBackgroundAvailability(selectedPackage.id);
+            updateTotalPrice();
+        });
+    });
+
+    // auto select default (if dataset.default or prewed2 present)
+    (function autoSelectDefault() {
+        const auto = Array.from(packageCards).find(c => c.dataset.default === 'true' || (c.dataset.package && c.dataset.package.toLowerCase()==='prewed2'));
+        if (auto && !Array.from(packageCards).some(c=>c.classList.contains('selected'))) auto.click();
+    })();
+
+    backgroundOptions.forEach(opt => {
+        opt.addEventListener('click', function () {
+            if (this.classList.contains('disabled')) { showNotification('Background ini tidak tersedia untuk paket yang dipilih','error'); return; }
+            const id = this.dataset.background;
+            const name = this.dataset.name || id;
+            const found = selectedBackgrounds.find(b => String(b.id) === String(id));
+            if (found) {
+                this.classList.remove('selected'); this.setAttribute('aria-selected','false');
+                selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
+            } else {
+                if (selectedBackgrounds.length >= maxBackgrounds) { showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`,'error'); return; }
+                this.classList.add('selected'); this.setAttribute('aria-selected','true');
+                selectedBackgrounds.push({ id, name });
             }
+            updateBackgroundCounter();
+        });
+        opt.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click(); }});
+    });
 
-            /* -------------------------
-               Package / background selection
-            ------------------------- */
-            packageCards.forEach(card => {
-                card.addEventListener('click', handlePackageSelection);
-            });
+    // ----------------------
+    // Extras: consistent pricing & qty
+    // Expected markup hints:
+    // .extra-checkbox (value/id, data-name, data-price)
+    // inside same container: .extra-qty (number input), .extra-price-input (optional), [data-extra-subtotal]
+    // ----------------------
+    const findRelated = checkbox => {
+        const container = checkbox.closest('.extra-row') || checkbox.parentElement || checkbox;
+        const qty = container ? container.querySelector('.extra-qty') : null;
+        const priceInput = container ? container.querySelector('.extra-price-input') : null;
+        const subtotalEl = container ? container.querySelector('[data-extra-subtotal]') : null;
+        return { container, qty, priceInput, subtotalEl };
+    };
 
-            function handlePackageSelection() {
-                packageCards.forEach(c => c.classList.remove('selected'));
-                this.classList.add('selected');
+    const extraInitData = (cb, idx) => {
+        const id = (cb.value && !isNaN(Number(cb.value))) ? Number(cb.value) : (cb.dataset.id ? (isNaN(Number(cb.dataset.id)) ? cb.dataset.id : Number(cb.dataset.id)) : `extra-${idx}`);
+        const name = cb.dataset.name || cb.dataset.label || (cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : `Extra ${id}`);
+        const dataPrice = parsePrice(cb.dataset.price);
+        const related = findRelated(cb);
+        let unit = dataPrice;
+        if (related.priceInput) unit = parsePrice(related.priceInput.value || related.priceInput.getAttribute('value') || unit);
+        let qty = 1;
+        if (related.qty) {
+            const qv = parseInt(related.qty.value || related.qty.getAttribute('value') || '1', 10);
+            qty = isNaN(qv) || qv < 1 ? 1 : qv;
+        }
+        return { id, name, unitPrice: Number(unit)||0, qty: Number(qty)||1, totalPrice: (Number(unit)||0) * (Number(qty)||1), related };
+    };
 
-                selectedPackage = {
-                    id: this.dataset.package,
-                    name: this.querySelector('.package-title').textContent,
-                    price: parseInt(this.dataset.price, 10) || 0,
-                    maxBackgrounds: parseInt(this.dataset.backgrounds, 10) || 0
+    function updateExtrasState(cb, idx) {
+        const d = extraInitData(cb, idx);
+        if (cb.checked) {
+            const exist = selectedExtras.find(x => String(x.id) === String(d.id));
+            if (exist) { exist.unitPrice = d.unitPrice; exist.qty = d.qty; exist.totalPrice = d.totalPrice; }
+            else selectedExtras.push({ id:d.id, name:d.name, unitPrice:d.unitPrice, qty:d.qty, totalPrice:d.totalPrice });
+        } else {
+            selectedExtras = selectedExtras.filter(x => String(x.id) !== String(d.id));
+        }
+        if (d.related && d.related.subtotalEl) d.related.subtotalEl.textContent = formatPrice(d.totalPrice);
+        updateTotalPrice();
+    }
+
+    function updateExtrasOnInput(cb, idx) {
+        if (!cb.checked) return;
+        const d = extraInitData(cb, idx);
+        const exist = selectedExtras.find(x => String(x.id) === String(d.id));
+        if (exist) { exist.unitPrice = d.unitPrice; exist.qty = d.qty; exist.totalPrice = d.totalPrice; }
+        else selectedExtras.push({ id:d.id, name:d.name, unitPrice:d.unitPrice, qty:d.qty, totalPrice:d.totalPrice });
+        if (d.related && d.related.subtotalEl) d.related.subtotalEl.textContent = formatPrice(d.totalPrice);
+        updateTotalPrice();
+    }
+
+    extraCheckboxes.forEach((cb, idx) => {
+        // initial if checked
+        const init = extraInitData(cb, idx);
+        if (cb.checked) selectedExtras.push({ id:init.id, name:init.name, unitPrice:init.unitPrice, qty:init.qty, totalPrice:init.totalPrice });
+        // change handler
+        cb.addEventListener('change', () => updateExtrasState(cb, idx));
+        // wire qty/price inputs if present
+        const rel = findRelated(cb);
+        if (rel.qty) {
+            rel.qty.addEventListener('input', () => { rel.qty.value = rel.qty.value.replace(/[^\d]/g,'') || '1'; updateExtrasOnInput(cb, idx); });
+            rel.qty.addEventListener('blur', () => { if (!rel.qty.value || Number(rel.qty.value) < 1) rel.qty.value = '1'; updateExtrasOnInput(cb, idx); });
+        }
+        if (rel.priceInput) {
+            rel.priceInput.addEventListener('input', () => updateExtrasOnInput(cb, idx));
+            rel.priceInput.addEventListener('blur', () => updateExtrasOnInput(cb, idx));
+        }
+        if (init.related && init.related.subtotalEl) init.related.subtotalEl.textContent = formatPrice(init.totalPrice);
+    });
+
+    // ----------------------
+    // Price total
+    // ----------------------
+    function updateTotalPrice() {
+        const extrasTotal = selectedExtras.reduce((s,e) => s + (Number(e.totalPrice) || (Number(e.unitPrice||0) * Number(e.qty||1))), 0);
+        const total = (Number(basePrice) || 0) + extrasTotal;
+        if (totalPriceElement) {
+            totalPriceElement.classList.add('updating');
+            setTimeout(()=> totalPriceElement.classList.remove('updating'), 220);
+            totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
+            totalPriceElement.setAttribute('data-total', String(total));
+            totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
+        }
+    }
+
+    // ----------------------
+    // Validation helpers
+    // ----------------------
+    const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
+    formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
+    function validateField(e){
+        const field = e.target;
+        if (!field) return true;
+        const name = field.name;
+        const val = (field.value || '').toString().trim();
+        const errEl = document.getElementById(`${name}-error`);
+        let msg = '';
+        if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
+        else if ((name === 'phone' || name === 'whatsapp_number') && val && !/^\+?[\d]{9,15}$/.test(val.replace(/\s+/g,''))) msg = 'Nomor WhatsApp tidak valid';
+        else if (name === 'date' && val) {
+            const ch = new Date(val);
+            const t = new Date(); t.setHours(0,0,0,0);
+            if (isNaN(ch.getTime()) || ch < t) msg = 'Tanggal tidak boleh di masa lalu';
+        }
+        if (errEl) { errEl.textContent = msg; field.setAttribute('aria-invalid', msg ? 'true' : 'false'); field.style.borderColor = msg ? '#ef4444' : ''; }
+        return !msg;
+    }
+    function clearFieldError(e) { const f = e.target; const el = document.getElementById(`${f.name}-error`); if (el) { el.textContent=''; f.setAttribute('aria-invalid','false'); f.style.borderColor=''; } }
+
+    // ----------------------
+    // Terms modal handlers
+    // ----------------------
+    function showTermsModal(){ if (!termsModal) return; termsModal.classList.add('show'); document.body.style.overflow='hidden'; if (termsCheckbox) termsCheckbox.checked=false; updateTermsButton(); }
+    function hideTermsModal(){ if (!termsModal) return; termsModal.classList.remove('show'); document.body.style.overflow=''; if (submitBtn) submitBtn.focus(); }
+    function updateTermsButton(){ if (!termsSubmitBtn || !termsCheckbox) return; termsSubmitBtn.disabled = !termsCheckbox.checked; termsCheckbox.checked ? termsSubmitBtn.classList.add('enabled') : termsSubmitBtn.classList.remove('enabled'); }
+    if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsButton);
+    if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
+    if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
+    if (termsModal) termsModal.addEventListener('click', (e)=> { if (e.target === termsModal) hideTermsModal(); });
+    document.addEventListener('keydown', (e)=> { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
+
+    // ----------------------
+    // Submit flow -> send to /booking (payment)
+    // ----------------------
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            if (isFormSubmitting) return;
+
+            // quick checks
+            if (!selectedPackage) { showNotification('Silakan pilih paket terlebih dahulu','error'); if (packageCards[0]) packageCards[0].focus(); return; }
+            if (selectedBackgrounds.length === 0) { showNotification('Silakan pilih minimal 1 background','error'); if (backgroundSection) backgroundSection.scrollIntoView({behavior:'smooth', block:'center'}); return; }
+
+            let hasErr = false;
+            formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErr = true; });
+            if (hasErr) { showNotification('Mohon perbaiki kesalahan pada form','error'); return; }
+
+            // show terms
+            showTermsModal();
+        });
+    }
+
+    // Terms submit sends final payload
+    if (termsSubmitBtn) {
+        termsSubmitBtn.addEventListener('click', async function () {
+            if (!(termsCheckbox && termsCheckbox.checked)) return;
+            hideTermsModal();
+            isFormSubmitting = true;
+            setSubmitLoading(true);
+
+            try {
+                if (!bookingForm) throw new Error('Form tidak ditemukan');
+                const fd = new FormData(bookingForm);
+                const payload = {
+                    contact_name: fd.get('contactName') || fd.get('contact_name') || '',
+                    whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
+                    booking_date: fd.get('date') || '',
+                    booking_time: fd.get('time') || '',
+                    session_name: 'prewed',
+                    package_name: selectedPackage ? selectedPackage.name : '',
+                    package_id: selectedPackage ? selectedPackage.id : '',
+                    package_price: Number(selectedPackage ? selectedPackage.price : basePrice),
+                    selected_backgrounds: selectedBackgrounds.map(b => b.id), // ids only
+                    selected_extra_items: selectedExtras.map(e => e.id),     // ids only
+                    total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (basePrice + selectedExtras.reduce((s,i)=>s + (i.totalPrice || i.unitPrice * i.qty || 0),0))),
+                    notes: fd.get('notes') || null,
+                    status: 'waiting_payment'
                 };
-                basePrice = selectedPackage.price;
-                selectedBackgrounds = [];
-                backgroundOptions.forEach(o => {
-                    o.classList.remove('selected');
-                    o.setAttribute('aria-selected', 'false');
-                    o.style.opacity = '';
-                    o.style.pointerEvents = '';
+
+                const resp = await fetch('/booking', {
+                    method:'POST',
+                    headers:{
+                        'Content-Type':'application/json',
+                        'Accept':'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                    },
+                    body: JSON.stringify(payload)
                 });
 
-                updateBackgroundAvailability(selectedPackage.id);
-                updateTotalPrice();
-            }
+                let body = {};
+                try { body = await resp.json(); } catch (jerr) { try { body = { __raw: await resp.text() }; } catch(e){ body = { __err: String(e) }; } }
 
-            function updateBackgroundAvailability(packageId) {
-                const cfg = packageBackgrounds[packageId];
-                if (!cfg) return;
-                maxBackgrounds = cfg.maxBackgrounds;
-                backgroundSection.classList.remove('disabled');
-                packageNotice && packageNotice.classList.add('hidden');
-
-                backgroundOptions.forEach(option => {
-                    const id = option.dataset.background;
-                    if (cfg.availableBackgrounds.includes(id)) {
-                        option.classList.remove('disabled');
-                        option.setAttribute('tabindex', '0');
-                        option.setAttribute('aria-disabled', 'false');
+                if (resp.ok) {
+                    if (body.redirect_url) {
+                        showNotification('Berhasil. Mengarahkan ke pembayaran...','info');
+                        setTimeout(()=> window.location.href = body.redirect_url, 400);
+                        return;
                     } else {
-                        option.classList.add('disabled');
-                        option.setAttribute('tabindex', '-1');
-                        option.setAttribute('aria-disabled', 'true');
-                    }
-                });
-                updateBackgroundCounter();
-            }
-
-            backgroundOptions.forEach(option => {
-                option.addEventListener('click', function () {
-                    if (this.classList.contains('disabled')) {
-                        showNotification('Background ini tidak tersedia untuk paket yang dipilih', 'error');
+                        showNotification(body.message || 'Pesanan dibuat. Lanjutkan ke pembayaran.','info');
+                        setTimeout(()=> window.location.href = body.redirect_url || '/', 400);
                         return;
                     }
-                    const id = this.dataset.background;
-                    const name = this.dataset.name;
-                    const already = selectedBackgrounds.find(b => String(b.id) === String(id));
-                    if (already) {
-                        // unselect
-                        selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
-                        this.classList.remove('selected');
-                        this.setAttribute('aria-selected', 'false');
-                    } else {
-                        if (selectedBackgrounds.length >= maxBackgrounds) {
-                            showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`, 'error');
-                            return;
-                        }
-                        selectedBackgrounds.push({ id: id, name: name });
-                        this.classList.add('selected');
-                        this.setAttribute('aria-selected', 'true');
-                    }
-                    updateBackgroundCounter();
-                });
-            });
-
-            function updateBackgroundCounter() {
-                const selectedCount = selectedBackgrounds.length;
-                backgroundCounter.textContent = `${selectedCount}/${maxBackgrounds} dipilih`;
-                if (selectedCount >= maxBackgrounds) {
-                    backgroundOptions.forEach(option => {
-                        if (!option.classList.contains('selected') && !option.classList.contains('disabled')) {
-                            option.style.opacity = '0.3';
-                            option.style.pointerEvents = 'none';
-                        }
-                    });
                 } else {
-                    backgroundOptions.forEach(option => {
-                        if (!option.classList.contains('disabled')) {
-                            option.style.opacity = '';
-                            option.style.pointerEvents = '';
+                    if (resp.status === 409) { showNotification(body.message || 'Slot sudah diambil','error'); return; }
+                    if (resp.status === 422) {
+                        showNotification('Mohon perbaiki kesalahan pada form.','error');
+                        if (body.errors && typeof body.errors === 'object') {
+                            Object.keys(body.errors).forEach(k => {
+                                const el = document.getElementById(`${k}-error`);
+                                if (el) el.textContent = Array.isArray(body.errors[k]) ? body.errors[k].join(', ') : body.errors[k];
+                            });
                         }
-                    });
-                }
-            }
-
-            /* -------------------------
-               Extras
-            ------------------------- */
-            extraCheckboxes.forEach(cb => {
-                cb.addEventListener('change', function () {
-                    const item = {
-                        id: parseInt(this.value, 10),  // ✅ sekarang dapat ID
-                        name: this.dataset.name,
-                        price: parseInt(this.dataset.price || 0, 10) || 0
-                    };
-                    if (this.checked) {
-                        selectedExtras.push(item);
-                    } else {
-                        selectedExtras = selectedExtras.filter(x => x.id !== item.id);
+                        const first = document.querySelector('[aria-invalid="true"]');
+                        if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
+                        console.error('Validation errors:', body.errors || body);
+                        return;
                     }
-                    updateTotalPrice();
-                });
-            });
-
-            function updateTotalPrice() {
-                const extrasTotal = selectedExtras.reduce((s, i) => s + (i.price || 0), 0);
-                const total = (basePrice || 0) + extrasTotal;
-                totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
-                totalPriceElement.setAttribute('data-total', total);
-            }
-
-            function formatPrice(price) {
-                return `Rp${Number(price).toLocaleString('id-ID')}`;
-            }
-
-            /* -------------------------
-               Validation helpers
-            ------------------------- */
-            const inputsToValidate = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
-
-            inputsToValidate.forEach(i => {
-                i.addEventListener('blur', validateField);
-                i.addEventListener('input', clearFieldError);
-            });
-
-            function validateField(e) {
-                const field = e.target;
-                const name = field.name;
-                const val = (field.value || '').toString().trim();
-                const errEl = document.getElementById(`${name}-error`);
-                let msg = '';
-
-                if (field.hasAttribute('required') && !val) {
-                    msg = 'Field ini wajib diisi';
-                } else if (name === 'whatsapp_number' && val && !isValidPhone(val)) {
-                    msg = 'Nomor WhatsApp tidak valid';
-                } else if (name === 'booking_date' && val && new Date(val) < new Date().setHours(0, 0, 0, 0)) {
-                    msg = 'Tanggal tidak boleh di masa lalu';
-                }
-
-                if (errEl) {
-                    errEl.textContent = msg;
-                    field.setAttribute('aria-invalid', msg ? 'true' : 'false');
-                    field.style.borderColor = msg ? '#ef4444' : '';
-                }
-                return !msg;
-            }
-
-            function clearFieldError(e) {
-                const field = e.target;
-                const errEl = document.getElementById(`${field.name}-error`);
-                if (errEl) {
-                    errEl.textContent = '';
-                    field.setAttribute('aria-invalid', 'false');
-                    field.style.borderColor = '';
-                }
-            }
-
-            function isValidPhone(phone) {
-                const s = (phone || '').trim();
-                return /^\+?\d{9,15}$/.test(s.replace(/\s+/g, ''));
-            }
-
-            /* -------------------------
-               Terms modal
-            ------------------------- */
-            function showTermsModal() {
-                termsModal.classList.add('show');
-                document.body.style.overflow = 'hidden';
-                termsCheckbox.checked = false;
-                updateTermsSubmit();
-            }
-            function hideTermsModal() {
-                termsModal.classList.remove('show');
-                document.body.style.overflow = '';
-            }
-            function updateTermsSubmit() {
-                if (termsCheckbox.checked) {
-                    termsSubmitBtn.disabled = false;
-                } else {
-                    termsSubmitBtn.disabled = true;
-                }
-            }
-            termsModalClose && termsModalClose.addEventListener('click', hideTermsModal);
-            termsCancelBtn && termsCancelBtn.addEventListener('click', hideTermsModal);
-            termsCheckbox && termsCheckbox.addEventListener('change', updateTermsSubmit);
-
-            /* -------------------------
-               Submit flow
-            ------------------------- */
-            bookingForm.addEventListener('submit', function (ev) {
-                ev.preventDefault();
-                if (isFormSubmitting) return;
-
-                // quick validation client-side
-                if (!selectedPackage) {
-                    showNotification('Silakan pilih paket terlebih dahulu', 'error');
-                    return;
-                }
-                if (selectedBackgrounds.length === 0) {
-                    showNotification('Silakan pilih minimal 1 background', 'error');
+                    const serverMsg = body.message || body.__raw || `Server error ${resp.status}`;
+                    showNotification(String(serverMsg).substring(0,200), 'error');
+                    console.error('Booking API error:', { status: resp.status, body });
                     return;
                 }
 
-                // run field validators
-                let hasErrors = false;
-                inputsToValidate.forEach(i => {
-                    const ok = validateField({ target: i });
-                    if (!ok) hasErrors = true;
-                });
-                if (hasErrors) {
-                    showNotification('Mohon perbaiki kesalahan pada form', 'error');
-                    return;
-                }
-
-                // show terms modal
-                showTermsModal();
-            });
-
-            // Terms submit action: final HTTP POST
-            termsSubmitBtn && termsSubmitBtn.addEventListener('click', async function () {
-                if (!termsCheckbox.checked) return;
-                hideTermsModal();
-
-                isFormSubmitting = true;
-                setLoading(true);
-
-                try {
-                    const fd = new FormData(bookingForm);
-                    const rawPhone = (fd.get('whatsapp_number') || '').toString().trim();
-                    const normalizedPhone = normalizePhone(rawPhone);
-
-                    const payload = {
-                        contact_name: fd.get('contact_name'),
-                        whatsapp_number: normalizedPhone,
-                        booking_date: fd.get('booking_date'),
-                        booking_time: fd.get('booking_time'),
-                        session_name: 'prewed',
-                        package_name: selectedPackage?.name || '',
-                        selected_backgrounds: selectedBackgrounds.map(b => parseInt(b.id, 10)),
-                        selected_extra_items: selectedExtras.map(e => e.id), // ✅ sekarang kirim ID ke Laravel
-                        total_price: Number(totalPriceElement.getAttribute('data-total'))
-                            || (basePrice + selectedExtras.reduce((s, i) => s + (i.price || 0), 0)),
-                        notes: fd.get('notes') || null,
-                        status: 'waiting_payment'
-                    };
-
-                    const resp = await fetch('/booking', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '',
-                            'Accept': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const result = await resp.json().catch(() => ({}));
-                    if (resp.ok) {
-                        window.location.href = result.redirect_url || '/homepage';
-                    } else {
-                        const msg = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
-                        showNotification(msg, 'error');
-                    }
-
-                } catch (err) {
-                    console.error(err);
-                    showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-                } finally {
-                    isFormSubmitting = false;
-                    setLoading(false);
-                }
-            });
-
-
-            if (resp.status === 409) {
-                showNotification(result.message || 'Slot sudah diambil', 'error');
-                return;
+            } catch (err) {
+                console.error('Form submission error:', err);
+                showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+            } finally {
+                isFormSubmitting = false;
+                setSubmitLoading(false);
             }
+        });
+    }
 
+    function setSubmitLoading(on) {
+        const btnContent = document.getElementById('btnContent');
+        const btnLoading = document.getElementById('btnLoading');
+        if (!submitBtn) return;
+        if (on) {
+            submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy','true');
+            if (btnContent) btnContent.style.display='none';
+            if (btnLoading) btnLoading.style.display='flex';
+        } else {
+            submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy','false');
+            if (btnLoading) btnLoading.style.display='none';
+            if (btnContent) btnContent.style.display='flex';
+        }
+    }
 
-            function normalizePhone(raw) {
-                let s = (raw || '').toString().trim();
-                s = s.replace(/[^\d+]/g, ''); // keep digits and plus
-                if (s.startsWith('+')) return s;
-                if (s.startsWith('62')) return '+' + s;
-                if (s.startsWith('0')) return '+62' + s.slice(1);
-                // fallback presume local number without 0
-                return '+62' + s;
-            }
-
-            function setLoading(on) {
-                const btnContent = document.getElementById('btnContent');
-                const btnLoading = document.getElementById('btnLoading');
-                if (on) {
-                    submitBtn.disabled = true; btnContent.style.display = 'none'; btnLoading.style.display = 'flex';
-                } else {
-                    submitBtn.disabled = false; btnContent.style.display = 'flex'; btnLoading.style.display = 'none';
-                }
-            }
-
-            /* -------------------------
-               Small utilities
-            ------------------------- */
-            function showNotification(message, type = 'info') {
-                const n = document.createElement('div');
-                n.className = `notification notification-${type}`;
-                n.textContent = message;
-                n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: rgba(0,0,0,0.85); color: #fff; padding: .75rem 1rem; border-radius: .5rem; z-index: 9999;`;
-                document.body.appendChild(n);
-                setTimeout(() => n.remove(), 4000);
-            }
-
-            // init price UI
+    // success/reset utilities
+    function showSuccessMessage() { if (!successMessage) return; successMessage.classList.add('show'); successMessage.focus(); setTimeout(()=> successMessage.classList.remove('show'), 8000); }
+    function resetForm() {
+        try {
+            if (!bookingForm) return;
+            bookingForm.reset();
+            packageCards.forEach(c=>{ c.classList.remove('selected'); c.setAttribute('aria-selected','false'); });
+            backgroundOptions.forEach(o=>{ o.classList.remove('selected','disabled'); o.setAttribute('aria-selected','false'); o.style.opacity=''; o.style.pointerEvents=''; });
+            extraCheckboxes.forEach(cb=>cb.checked=false);
+            selectedExtras = []; selectedBackgrounds = []; selectedPackage = null; basePrice = 0; maxBackgrounds = 0;
+            if (backgroundSection) backgroundSection.classList.add('disabled');
+            if (packageNotice) packageNotice.classList.remove('hidden');
+            if (backgroundCounter) { backgroundCounter.textContent='0/0 dipilih'; backgroundCounter.classList.remove('warning'); }
             updateTotalPrice();
+        } catch(e) { console.warn('reset error', e); }
+    }
 
-        }); // DOMContentLoaded
-    </script>
+    // init
+    (function init() {
+        if (dateInput) dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
+        updateTotalPrice();
+        console.log('✨ Prewed booking script initialized (stable).');
+    })();
+
+    // expose for debug
+    window.prewed = {
+        fetchAvailableTimes,
+        resetForm,
+        getSelectedExtras: ()=> selectedExtras.map(e=> ({...e})),
+        getSelectedBackgrounds: ()=> selectedBackgrounds.map(b=> ({...b}))
+    };
+
+})(); // IIFE
+</script>
 @endpush

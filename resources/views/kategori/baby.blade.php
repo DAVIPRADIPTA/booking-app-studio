@@ -1540,313 +1540,251 @@
     </div>
 @endsection
 @push('scripts')
-    <script>
-        // ========================
-        // STATE MANAGEMENT (GLOBAL)
-        // ========================
-        // Karena hanya satu sesi, kita hardcode
-        const sessionData = {
-            session_name: 'baby-smash-cake',
-            package_name: 'Baby Smash Cake',
-            base_price: 550000
-        };
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // ========================
+    // CONFIG / STATE
+    // ========================
+    const sessionData = {
+        session_name: 'baby-smash-cake',
+        package_name: 'Baby Smash Cake',
+        base_price: 550000
+    };
 
-        let selectedExtras = [];
-        let isFormSubmitting = false;
+    let selectedExtras = []; // [{id, name, price}]
+    let isFormSubmitting = false;
 
-        // DOM Elements
-        const bookingForm = document.getElementById('bookingForm');
-        const termsModal = document.getElementById('termsModal');
-        const termsCheckbox = document.getElementById('termsCheckbox');
-        const termsSubmitBtn = document.getElementById('termsSubmitBtn');
-        const termsCancelBtn = document.getElementById('termsCancelBtn');
-        const termsModalClose = document.getElementById('termsModalClose');
-        const submitBtn = document.getElementById('submitBtn');
-        const successMessage = document.getElementById('successMessage');
-        const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
-        const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
-        const totalPriceElement = document.getElementById('totalPrice');
+    // DOM
+    const bookingForm = document.getElementById('bookingForm');
+    const dateInput = document.getElementById('date');
+    const timeSelect = document.getElementById('time');
+    const timeInfoBox = document.getElementById('time-availability-info');
+    const availabilityMessage = document.getElementById('availability-message');
+    const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+    const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
+    const totalPriceElement = document.getElementById('totalPrice');
+    const termsModal = document.getElementById('termsModal');
+    const termsCheckbox = document.getElementById('termsCheckbox');
+    const termsSubmitBtn = document.getElementById('termsSubmitBtn');
+    const termsCancelBtn = document.getElementById('termsCancelBtn');
+    const termsModalClose = document.getElementById('termsModalClose');
+    const submitBtn = document.getElementById('submitBtn');
+    const successMessage = document.getElementById('successMessage');
+    const btnContent = document.getElementById('btnContent');
+    const btnLoading = document.getElementById('btnLoading');
 
-        // ========================
-        // HELPER FUNCTIONS
-        // ========================
-        function formatPrice(price) {
-            return 'Rp' + price.toLocaleString('id-ID');
-        }
+    // ========================
+    // HELPERS
+    // ========================
+    function formatPrice(price) {
+        if (typeof price !== 'number') price = Number(price) || 0;
+        return 'Rp' + price.toLocaleString('id-ID');
+    }
 
-        function formatPhoneNumber(number) {
-            if (!number) return '';
-            const cleaned = number.replace(/\D/g, '');
-            if (cleaned.startsWith('0')) {
-                return '62' + cleaned.substring(1);
-            } else if (cleaned.startsWith('62')) {
-                return cleaned;
+    function normalizePhone(raw) {
+        if (!raw) return '';
+        let s = String(raw).trim();
+        s = s.replace(/[^\d+]/g, '');
+        if (s.startsWith('+')) return s;
+        if (s.startsWith('62')) return '+' + s;
+        if (s.startsWith('0')) return '+62' + s.slice(1);
+        return '+62' + s;
+    }
+
+    function isValidPhone(raw) {
+        if (!raw) return false;
+        const s = String(raw).trim().replace(/\s+/g, '').replace(/^\+/, '');
+        return /^(62)?8[1-9][0-9]{6,11}$/.test(s);
+    }
+
+    function showNotification(message, type = 'error') {
+        const n = document.createElement('div');
+        n.className = `notification notification-${type}`;
+        n.textContent = message;
+        const bg = type === 'error' ? 'rgba(239,68,68,0.95)' : (type === 'warning' ? 'rgba(245,158,11,0.95)' : 'rgba(59,130,246,0.95)');
+        n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: ${bg}; color:#fff; padding:.75rem 1rem; border-radius:.5rem; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,0.2);`;
+        document.body.appendChild(n);
+        setTimeout(() => {
+            n.style.transition = 'opacity .2s, transform .2s';
+            n.style.opacity = '0';
+            n.style.transform = 'translateX(8px)';
+            setTimeout(() => { if (document.body.contains(n)) n.remove(); }, 220);
+        }, 3500);
+    }
+
+    function showSuccessMessageLocal() {
+        if (!successMessage) return;
+        successMessage.classList.add('show');
+        successMessage.focus();
+        setTimeout(() => successMessage.classList.remove('show'), 8000);
+    }
+
+    // ========================
+    // EXTRAS
+    // ========================
+    // expects each .extra-checkbox to have value (id) OR data-id, data-name, data-price
+    extraCheckboxes.forEach((cb, idx) => {
+        cb.addEventListener('change', function () {
+            const idCandidate = this.value ? (isNaN(Number(this.value)) ? null : Number(this.value)) : (this.dataset.id ? Number(this.dataset.id) : null);
+            const id = Number.isFinite(idCandidate) ? idCandidate : `extra-${idx}`;
+            const price = parseInt(this.dataset.price || '0', 10) || 0;
+            const name = this.dataset.name || `Extra ${id}`;
+
+            if (this.checked) {
+                if (!selectedExtras.find(x => x.id === id)) selectedExtras.push({ id, name, price });
             } else {
-                return '62' + cleaned;
+                selectedExtras = selectedExtras.filter(x => x.id !== id);
             }
-        }
-
-        function isValidPhone(phone) {
-            const cleaned = phone.replace(/\D/g, '');
-            return /^(62|0)8[1-9][0-9]{6,11}$/.test(cleaned);
-        }
-
-        function showNotification(message, type = 'error') {
-            const notification = document.createElement('div');
-            notification.className = `notification notification-${type}`;
-            notification.textContent = message;
-            notification.style.cssText = `
-                        position: fixed; top: 2rem; right: 2rem; 
-                        background: ${type === 'error' ? 'rgba(239, 68, 68, 0.9)' : 'rgba(255, 182, 193, 0.9)'}; 
-                        color: white; padding: 1rem 1.5rem; border-radius: 0.75rem;
-                        backdrop-filter: blur(10px); z-index: 1000; font-weight: 500;
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                        animation: slideInRight 0.3s ease-out;
-                    `;
-            document.body.appendChild(notification);
-            setTimeout(() => {
-                notification.style.animation = 'slideOutRight 0.3s ease-in forwards';
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 300);
-            }, 4000);
-        }
-
-        function showSuccessMessage() {
-            successMessage.classList.add('show');
-            successMessage.focus();
-            setTimeout(() => {
-                successMessage.classList.remove('show');
-            }, 8000);
-        }
-
-        function resetForm() {
-            setTimeout(() => {
-                bookingForm.reset();
-                extraCheckboxes.forEach(c => c.checked = false);
-                selectedExtras = [];
-                updateTotalPrice();
-            }, 3000);
-        }
-
-        // ========================
-        // VALIDATION
-        // ========================
-        function validateField(e) {
-            const field = e.target;
-            const fieldName = field.name;
-            const value = field.value.trim();
-            const errorElement = document.getElementById(`${fieldName}-error`);
-            let errorMessage = '';
-
-            if (field.hasAttribute('required') && !value) {
-                errorMessage = 'Field ini wajib diisi';
-            } else if (fieldName === 'phone' && value && !isValidPhone(value)) {
-                errorMessage = 'Nomor WhatsApp tidak valid';
-            } else if (fieldName === 'date' && value) {
-                const selectedDate = new Date(value);
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                if (selectedDate < today) {
-                    errorMessage = 'Tanggal tidak boleh di masa lalu';
-                }
-            }
-
-            if (errorMessage && errorElement) {
-                errorElement.textContent = errorMessage;
-                field.style.borderColor = '#ef4444';
-                field.setAttribute('aria-invalid', 'true');
-            } else if (errorElement) {
-                errorElement.textContent = '';
-                field.style.borderColor = '';
-                field.setAttribute('aria-invalid', 'false');
-            }
-        }
-
-        function clearFieldError(e) {
-            const field = e.target;
-            const errorElement = document.getElementById(`${field.name}-error`);
-            if (errorElement) {
-                errorElement.textContent = '';
-                field.style.borderColor = '';
-                field.setAttribute('aria-invalid', 'false');
-            }
-        }
-
-        // ========================
-        // EXTRA ITEMS SELECTION
-        // ========================
-        extraCheckboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', function () {
-                const extraItem = {
-                    name: this.dataset.name,
-                    price: parseInt(this.dataset.price)
-                };
-
-                if (this.checked) {
-                    selectedExtras.push(extraItem);
-                } else {
-                    selectedExtras = selectedExtras.filter(item => item.name !== extraItem.name);
-                }
-                updateTotalPrice();
-            });
-        });
-
-        // ========================
-        // UPDATE TOTAL PRICE
-        // ========================
-        function updateTotalPrice() {
-            const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
-            const totalPrice = sessionData.base_price + extrasTotal;
-            if (totalPriceElement) {
-                totalPriceElement.textContent = `Total: ${formatPrice(totalPrice)}`;
-            }
-        }
-
-        // ========================
-        // REAL-TIME TIME AVAILABILITY
-        // ========================
-        async function fetchAvailableTimes() {
-            const dateInput = document.getElementById('date');
-            const timeSelect = document.getElementById('time');
-            const infoBox = document.getElementById('time-availability-info');
-            const messageSpan = document.getElementById('availability-message');
-
-            const selectedDate = dateInput.value;
-
-            if (!selectedDate) return;
-
-            // Reset
-            timeSelect.disabled = true;
-            timeSelect.innerHTML = '<option value="">Memuat...</option>';
-            infoBox.classList.add('hidden');
-            infoBox.classList.remove('show', 'available', 'limited', 'full');
-
-            try {
-                const response = await fetch(`/api/available-times?booking_date=${selectedDate}`);
-                const data = await response.json();
-
-                // Kosongkan dropdown
-                timeSelect.innerHTML = '';
-
-                if (data.status === 'full') {
-                    // Tidak ada slot
-                    const option = document.createElement('option');
-                    option.value = '';
-                    option.textContent = 'Hari ini full booked';
-                    option.disabled = true;
-                    timeSelect.appendChild(option);
-                    timeSelect.disabled = true;
-
-                    messageSpan.textContent = '❌ Maaf, semua slot sudah penuh di tanggal ini. Silakan pilih tanggal lain.';
-                    infoBox.classList.add('full');
-                } else {
-                    // Tampilkan waktu yang tersedia
-                    data.available_times.forEach(time => {
-                        const option = document.createElement('option');
-                        option.value = time;
-                        option.textContent = `${time} WIB`;
-                        timeSelect.appendChild(option);
-                    });
-                    timeSelect.disabled = false;
-
-                    if (data.status === 'limited') {
-                        messageSpan.textContent = `⚠️ Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                        infoBox.classList.add('limited');
-                    } else {
-                        messageSpan.textContent = `Masih ada ${data.available_times.length} slot ( sesi waktu ) yang tersedia.`;
-                        infoBox.classList.add('available');
-                    }
-                }
-
-                // Tampilkan notifikasi dengan animasi
-                infoBox.classList.remove('hidden');
-                setTimeout(() => infoBox.classList.add('show'), 50);
-
-            } catch (error) {
-                console.error('Gagal memuat ketersediaan waktu:', error);
-                timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-                timeSelect.disabled = true;
-            }
-        }
-
-        // ========================
-        // FORM SUBMISSION
-        // ========================
-        document.addEventListener('DOMContentLoaded', function () {
-            // Set today as min date
-            const today = new Date().toISOString().split('T')[0];
-            const dateInput = document.getElementById('date');
-            if (dateInput) {
-                dateInput.min = today;
-            }
-
-            // Validasi input
-            formInputs.forEach(input => {
-                input.addEventListener('blur', validateField);
-                input.addEventListener('input', clearFieldError);
-            });
-
-            // Cek ketersediaan waktu saat tanggal berubah
-            if (dateInput) {
-                dateInput.addEventListener('change', fetchAvailableTimes);
-                if (dateInput.value) fetchAvailableTimes();
-            }
-
-            // Update total price awal
             updateTotalPrice();
         });
+    });
 
-        // Terms Modal
-        function showTermsModal() {
-            termsModal.classList.add('show');
-            document.body.style.overflow = 'hidden';
-            termsModal.focus();
+    function updateTotalPrice() {
+        const extrasTotal = selectedExtras.reduce((s, i) => s + (i.price || 0), 0);
+        const total = (sessionData.base_price || 0) + extrasTotal;
+        if (totalPriceElement) {
+            totalPriceElement.textContent = `Total: ${formatPrice(total)}`;
+            totalPriceElement.setAttribute('data-total', String(total));
+            totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
+        }
+    }
+
+    // ========================
+    // VALIDATION
+    // ========================
+    function validateField(e) {
+        const field = e && e.target ? e.target : e;
+        if (!field) return true;
+        const name = field.name;
+        const val = (field.value || '').toString().trim();
+        const errEl = document.getElementById(`${name}-error`);
+        let msg = '';
+
+        if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
+        else if ((name === 'phone' || name === 'whatsapp_number') && val && !isValidPhone(val)) msg = 'Nomor WhatsApp tidak valid';
+        else if (name === 'date' && val) {
+            const chosen = new Date(val);
+            const today = new Date(); today.setHours(0,0,0,0);
+            if (isNaN(chosen.getTime()) || chosen < today) msg = 'Tanggal tidak boleh di masa lalu';
         }
 
-        function hideTermsModal() {
-            termsModal.classList.remove('show');
-            document.body.style.overflow = '';
-            submitBtn.focus();
+        if (errEl) {
+            errEl.textContent = msg;
+            field.setAttribute('aria-invalid', msg ? 'true' : 'false');
+            field.style.borderColor = msg ? '#ef4444' : '';
+        } else if (msg) {
+            showNotification(msg, 'error');
         }
+        return !msg;
+    }
+    function clearFieldError(e) {
+        const field = e && e.target ? e.target : e;
+        if (!field) return;
+        const errEl = document.getElementById(`${field.name}-error`);
+        if (errEl) {
+            errEl.textContent = '';
+            field.setAttribute('aria-invalid', 'false');
+            field.style.borderColor = '';
+        }
+    }
 
-        function updateTermsSubmitButton() {
-            if (termsCheckbox.checked) {
-                termsSubmitBtn.classList.add('enabled');
-                termsSubmitBtn.disabled = false;
+    // attach validators
+    formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
+
+    // ========================
+    // REAL-TIME TIME AVAILABILITY
+    // ========================
+    async function fetchAvailableTimes() {
+        if (!dateInput || !timeSelect) return;
+        const selectedDate = (dateInput.value || '').toString().trim();
+        if (!selectedDate) return;
+
+        timeSelect.disabled = true;
+        timeSelect.innerHTML = '<option value="">Memuat...</option>';
+        if (timeInfoBox) { timeInfoBox.classList.add('hidden'); timeInfoBox.classList.remove('available','limited','full'); }
+
+        try {
+            const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers: { 'Accept': 'application/json' }});
+            const data = await resp.json().catch(() => ({}));
+
+            timeSelect.innerHTML = '';
+
+            if (data.status === 'full') {
+                const opt = document.createElement('option'); opt.value=''; opt.textContent='Hari ini full booked'; opt.disabled = true; timeSelect.appendChild(opt); timeSelect.disabled = true;
+                if (availabilityMessage) availabilityMessage.textContent = '❌ Maaf, semua slot sudah penuh di tanggal ini. Silakan pilih tanggal lain.';
+                if (timeInfoBox) timeInfoBox.classList.add('full');
             } else {
-                termsSubmitBtn.classList.remove('enabled');
-                termsSubmitBtn.disabled = true;
+                (data.available_times || []).forEach(t => {
+                    const opt = document.createElement('option'); opt.value = t; opt.textContent = `${t} WIB`; timeSelect.appendChild(opt);
+                });
+                timeSelect.disabled = false;
+                if (data.status === 'limited') {
+                    if (availabilityMessage) availabilityMessage.textContent = `⚠️ Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                    if (timeInfoBox) timeInfoBox.classList.add('limited');
+                } else {
+                    if (availabilityMessage) availabilityMessage.textContent = `Masih ada ${data.available_times.length} slot yang tersedia.`;
+                    if (timeInfoBox) timeInfoBox.classList.add('available');
+                }
+            }
+
+            if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); setTimeout(()=>timeInfoBox.classList.add('show'),50); }
+        } catch (err) {
+            console.error('Gagal memuat ketersediaan waktu:', err);
+            timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+            timeSelect.disabled = true;
+            if (timeInfoBox && availabilityMessage) {
+                availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.';
+                timeInfoBox.classList.remove('hidden');
             }
         }
+    }
+    if (dateInput) {
+        dateInput.addEventListener('change', fetchAvailableTimes);
+        if (dateInput.value) fetchAvailableTimes();
+    }
 
-        // Event Listeners
-        termsCheckbox.addEventListener('change', updateTermsSubmitButton);
-        termsModalClose.addEventListener('click', hideTermsModal);
-        termsCancelBtn.addEventListener('click', hideTermsModal);
-        termsModal.addEventListener('click', (e) => {
-            if (e.target === termsModal) hideTermsModal();
-        });
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && termsModal.classList.contains('show')) {
-                hideTermsModal();
-            }
-        });
+    // expose for debug
+    window.fetchAvailableTimes = fetchAvailableTimes;
 
-        // Submit Form
-        bookingForm.addEventListener('submit', (e) => {
-            e.preventDefault();
+    // ========================
+    // TERMS MODAL HANDLERS
+    // ========================
+    function showTermsModal() {
+        if (!termsModal) return;
+        termsModal.classList.add('show');
+        document.body.style.overflow = 'hidden';
+        if (termsCheckbox) termsCheckbox.checked = false;
+        updateTermsSubmitButton();
+        termsModal.focus();
+    }
+    function hideTermsModal() {
+        if (!termsModal) return;
+        termsModal.classList.remove('show');
+        document.body.style.overflow = '';
+        if (submitBtn) submitBtn.focus();
+    }
+    function updateTermsSubmitButton() {
+        if (!termsSubmitBtn || !termsCheckbox) return;
+        termsSubmitBtn.disabled = !termsCheckbox.checked;
+        if (termsCheckbox.checked) termsSubmitBtn.classList.add('enabled'); else termsSubmitBtn.classList.remove('enabled');
+    }
+    if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsSubmitButton);
+    if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
+    if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
+    if (termsModal) termsModal.addEventListener('click', (e) => { if (e.target === termsModal) hideTermsModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
+
+    // ========================
+    // FORM SUBMIT -> show terms modal
+    // ========================
+    if (bookingForm) {
+        bookingForm.addEventListener('submit', function (ev) {
+            ev.preventDefault();
             if (isFormSubmitting) return;
 
+            // validate fields
             let hasErrors = false;
-            formInputs.forEach(input => {
-                validateField({ target: input });
-                if (input.getAttribute('aria-invalid') === 'true') {
-                    hasErrors = true;
-                }
-            });
+            formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErrors = true; });
 
             if (hasErrors) {
                 showNotification('Mohon perbaiki kesalahan pada form', 'error');
@@ -1855,160 +1793,189 @@
 
             showTermsModal();
         });
+    }
 
-        // Terms Submit
-        // ...existing code...
-
-        termsSubmitBtn.addEventListener('click', async () => {
-            if (!termsCheckbox.checked) return;
+    // ========================
+    // TERMS SUBMIT -> POST /booking -> redirect to payment
+    // ========================
+    if (termsSubmitBtn) {
+        termsSubmitBtn.addEventListener('click', async function () {
+            if (!(termsCheckbox && termsCheckbox.checked)) return;
 
             hideTermsModal();
             isFormSubmitting = true;
             setSubmitButtonLoading(true);
 
             try {
-                const formData = new FormData(bookingForm);
+                if (!bookingForm) throw new Error('Form tidak ditemukan');
 
-                const data = {
-                    contact_name: formData.get('contactName'),
-                    whatsapp_number: formatPhoneNumber(formData.get('phone')),
-                    booking_date: formData.get('date'),
-                    booking_time: formData.get('time'),
+                const fd = new FormData(bookingForm);
+                // prepare payload: send selected_extra_items as array of IDs (numbers)
+                const payload = {
+                    contact_name: fd.get('contactName') || fd.get('contact_name') || '',
+                    whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
+                    booking_date: fd.get('date') || '',
+                    booking_time: fd.get('time') || '',
                     session_name: sessionData.session_name,
                     package_name: sessionData.package_name,
-                    selected_backgrounds: [], // tidak ada background
-                    selected_extra_items: selectedExtras,
-                    total_price: sessionData.base_price + selectedExtras.reduce((sum, item) => sum + item.price, 0),
-                    notes: formData.get('notes'),
-                    baby_name: formData.get('babyName') || '-',
-                    baby_age: formData.get('babyAge') || null,
+                    selected_backgrounds: [], // none in baby session
+                    selected_extra_items: selectedExtras.map(e => Number(e.id)), // <-- only IDs
+                    total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (sessionData.base_price + selectedExtras.reduce((s,i)=>s+(i.price||0),0))),
+                    notes: fd.get('notes') || null,
+                    baby_name: fd.get('babyName') || '-',
+                    baby_age: fd.get('babyAge') || null,
+                    status: 'waiting_payment'
                 };
 
-                const response = await fetch('/booking', {
+                const resp = await fetch('/booking', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
                     },
-                    body: JSON.stringify(data),
+                    body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
-
-                if (response.ok && result.redirect_url) {
-                    showSuccessMessage();
-                    resetForm();
-                    setTimeout(() => {
-                        window.location.href = result.redirect_url;
-                    }, 1200); // Redirect ke halaman pembayaran
-                } else {
-                    let errorMessage = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
-                    if (response.status === 422) {
-                        errorMessage = 'Mohon perbaiki kesalahan pada form.';
-                    }
-                    showNotification(errorMessage, 'error');
-                    console.error('API Error:', result.error || result.errors);
+                // parse response robustly
+                let body = {};
+                try { body = await resp.json(); } catch (jsonErr) {
+                    try { body = { __raw_text: await resp.text() }; } catch (txtErr) { body = { __parse_error: String(txtErr) }; }
                 }
-            } catch (error) {
-                showNotification('Terjadi kesalahan: ' + error.message, 'error');
-                console.error('Form submission error:', error);
+
+                if (resp.ok) {
+                    // success: expect redirect_url
+                    if (body.redirect_url) {
+                        showSuccessMessageLocal();
+                        // optional: reset form or keep values until redirect
+                        resetLocalFormAfterSuccess();
+                        // redirect to payment
+                        window.location.href = body.redirect_url;
+                        return;
+                    } else {
+                        showNotification(body.message || 'Pesanan dibuat. Lanjutkan ke halaman pembayaran.', 'info');
+                        window.location.href = body.redirect_url || '/';
+                        return;
+                    }
+                } else {
+                    // handle known statuses
+                    if (resp.status === 409) {
+                        showNotification(body.message || 'Slot sudah diambil. Silakan pilih waktu lain.', 'error');
+                        return;
+                    }
+                    if (resp.status === 422) {
+                        showNotification('Mohon perbaiki kesalahan pada form.', 'error');
+                        // render per-field errors if available
+                        if (body.errors && typeof body.errors === 'object') {
+                            Object.keys(body.errors).forEach(key => {
+                                const el = document.getElementById(`${key}-error`);
+                                if (el) el.textContent = Array.isArray(body.errors[key]) ? body.errors[key].join(', ') : body.errors[key];
+                            });
+                        }
+                        // scroll to first invalid input
+                        const first = document.querySelector('[aria-invalid="true"]');
+                        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        return;
+                    }
+                    // for 500 or other errors show server message if any
+                    const serverMsg = body && (body.message || body.__raw_text) ? (body.message || body.__raw_text) : `Server error ${resp.status}`;
+                    showNotification(`Server error: ${typeof serverMsg === 'string' ? serverMsg.substring(0,200) : serverMsg}`, 'error');
+                    console.error('Booking API Error:', { status: resp.status, body });
+                    return;
+                }
+            } catch (err) {
+                console.error('Form submission error:', err);
+                showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
             } finally {
                 isFormSubmitting = false;
                 setSubmitButtonLoading(false);
             }
         });
+    }
 
-        // ...existing code...
+    function resetLocalFormAfterSuccess() {
+        // reset visually but allow time for UX (and avoid losing redirect data)
+        try {
+            if (bookingForm) bookingForm.reset();
+            selectedExtras = [];
+            updateTotalPrice();
+        } catch (e) { /* ignore */ }
+    }
 
-        // Loading Button
-        function setSubmitButtonLoading(loading) {
-            const btnContent = document.getElementById('btnContent');
-            const btnLoading = document.getElementById('btnLoading');
-            if (loading) {
-                submitBtn.classList.add('loading');
-                submitBtn.disabled = true;
-                submitBtn.setAttribute('aria-busy', 'true');
-                btnContent.style.opacity = '0';
-                btnContent.style.transform = 'scale(0.9)';
-                setTimeout(() => {
-                    btnContent.style.display = 'none';
-                    btnLoading.style.display = 'flex';
-                    btnLoading.classList.add('show');
-                }, 150);
-            } else {
-                submitBtn.classList.remove('loading');
-                submitBtn.disabled = false;
-                submitBtn.setAttribute('aria-busy', 'false');
-                btnLoading.classList.remove('show');
-                setTimeout(() => {
-                    btnLoading.style.display = 'none';
-                    btnContent.style.display = 'flex';
-                    btnContent.style.opacity = '1';
-                    btnContent.style.transform = 'scale(1)';
-                }, 150);
-            }
+    // ========================
+    // LOADING UI
+    // ========================
+    function setSubmitButtonLoading(loading) {
+        if (!submitBtn) return;
+        if (loading) {
+            submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy', 'true');
+            if (btnContent) btnContent.style.display = 'none';
+            if (btnLoading) btnLoading.style.display = 'flex';
+        } else {
+            submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy', 'false');
+            if (btnLoading) btnLoading.style.display = 'none';
+            if (btnContent) btnContent.style.display = 'flex';
         }
+    }
 
-        // WhatsApp Message
-        function sendWhatsAppMessage() {
-            const formData = new FormData(bookingForm);
-            const contactName = formData.get('contactName');
-            const rawPhone = formData.get('phone');
-            const phone = formatPhoneNumber(rawPhone);
-            const babyName = formData.get('babyName') || '-';
-            const ageNames = {
-                '1-year': '1 Tahun',
-                '2-years': '2 Tahun',
-                '3-years': '3 Tahun',
-                '4-years': '4 Tahun',
-                '5-years': '5 Tahun',
-                '6-years': '6 Tahun'
-            };
-            const babyAge = ageNames[formData.get('babyAge')] || '-';
-            const date = formData.get('date');
-            const timeNames = {
-                '10:00': '10.00 WIB', '11:00': '11.00 WIB', '12:00': '12.00 WIB',
-                '13:00': '13.00 WIB', '14:00': '14.00 WIB', '15:00': '15.00 WIB', '16:00': '16.00 WIB'
-            };
-            const time = timeNames[formData.get('time')] || '-';
-            const notes = formData.get('notes') || 'Tidak ada';
-            const extrasText = selectedExtras.length > 0
-                ? selectedExtras.map(item => `- ${item.name} – ${formatPrice(item.price)}`).join('\n')
-                : 'Tidak ada tambahan';
-            const totalPrice = sessionData.base_price + selectedExtras.reduce((sum, item) => sum + item.price, 0);
+    // ========================
+    // WHATSAPP fallback (exposed)
+    // ========================
+    function sendWhatsAppMessage() {
+        if (!bookingForm) return;
+        const fd = new FormData(bookingForm);
+        const name = fd.get('contactName') || '-';
+        const phone = normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || '');
+        const babyName = fd.get('babyName') || '-';
+        const babyAge = fd.get('babyAge') || '-';
+        const date = fd.get('date') || '-';
+        const time = fd.get('time') || '-';
+        const notes = fd.get('notes') || '-';
+        const extrasText = selectedExtras.length ? selectedExtras.map(e => `- ${e.name} – ${formatPrice(e.price)}`).join('\n') : 'Tidak ada tambahan';
+        const total = (sessionData.base_price || 0) + selectedExtras.reduce((s,i)=>s+(i.price||0),0);
 
-            const message = `BOOKING BABY SMASH CAKE – PEACE PICTURE STUDIO
+        const message = `BOOKING BABY SMASH CAKE – PEACE PICTURE STUDIO
 
-            Nama Kontak      : ${contactName}
-            No. WhatsApp     : +${phone}
-            Nama Bayi        : ${babyName}
-            Usia Bayi        : ${babyAge}
+Nama Kontak: ${name}
+No. WhatsApp: ${phone}
+Nama Bayi: ${babyName}
+Usia Bayi: ${babyAge}
 
-            Paket            : Baby Smash Cake
-            Harga Paket      : ${formatPrice(sessionData.base_price)}
+Paket: ${sessionData.package_name}
+Harga Paket: ${formatPrice(sessionData.base_price)}
 
-            Tanggal          : ${date}
-            Waktu            : ${time}
+Tanggal: ${date}
+Waktu: ${time}
 
-            Tambahan Item    :
-            ${extrasText}
+Tambahan Item:
+${extrasText}
 
-            Catatan Tambahan :
-            ${notes}
+Catatan:
+${notes}
 
-            Total Harga      : ${formatPrice(totalPrice)}
+Total Harga: ${formatPrice(total)}
 
-            Saya telah membaca dan menyetujui syarat & ketentuan dari Peace Picture Studio.
+Saya telah membaca dan menyetujui syarat & ketentuan.
+*Note: Kue tidak disediakan oleh studio.*`;
 
-            --------------------------------------------------
-            Terima kasih telah memilih Peace Picture Studio.
-            Kami akan segera menghubungi Anda untuk konfirmasi lebih lanjut.
+        const wa = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
+        window.open(wa, '_blank');
+    }
+    window.sendWhatsAppMessage = sendWhatsAppMessage;
 
-            *Note: Kue tidak disediakan oleh studio, mohon dibawa sendiri.*`;
-
-            const whatsappUrl = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
+    // ========================
+    // INIT
+    // ========================
+    (function init() {
+        // min date
+        if (dateInput) {
+            const today = new Date(); today.setHours(0,0,0,0);
+            dateInput.min = today.toISOString().split('T')[0];
         }
-    </script>
+        updateTotalPrice();
+        console.log('✨ Baby Smash Cake booking script initialized.');
+    })();
+
+}); // DOMContentLoaded
+</script>
 @endpush
