@@ -44,6 +44,16 @@ class Booking extends Model
         'refund_amount'             => 'decimal:2',
     ];
 
+    /**
+     * Default timeslots (ubah jika perlu)
+     *
+     * @var array
+     */
+    protected static array $defaultTimes = [
+        '10:00', '11:00', '12:00', '13:00',
+        '14:00', '15:00', '16:00'
+    ];
+
     // --- RELASI ---
     public function customer()
     {
@@ -110,25 +120,203 @@ class Booking extends Model
     }
 
     // --- ACCESSORS ---
+    /**
+     * Kembalikan selected_backgrounds sebagai array objek yang
+     * mengandung minimal ['id', 'name', 'image'] jika tersedia.
+     *
+     * @param  mixed  $value
+     * @return array
+     */
     public function getSelectedBackgroundsAttribute($value)
     {
-        $backgrounds = json_decode($value, true) ?? [];
-        return collect($backgrounds)->map(function ($bg) {
+        $raw = $value;
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = $decoded === null ? [] : $decoded;
+        }
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+
+        return collect($raw)->map(function ($bg) {
             return [
-                'name'  => $bg['name']  ?? 'Background',
+                'id'    => $bg['id']    ?? null,
+                'name'  => $bg['name']  ?? ($bg['title'] ?? 'Background'),
                 'image' => $bg['image'] ?? null,
             ];
         })->toArray();
     }
 
+    /**
+     * Kembalikan selected_extra_items sebagai array objek yang
+     * mengandung minimal ['id', 'name', 'price'] jika tersedia.
+     *
+     * @param  mixed  $value
+     * @return array
+     */
     public function getSelectedExtraItemsAttribute($value)
     {
-        $items = json_decode($value, true) ?? [];
-        return collect($items)->map(function ($item) {
+        $raw = $value;
+        if (is_string($raw)) {
+            $decoded = json_decode($raw, true);
+            $raw = $decoded === null ? [] : $decoded;
+        }
+        if (!is_array($raw)) {
+            $raw = [];
+        }
+
+        return collect($raw)->map(function ($item) {
             return [
+                'id'    => $item['id']    ?? null,
                 'name'  => $item['name']  ?? 'Extra Item',
-                'price' => $item['price'] ?? 0,
+                'price' => isset($item['price']) ? (int) $item['price'] : 0,
             ];
         })->toArray();
+    }
+
+    // --- MUTATORS ---
+    /**
+     * Pastikan selected_backgrounds disimpan dalam bentuk JSON yang konsisten.
+     */
+    public function setSelectedBackgroundsAttribute($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        $normalized = array_map(function ($bg) {
+            if (is_array($bg)) {
+                return [
+                    'id'    => $bg['id']    ?? ($bg[0] ?? null),
+                    'name'  => $bg['name']  ?? ($bg['title'] ?? null),
+                    'image' => $bg['image'] ?? null,
+                ];
+            }
+            return [
+                'id' => $bg,
+            ];
+        }, $value);
+
+        $this->attributes['selected_backgrounds'] = json_encode($normalized);
+    }
+
+    /**
+     * Pastikan selected_extra_items disimpan konsisten.
+     */
+    public function setSelectedExtraItemsAttribute($value)
+    {
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            }
+        }
+
+        if (!is_array($value)) {
+            $value = [];
+        }
+
+        $normalized = array_map(function ($it) {
+            if (is_array($it)) {
+                return [
+                    'id'    => $it['id']    ?? ($it[0] ?? null),
+                    'name'  => $it['name']  ?? null,
+                    'price' => isset($it['price']) ? (int) $it['price'] : 0,
+                ];
+            }
+            return [
+                'id' => $it,
+            ];
+        }, $value);
+
+        $this->attributes['selected_extra_items'] = json_encode($normalized);
+    }
+
+    // --- STATIC HELPERS ---
+    /**
+     * Dapatkan semua slot jam tetap (untuk halaman admin/frontend yang perlu daftar jam).
+     *
+     * @return array
+     */
+    public static function getAllTimes(): array
+    {
+        return self::$defaultTimes;
+    }
+
+    /**
+     * Dapatkan waktu yang tersedia untuk sebuah tanggal.
+     *
+     * @param  string|null  $date  (format YYYY-MM-DD). Jika null -> kembalikan struktur kosong.
+     * @return array [
+     *   'available_times' => array of time strings,
+     *   'booked_times'    => array of time strings,
+     *   'status'          => 'available'|'limited'|'full',
+     *   'date'            => $date,
+     * ]
+     */
+    public static function getAvailableTimes(?string $date = null): array
+    {
+        if (empty($date)) {
+            return [
+                'available_times' => [],
+                'booked_times'    => [],
+                'status'          => 'available',
+                'date'            => $date,
+            ];
+        }
+
+        $allTimes = self::$defaultTimes;
+
+        // Ambil booked times untuk tanggal tsb (hanya status yang mem-block)
+        $bookedTimes = self::where('booking_date', $date)
+            ->whereIn('status', ['waiting_payment', 'pending_verification', 'booked'])
+            ->pluck('booking_time')
+            ->toArray();
+
+        $bookedTimes = array_values(array_map('strval', $bookedTimes));
+
+        $availableTimes = array_values(array_diff($allTimes, $bookedTimes));
+
+        $status = 'available';
+        if (empty($availableTimes)) {
+            $status = 'full';
+        } elseif (count($availableTimes) < 3) {
+            $status = 'limited';
+        }
+
+        return [
+            'available_times' => $availableTimes,
+            'booked_times'    => $bookedTimes,
+            'status'          => $status,
+            'date'            => $date,
+        ];
+    }
+
+    /**
+     * Cek apakah sebuah slot tersedia.
+     *
+     * @param  string  $date  Format YYYY-MM-DD
+     * @param  string  $time  Format HH:MM atau string waktu yang sama dengan stored value
+     * @param  int|null $excludeId  Jika diberi, exclude booking dengan id ini (berguna saat update)
+     * @return bool  true = slot tersedia, false = sudah terpakai
+     */
+    public static function isSlotAvailable(string $date, string $time, ?int $excludeId = null): bool
+    {
+        $query = self::where('booking_date', $date)
+            ->where('booking_time', $time)
+            ->whereIn('status', ['waiting_payment', 'pending_verification', 'booked']);
+
+        if (!is_null($excludeId)) {
+            $query->where('id', '!=', $excludeId);
+        }
+
+        return !$query->exists();
     }
 }

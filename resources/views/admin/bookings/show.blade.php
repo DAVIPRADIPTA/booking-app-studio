@@ -13,7 +13,8 @@
                     </svg>
                     <span>Kembali ke Daftar Pesanan</span>
                 </a>
-                @if($booking->status !== 'cancelled')
+
+                @if($booking->status === 'booked')
                     <a href="{{ route('bookings.edit', $booking->id) }}"
                         class="inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-lg transition w-full sm:w-auto">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -196,17 +197,27 @@
                             <p class="font-bold text-xl">Rp{{ number_format($booking->total_price, 0, ',', '.') }}</p>
                         </div>
 
-                        @if($booking->payment_proof)
-                            <div>
-                                <p class="text-gray-500 text-sm mb-2">Bukti Pembayaran</p>
-                                <img src="{{ asset('storage/' . $booking->payment_proof) }}" class="w-full rounded-lg border"
-                                    alt="Bukti Pembayaran">
-                                <a href="{{ asset('storage/' . $booking->payment_proof) }}" target="_blank"
-                                    class="mt-2 inline-block text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">
-                                    Lihat / Download
-                                </a>
-                            </div>
+                        {{-- Hanya tampilkan area bukti ketika metode = transfer --}}
+                        @if($booking->payment_method === 'transfer')
+                            @if($booking->payment_proof)
+                                <div>
+                                    <p class="text-gray-500 text-sm mb-2">Bukti Pembayaran</p>
+                                    <img src="{{ asset('storage/' . $booking->payment_proof) }}" class="w-full rounded-lg border"
+                                        alt="Bukti Pembayaran">
+                                    <a href="{{ asset('storage/' . $booking->payment_proof) }}" target="_blank"
+                                        class="mt-2 inline-block text-sm bg-gray-100 px-3 py-1 rounded hover:bg-gray-200">
+                                        Lihat / Download
+                                    </a>
+                                </div>
+                            @else
+                                <div class="p-3 bg-yellow-50 rounded-lg border border-yellow-100 text-sm text-yellow-700">
+                                    Metode pembayaran: <strong>Transfer</strong>. Namun belum ada bukti transfer yang diunggah.
+                                </div>
+                            @endif
+                        @else
+                            {{-- Jika metode bukan transfer (mis. cash) maka tidak menampilkan area bukti sama sekali --}}
                         @endif
+
                     </div>
                 </div>
 
@@ -215,7 +226,7 @@
                     <h2 class="text-lg font-bold text-gray-800 mb-4">Aksi Admin</h2>
                     <div class="space-y-3">
                         @if($booking->status === 'waiting_payment')
-                            <form method="POST" action="{{ route('bookings.forceCancel', $booking->id) }}">
+                            <form method="POST" action="{{ route('bookings.forceCancel', $booking->id) }}" class="js-prompt-reason">
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
@@ -230,7 +241,8 @@
                                     Verifikasi & Konfirmasi
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('bookings.cancelBooking', $booking->id) }}">
+
+                            <form method="POST" action="{{ route('bookings.cancelBooking', $booking->id) }}" class="js-prompt-reason">
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
@@ -245,11 +257,24 @@
                                     Tandai Selesai
                                 </button>
                             </form>
-                            <form method="POST" action="{{ route('bookings.cancelBooking', $booking->id) }}">
+
+                            <form method="POST" action="{{ route('bookings.cancelBooking', $booking->id) }}" class="js-prompt-reason">
                                 @csrf
                                 <button type="submit"
                                     class="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg">
                                     Batalkan Pesanan
+                                </button>
+                            </form>
+                        @endif
+
+                        {{-- Tombol Hapus hanya muncul bila status completed atau cancelled --}}
+                        @if(in_array($booking->status, ['completed', 'cancelled']))
+                            <form method="POST" action="{{ route('bookings.destroy', $booking->id) }}" class="js-confirm-delete">
+                                @csrf
+                                @method('DELETE')
+                                <button type="submit"
+                                    class="w-full bg-red-700 hover:bg-red-800 text-white font-semibold py-2 rounded-lg">
+                                    Hapus Pesanan
                                 </button>
                             </form>
                         @endif
@@ -258,4 +283,48 @@
             </div>
         </div>
     </div>
+
+    {{-- JS: prompt alasan pembatalan (opsional) + confirm delete --}}
+    @push('scripts')
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Prompt alasan pembatalan (opsional). Jika user Cancel => batalkan submit.
+            document.querySelectorAll('form.js-prompt-reason').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    var message = 'Masukkan alasan pembatalan (opsional). Tekan Cancel untuk membatalkan aksi.';
+                    var reason = prompt(message);
+
+                    // Jika user menekan Cancel pada prompt -> batalkan submit
+                    if (reason === null) {
+                        return;
+                    }
+
+                    // Jika diisi non-empty -> tambahkan hidden input
+                    if (reason.trim() !== '') {
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'cancellation_reason';
+                        input.value = reason.trim();
+                        form.appendChild(input);
+                    }
+
+                    // submit form setelah prompt
+                    form.submit();
+                });
+            });
+
+            // Konfirmasi sebelum hapus
+            document.querySelectorAll('form.js-confirm-delete').forEach(function (form) {
+                form.addEventListener('submit', function (e) {
+                    var ok = confirm('Yakin ingin menghapus pesanan ini? Tindakan ini tidak bisa dibatalkan.');
+                    if (!ok) {
+                        e.preventDefault();
+                    }
+                });
+            });
+        });
+    </script>
+    @endpush
 </x-layouts.app>

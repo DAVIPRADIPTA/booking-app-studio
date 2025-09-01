@@ -1,12 +1,10 @@
 @extends('layouts.app')
-
 @section('title', 'Tambah Booking Manual - Admin')
 
 @push('styles')
     <style>
         /* Import Dancing Script Font */
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
-
         /* Package Selection */
         .package-card {
             position: relative;
@@ -20,19 +18,16 @@
             box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
             overflow: hidden;
         }
-
         .package-card:hover {
             border-color: #dc2626;
             transform: translateY(-4px);
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
         }
-
         .package-card.selected {
             border-color: #dc2626;
             background: #f0f9ff;
             box-shadow: 0 10px 25px rgba(220, 38, 38, 0.2);
         }
-
         .package-card.selected::after {
             content: '✓';
             position: absolute;
@@ -48,11 +43,9 @@
             justify-content: center;
             font-weight: bold;
         }
-
         .package-card .package-price {
             color: #dc2626;
         }
-
         .package-title {
             font-family: 'Dancing Script', cursive;
             font-size: clamp(1.4rem, 2.5vw, 1.7rem);
@@ -61,14 +54,12 @@
             margin-bottom: 0.6rem;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-
         .package-price {
             font-size: clamp(1.2rem, 2vw, 1.4rem);
             font-weight: 700;
             color: #1f2937;
             text-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-
         .package-features {
             list-style: none;
             padding: 0;
@@ -76,7 +67,6 @@
             position: relative;
             z-index: 10;
         }
-
         .package-features li {
             font-size: clamp(0.8rem, 1.5vw, 0.95rem);
             color: #4b5563;
@@ -84,7 +74,6 @@
             position: relative;
             padding-left: 1.2rem;
         }
-
         .package-features li::before {
             content: "•";
             color: #dc2626;
@@ -93,20 +82,17 @@
             left: 0;
             top: 0;
         }
-
         .package-note {
             margin-top: 0.5rem;
             font-size: 0.8rem;
             color: #ef4444;
         }
-
         /* Background Selection */
         .background-option {
             position: relative;
             overflow: hidden;
             transition: all 0.3s ease;
         }
-
         .background-option::before {
             content: '';
             position: absolute;
@@ -118,11 +104,9 @@
             transition: left 0.6s ease;
             z-index: 1;
         }
-
         .background-option:hover::before {
             left: 100%;
         }
-
         .background-option.selected::after {
             content: '✓';
             position: absolute;
@@ -144,36 +128,29 @@
             box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
             z-index: 2;
         }
-
         .background-option.selected::after {
             opacity: 1;
             transform: scale(1) rotate(0deg);
         }
-
         .background-option.selecting {
             transform: scale(0.95);
             transition: transform 0.2s ease;
         }
-
         /* Pulse animation for newly selected backgrounds - Deep Red */
         @keyframes backgroundPulse {
             0% {
                 box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
             }
-
             70% {
                 box-shadow: 0 0 0 12px rgba(220, 38, 38, 0);
             }
-
             100% {
                 box-shadow: 0 0 0 0 rgba(220, 38, 38, 0);
             }
         }
-
         .background-option.pulse {
             animation: backgroundPulse 1.5s;
         }
-
         /* Form Elements */
         .form-input,
         .form-select {
@@ -186,14 +163,12 @@
             color: #1f2937;
             transition: all 0.3s ease;
         }
-
         .form-input:focus,
         .form-select:focus {
             outline: none;
             border-color: #dc2626;
             box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
         }
-
         /* Availability Info */
         .availability-info {
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%);
@@ -205,19 +180,16 @@
             font-size: clamp(0.8rem, 1.3vw, 0.9rem);
             text-align: center;
         }
-
         .availability-info.limited {
             background: linear-gradient(135deg, rgba(234, 179, 8, 0.1) 0%, rgba(234, 179, 8, 0.05) 100%);
             border: 1px solid #fde047;
             color: #854d0e;
         }
-
         .availability-info.full {
             background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
             border: 1px solid #fca5a5;
             color: #b91c1c;
         }
-
         /* Background Counter */
         .background-counter {
             position: absolute;
@@ -235,7 +207,6 @@
             font-size: 0.9rem;
             box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
         }
-
         /* Package Notice */
         .package-notice {
             background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.08) 100%);
@@ -249,7 +220,6 @@
             color: #ef4444;
             font-size: 0.9rem;
         }
-
         .package-notice svg {
             min-width: 1.25rem;
             min-height: 1.25rem;
@@ -259,7 +229,22 @@
 
 @section('content')
     <div class="max-w-6xl mx-auto bg-white shadow-lg rounded-xl p-6">
-        <h1 class="text-2xl font-bold text-gray-800 mb-6">Tambah Booking Manual</h1>
+       <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-800">Tambah Booking Manual</h1>
+
+    <div class="flex items-center gap-2">
+        <!-- Link balik ke daftar booking -->
+        <a href="{{ route('bookings.index') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-semibold rounded-lg transition">
+            <!-- icon panah -->
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+            </svg>
+            Kembali
+        </a>
+    </div>
+</div>
+
 
         <form action="{{ route('bookings.store') }}" method="POST" enctype="multipart/form-data" id="adminBookingForm"
             class="space-y-8">
@@ -322,8 +307,15 @@
                     <label class="block font-semibold text-gray-700 mb-2">Waktu Pemotretan</label>
                     <select id="booking_time" name="booking_time"
                         class="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-                        required>
-                        <option value="">Pilih tanggal dulu...</option>
+                        required @if(empty($availableTimes) && !old('booking_time')) disabled @endif>
+                        @if(!empty($availableTimes) && old('booking_date'))
+                            <option value="">-- Pilih Waktu --</option>
+                            @foreach($availableTimes as $t)
+                                <option value="{{ $t }}" {{ old('booking_time') == $t ? 'selected' : '' }}>{{ $t }} WIB</option>
+                            @endforeach
+                        @else
+                            <option value="">{{ old('booking_time') ? old('booking_time') : 'Pilih tanggal dulu...' }}</option>
+                        @endif
                     </select>
                     <div id="time-availability-info" class="hidden mt-2 p-3 rounded-lg border">
                         <span id="availability-message"></span>
@@ -334,7 +326,6 @@
                 </div>
             </div>
 
-            <!-- Metode Pembayaran -->
             <!-- Metode Pembayaran -->
             <div class="bg-gray-50 p-6 rounded-lg border">
                 <label class="block font-semibold text-gray-700 mb-2">Metode Pembayaran</label>
@@ -359,7 +350,7 @@
                 <h2 class="text-xl font-semibold text-gray-700 mb-6">Pilih Paket</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                     <!-- Baby Smash Cake -->
-                    <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ old('package_name') == 'Baby Smash Cake' ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
+                    <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ in_array(old('package_name'), ['Baby Smash Cake', 'babysmash']) ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
                         data-package="Baby Smash Cake" data-price="550000" data-backgrounds="0" data-category="baby-smash">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Baby Smash Cake</h3>
@@ -433,7 +424,7 @@
                     </div>
 
                     <!-- Prewed I -->
-                    <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ old('package_name') == 'Prewed I' ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
+                    <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ in_array(old('package_name'), ['Prewed I', 'prewed1']) ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
                         data-package="Prewed I" data-price="700000" data-backgrounds="2" data-category="pre-wedding">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Prewed I</h3>
@@ -450,7 +441,7 @@
                     </div>
 
                     <!-- Prewed II -->
-                    <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ old('package_name') == 'Prewed II' ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
+                    <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ in_array(old('package_name'), ['Prewed II', 'prewed2']) ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
                         data-package="Prewed II" data-price="1000000" data-backgrounds="3" data-category="pre-wedding">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Prewed II</h3>
@@ -466,25 +457,25 @@
                         </ul>
                     </div>
                 </div>
+
                 <input type="hidden" name="package_name" id="package_name" value="{{ old('package_name') }}">
-                <input type="hidden" name="session_name" id="session_name" value="Pre-Wedding Session">
+                <input type="hidden" name="session_name" id="session_name" value="Photoshoot Session">
                 @error('package_name')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
             </div>
 
             <!-- Pilih Background -->
-            <div id="background-section" class="bg-gray-50 p-6 rounded-lg border">
+            <div id="background-section" class="bg-gray-50 p-6 rounded-lg border {{ in_array(old('package_name'), ['Baby Smash Cake', 'babysmash']) || !old('package_name') ? 'hidden' : '' }}">
                 <div class="flex justify-between items-center mb-3">
-                    <label class="block font-semibold text-gray-700">Pilih Background (Maks: <span
-                            id="maxBackgroundsLabel">0</span>)</label>
-                    <span class="background-counter" id="backgroundCounter">0</span>
+                    <label class="block font-semibold text-gray-700">Pilih Background (Maks: <span id="maxBackgroundsLabel">0</span>)</label>
+                    <span class="background-counter" id="backgroundCounter">{{ is_array($selectedBackgrounds ?? null) ? count($selectedBackgrounds) : 0 }}</span>
                 </div>
                 <div id="background-container" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    <!-- Background akan diisi oleh JavaScript berdasarkan paket yang dipilih -->
+                    <!-- Background akan diisi oleh JavaScript -->
                 </div>
                 <input type="hidden" name="selected_backgrounds" id="selected_backgrounds"
-                    value="{{ old('selected_backgrounds') ? json_encode($selectedBackgrounds) : '[]' }}">
+                    value="{{ old('selected_backgrounds') ? json_encode($selectedBackgrounds) : json_encode($selectedBackgrounds ?? []) }}">
                 <p class="text-gray-500 text-sm mt-4">* Silakan pilih minimal 1 background</p>
                 @error('selected_backgrounds')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
@@ -501,9 +492,9 @@
                             <label class="flex items-center p-2 border rounded hover:bg-gray-50">
                                 <input type="checkbox" name="selected_extra_items[]" value="{{ $item->id }}"
                                     class="h-4 w-4 text-red-600 rounded focus:ring-red-500 extra-checkbox"
-                                    data-name="{{ $item->name }}" data-price="{{ $item->price }}" @if(isset($selectedExtraItems) && in_array($item->id, $selectedExtraItems)) checked @endif>
-                                <span class="ml-2 text-gray-700">{{ $item->name }} (IDR
-                                    {{ number_format($item->price) }})</span>
+                                    data-name="{{ $item->name }}" data-price="{{ $item->price }}"
+                                    @if(old('selected_extra_items') && in_array($item->id, old('selected_extra_items'))) checked @endif>
+                                <span class="ml-2 text-gray-700">{{ $item->name }} (IDR {{ number_format($item->price) }})</span>
                             </label>
                         @endforeach
                     </div>
@@ -517,9 +508,9 @@
                             <label class="flex items-center p-2 border rounded hover:bg-gray-50">
                                 <input type="checkbox" name="selected_extra_items[]" value="{{ $item->id }}"
                                     class="h-4 w-4 text-red-600 rounded focus:ring-red-500 extra-checkbox"
-                                    data-name="{{ $item->name }}" data-price="{{ $item->price }}" @if(isset($selectedExtraItems) && in_array($item->id, $selectedExtraItems)) checked @endif>
-                                <span class="ml-2 text-gray-700">{{ $item->name }} (IDR
-                                    {{ number_format($item->price) }})</span>
+                                    data-name="{{ $item->name }}" data-price="{{ $item->price }}"
+                                    @if(old('selected_extra_items') && in_array($item->id, old('selected_extra_items'))) checked @endif>
+                                <span class="ml-2 text-gray-700">{{ $item->name }} (IDR {{ number_format($item->price) }})</span>
                             </label>
                         @endforeach
                     </div>
@@ -533,9 +524,9 @@
                             <label class="flex items-center p-2 border rounded hover:bg-gray-50">
                                 <input type="checkbox" name="selected_extra_items[]" value="{{ $item->id }}"
                                     class="h-4 w-4 text-red-600 rounded focus:ring-red-500 extra-checkbox"
-                                    data-name="{{ $item->name }}" data-price="{{ $item->price }}" @if(isset($selectedExtraItems) && in_array($item->id, $selectedExtraItems)) checked @endif>
-                                <span class="ml-2 text-gray-700">{{ $item->name }} (IDR
-                                    {{ number_format($item->price) }})</span>
+                                    data-name="{{ $item->name }}" data-price="{{ $item->price }}"
+                                    @if(old('selected_extra_items') && in_array($item->id, old('selected_extra_items'))) checked @endif>
+                                <span class="ml-2 text-gray-700">{{ $item->name }} (IDR {{ number_format($item->price) }})</span>
                             </label>
                         @endforeach
                     </div>
@@ -568,7 +559,7 @@
             <div class="bg-gray-50 p-6 rounded-lg border">
                 <div class="flex justify-between items-center">
                     <span class="font-semibold text-lg">Total Pembayaran:</span>
-                    <span id="totalPriceDisplay" class="text-2xl font-bold text-red-600">IDR 0</span>
+                    <span id="totalPriceDisplay" class="text-2xl font-bold text-red-600">IDR {{ number_format($totalPrice ?? 0) }}</span>
                 </div>
             </div>
 
@@ -586,342 +577,258 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Inisialisasi variabel global
     let selectedPackage = null;
-    let selectedBackgrounds = []; // array of background IDs
-    let selectedExtras = []; // array of objects {id, name, price}
+    let selectedBackgrounds = @json($selectedBackgrounds ?? []);
+    let selectedExtras = [];
     let basePrice = 0;
     let maxBackgrounds = 0;
     let packageCategory = '';
-    
-    // Ambil data dari old input jika ada
-    const oldSelectedBackgrounds = @json($selectedBackgrounds ?? []);
-    const oldSelectedExtraItems = @json($selectedExtraItems ?? []);
-    const oldPackage = @json(old('package_name') ?? null);
-    
-    // Inisialisasi data lama
-    if (oldPackage) {
-        const packageCard = document.querySelector(`.package-card[data-package="${oldPackage}"]`);
-        if (packageCard) {
-            packageCard.click();
+    let availableTimes = @json($availableTimes ?? []); // from server (controller)
+
+    // Inisialisasi extra items dari old input
+    const oldExtraItems = @json(old('selected_extra_items', []));
+    document.querySelectorAll('.extra-checkbox').forEach(checkbox => {
+        const itemId = checkbox.value;
+        if (oldExtraItems.includes(parseInt(itemId))) {
+            selectedExtras.push({
+                id: itemId,
+                name: checkbox.dataset.name,
+                price: parseInt(checkbox.dataset.price)
+            });
         }
-    }
-    
-    // Package selection
+    });
+
+    // Package Selection
     const packageCards = document.querySelectorAll('.package-card');
     packageCards.forEach(card => {
         card.addEventListener('click', function() {
             packageCards.forEach(c => c.classList.remove('selected', 'border-red-500', 'bg-red-50'));
             this.classList.add('selected', 'border-red-500', 'bg-red-50');
-            
+
             selectedPackage = {
                 name: this.dataset.package,
                 price: parseInt(this.dataset.price),
                 maxBackgrounds: parseInt(this.dataset.backgrounds),
                 category: this.dataset.category
             };
-            
+
             document.getElementById('package_name').value = selectedPackage.name;
             basePrice = selectedPackage.price;
             maxBackgrounds = selectedPackage.maxBackgrounds;
             packageCategory = selectedPackage.category;
-            
+
             document.getElementById('maxBackgroundsLabel').textContent = maxBackgrounds;
-            
-            // Tampilkan atau sembunyikan background section
+            document.getElementById('backgroundCounter').textContent = selectedBackgrounds.length;
+
             const backgroundSection = document.getElementById('background-section');
             if (maxBackgrounds === 0) {
                 backgroundSection.classList.add('hidden');
+                selectedBackgrounds = [];
+                updateHiddenBackgrounds();
             } else {
                 backgroundSection.classList.remove('hidden');
-                // Tampilkan background sesuai kategori
                 displayBackgroundsByCategory(packageCategory);
             }
-            
+
             updateTotal();
         });
     });
-    
-    // Fungsi untuk menampilkan background berdasarkan kategori
+
+    // Display Backgrounds by Category
     function displayBackgroundsByCategory(category) {
-        const backgroundContainer = document.getElementById('background-container');
-        backgroundContainer.innerHTML = '';
-        
-        // Ambil background berdasarkan kategori
+        const container = document.getElementById('background-container');
+        container.innerHTML = '';
         let backgrounds = [];
+
         switch(category) {
-            case 'baby-smash':
-                backgrounds = @json($babySmashBackgrounds);
-                break;
-            case 'plain':
-                backgrounds = @json($plainBackgrounds);
-                break;
-            case 'grande':
-                backgrounds = @json($grandeBackgrounds);
-                break;
-            case 'royal':
-                backgrounds = @json($royalBackgrounds);
-                break;
-            case 'pre-wedding':
-                backgrounds = @json($prewedBackgrounds);
-                break;
-            case 'family':
-                backgrounds = @json($familyBackgrounds);
-                break;
-            case 'graduation':
-                backgrounds = @json($graduationBackgrounds);
-                break;
-            default:
-                backgrounds = @json($backgroundItems);
+            case 'baby-smash': backgrounds = @json($babySmashBackgrounds); break;
+            case 'plain': backgrounds = @json($plainBackgrounds); break;
+            case 'grande': backgrounds = @json($grandeBackgrounds); break;
+            case 'royal': backgrounds = @json($royalBackgrounds); break;
+            case 'pre-wedding': backgrounds = @json($prewedBackgrounds); break;
+            case 'family': backgrounds = @json($familyBackgrounds); break;
+            case 'graduation': backgrounds = @json($graduationBackgrounds); break;
+            default: backgrounds = @json($backgroundItems);
         }
-        
-        // Tampilkan background
+
         backgrounds.forEach(bg => {
             const isSelected = selectedBackgrounds.includes(bg.id);
-            const bgOption = document.createElement('div');
-            bgOption.className = `background-option cursor-pointer border-2 rounded-lg overflow-hidden transition hover:border-red-500 ${isSelected ? 'border-red-500 bg-red-50' : 'border-gray-200'}`;
-            bgOption.dataset.id = bg.id;
-            bgOption.dataset.name = bg.name;
-            
-            bgOption.innerHTML = `
-                <img src="{{ asset('storage/') }}/${bg.image}" alt="${bg.name}" class="w-full h-32 object-cover">
-                <div class="p-2 bg-gray-50">
-                    <p class="text-sm font-medium text-gray-700">${bg.name}</p>
-                </div>
+            const div = document.createElement('div');
+            div.className = `background-option cursor-pointer border-2 rounded-lg overflow-hidden transition ${isSelected ? 'border-red-500 bg-red-50' : 'border-gray-200'}`;
+            div.dataset.id = bg.id;
+            div.innerHTML = `
+                <img src="{{ asset('storage') }}/${bg.image}" alt="${bg.name}" class="w-full h-32 object-cover">
+                <div class="p-2 bg-gray-50"><p class="text-sm font-medium text-gray-700">${bg.name}</p></div>
             `;
-            
-            bgOption.addEventListener('click', function() {
-                const bgId = this.dataset.id;
-                const bgIndex = selectedBackgrounds.indexOf(bgId);
-                
-                if (bgIndex > -1) {
-                    // Remove if already selected
-                    selectedBackgrounds.splice(bgIndex, 1);
-                    this.classList.remove('border-red-500', 'bg-red-50', 'pulse');
+            div.addEventListener('click', function() {
+                const id = parseInt(this.dataset.id);
+                const index = selectedBackgrounds.indexOf(id);
+                if (index > -1) {
+                    selectedBackgrounds.splice(index, 1);
+                    this.classList.remove('border-red-500', 'bg-red-50');
                 } else if (selectedBackgrounds.length < maxBackgrounds) {
-                    // Add if within limit
-                    selectedBackgrounds.push(bgId);
+                    selectedBackgrounds.push(id);
                     this.classList.add('border-red-500', 'bg-red-50');
                     this.classList.add('pulse');
-                    
-                    // Hapus efek pulse setelah 1.5 detik
-                    setTimeout(() => {
-                        this.classList.remove('pulse');
-                    }, 1500);
+                    setTimeout(() => this.classList.remove('pulse'), 1500);
                 } else {
-                    alert(`Paket ${selectedPackage.name} hanya membolehkan maksimal ${maxBackgrounds} background.`);
+                    alert(`Paket ${selectedPackage.name} hanya boleh ${maxBackgrounds} background.`);
                     return;
                 }
-                
                 document.getElementById('backgroundCounter').textContent = selectedBackgrounds.length;
+                updateHiddenBackgrounds();
                 updateTotal();
             });
-            
-            backgroundContainer.appendChild(bgOption);
+            container.appendChild(div);
+        });
+
+        // Highlight yang sudah dipilih
+        selectedBackgrounds.forEach(id => {
+            const el = container.querySelector(`[data-id="${id}"]`);
+            if (el) el.classList.add('border-red-500', 'bg-red-50');
         });
     }
-    
-    // Extra items selection
-    const extraItemsCheckboxes = document.querySelectorAll('.extra-checkbox');
-    extraItemsCheckboxes.forEach(checkbox => {
+
+    function updateHiddenBackgrounds() {
+        document.getElementById('selected_backgrounds').value = JSON.stringify(selectedBackgrounds);
+    }
+
+    // Extra Items change
+    document.querySelectorAll('.extra-checkbox').forEach(checkbox => {
         checkbox.addEventListener('change', function() {
-            const itemId = this.value;
-            const itemName = this.dataset.name;
-            const itemPrice = parseInt(this.dataset.price);
-            
+            const id = this.value;
+            const name = this.dataset.name;
+            const price = parseInt(this.dataset.price);
             if (this.checked) {
-                // Tambahkan ke selectedExtras jika belum ada
-                if (!selectedExtras.some(item => item.id === itemId)) {
-                    selectedExtras.push({
-                        id: itemId,
-                        name: itemName,
-                        price: itemPrice
-                    });
+                if (!selectedExtras.some(item => item.id === id)) {
+                    selectedExtras.push({ id, name, price });
                 }
             } else {
-                // Hapus dari selectedExtras
-                selectedExtras = selectedExtras.filter(item => item.id !== itemId);
+                selectedExtras = selectedExtras.filter(item => item.id !== id);
             }
-            
             updateTotal();
         });
     });
-    
-    // Payment method change
-    const paymentMethodSelect = document.getElementById('payment_method');
-    const uploadProofSection = document.getElementById('uploadProofSection');
-    
-    // Initial check for payment method
-    if (paymentMethodSelect.value === 'transfer') {
-        uploadProofSection.classList.remove('hidden');
-    } else {
-        uploadProofSection.classList.add('hidden');
-    }
-    
-    // Event listener untuk perubahan metode pembayaran
-    paymentMethodSelect.addEventListener('change', function() {
-        if (this.value === 'transfer') {
-            uploadProofSection.classList.remove('hidden');
-        } else {
-            uploadProofSection.classList.add('hidden');
-        }
+
+    // Payment Method
+    const paymentMethod = document.getElementById('payment_method');
+    const proofSection = document.getElementById('uploadProofSection');
+    paymentMethod.addEventListener('change', () => {
+        proofSection.classList.toggle('hidden', paymentMethod.value !== 'transfer');
     });
-    
-    // Fetch available times function
+
+    // Fetch available times from API (and set availableTimes var)
     window.fetchAvailableTimes = async function() {
-        const dateInput = document.getElementById('booking_date');
-        const timeSelect = document.getElementById('booking_time');
-        const selectedDate = dateInput.value;
-        
-        if (!selectedDate) return;
-        
-        timeSelect.disabled = true;
-        timeSelect.innerHTML = '<option value="">Memuat...</option>';
-        const timeAvailabilityInfo = document.getElementById('time-availability-info');
-        const availabilityMessage = document.getElementById('availability-message');
-        timeAvailabilityInfo.classList.add('hidden');
-        
+        const date = document.getElementById('booking_date').value;
+        if (!date) return;
+
+        const select = document.getElementById('booking_time');
+        const info = document.getElementById('time-availability-info');
+        const msg = document.getElementById('availability-message');
+
+        select.disabled = true;
+        select.innerHTML = '<option>Memuat...</option>';
+        info.classList.add('hidden');
+
         try {
-            const response = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`);
-            if (!response.ok) throw new Error('Gagal memuat data waktu');
-            
-            const data = await response.json();
-            timeSelect.innerHTML = '';
-            
+            const res = await fetch(`/api/available-times?booking_date=${encodeURIComponent(date)}`);
+            if (!res.ok) throw new Error('Fetch error');
+            const data = await res.json();
+
+            availableTimes = data.available_times || [];
+
             if (data.status === 'full') {
-                const option = document.createElement('option');
-                option.value = '';
-                option.textContent = 'Hari ini full booked';
-                option.disabled = true;
-                timeSelect.appendChild(option);
-                timeSelect.disabled = true;
-                
-                availabilityMessage.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
-                timeAvailabilityInfo.className = 'availability-info full';
-                timeAvailabilityInfo.classList.remove('hidden');
+                select.innerHTML = '<option value="" disabled>Hari ini full booked</option>';
+                select.disabled = true;
+                msg.textContent = 'Tidak ada slot tersedia.';
+                info.className = 'availability-info full';
             } else {
-                data.available_times.forEach(time => {
-                    const option = document.createElement('option');
-                    option.value = time;
-                    option.textContent = `${time} WIB`;
-                    timeSelect.appendChild(option);
+                select.innerHTML = '<option value="">-- Pilih Waktu --</option>';
+                data.available_times.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = t + ' WIB';
+                    select.appendChild(opt);
                 });
-                
-                timeSelect.disabled = false;
-                
-                if (data.status === 'limited') {
-                    availabilityMessage.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                    timeAvailabilityInfo.className = 'availability-info limited';
-                } else {
-                    availabilityMessage.textContent = `Ada ${data.available_times.length} slot yang tersedia.`;
-                    timeAvailabilityInfo.className = 'availability-info';
-                }
-                timeAvailabilityInfo.classList.remove('hidden');
+                select.disabled = false;
+                msg.textContent = `Ada ${data.available_times.length} slot tersedia.`;
+                info.className = data.status === 'limited' ? 'availability-info limited' : 'availability-info';
             }
-        } catch (err) {
-            console.error(err);
-            timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-            timeSelect.disabled = true;
+            info.classList.remove('hidden');
+        } catch (e) {
+            console.error('Error fetching available times:', e);
+            select.innerHTML = '<option value="" disabled>Gagal muat data</option>';
+            select.disabled = true;
+            msg.textContent = 'Terjadi kesalahan saat memuat data. Coba lagi nanti.';
+            info.className = 'availability-info';
+            info.classList.remove('hidden');
         }
     };
-    
-    // Update total payment
-    function updateTotal() {
-        let extrasTotal = 0;
-        
-        // Hitung total harga extra items
-        selectedExtras.forEach(item => {
-            extrasTotal += item.price;
-        });
-        
-        const totalPrice = basePrice + extrasTotal;
-        document.getElementById('totalPriceDisplay').textContent = `IDR ${new Intl.NumberFormat('id-ID').format(totalPrice)}`;
-    }
-    
-    // Date change - fetch available times
+
+    // event listener tanggal
     document.getElementById('booking_date').addEventListener('change', fetchAvailableTimes);
-    
-    // Run initial fetch if date is already filled
-    if (document.getElementById('booking_date').value) {
-        fetchAvailableTimes();
-    }
-    
-    // Initialize background selection if already selected
-    if (oldSelectedBackgrounds.length > 0) {
-        selectedBackgrounds = oldSelectedBackgrounds;
-        document.getElementById('backgroundCounter').textContent = selectedBackgrounds.length;
-        
-        // Jika ada background yang dipilih, pastikan background section ditampilkan
-        if (selectedPackage && selectedPackage.maxBackgrounds > 0) {
-            document.getElementById('background-section').classList.remove('hidden');
-            displayBackgroundsByCategory(packageCategory);
-        }
-        
-        // Update tampilan background
-        setTimeout(() => {
-            selectedBackgrounds.forEach(id => {
-                const bgOption = document.querySelector(`.background-option[data-id="${id}"]`);
-                if (bgOption) {
-                    bgOption.classList.add('border-red-500', 'bg-red-50');
-                }
-            });
-        }, 100);
-    }
-    
-    // Initialize extra items selection if already selected
-    if (oldSelectedExtraItems.length > 0) {
-        extraItemsCheckboxes.forEach(checkbox => {
-            const itemId = checkbox.value;
-            if (oldSelectedExtraItems.includes(parseInt(itemId))) {
-                checkbox.checked = true;
-                
-                // Tambahkan ke selectedExtras
-                const itemName = checkbox.dataset.name;
-                const itemPrice = parseInt(checkbox.dataset.price);
-                selectedExtras.push({
-                    id: itemId,
-                    name: itemName,
-                    price: itemPrice
-                });
-            }
-        });
-        updateTotal();
-    }
-    
-    // Initialize total price
-    updateTotal();
-    
-    // Initial check for Baby Smash Cake
-    if (oldPackage && (oldPackage === 'Baby Smash Cake' || oldPackage === 'babysmash')) {
-        document.getElementById('background-section').classList.add('hidden');
-    }
-    
+
     // Validasi form sebelum submit
     document.getElementById('adminBookingForm').addEventListener('submit', function(e) {
         if (!selectedPackage) {
             e.preventDefault();
-            alert('Silakan pilih paket terlebih dahulu.');
+            alert('Silakan pilih paket.');
             return;
         }
-        
-        // Untuk Baby Smash Cake, tidak perlu validasi background
-        if (selectedPackage.maxBackgrounds > 0 && selectedBackgrounds.length === 0) {
+
+        if (maxBackgrounds > 0 && selectedBackgrounds.length === 0) {
             e.preventDefault();
-            alert('Silakan pilih minimal 1 background.');
+            alert('Pilih minimal 1 background.');
             return;
         }
-        
-        // Validasi bukti pembayaran untuk transfer
-        const paymentMethod = document.getElementById('payment_method').value;
-        if (paymentMethod === 'transfer') {
-            const paymentProof = document.querySelector('input[name="payment_proof"]');
-            if (!paymentProof.files || paymentProof.files.length === 0) {
+
+        const bookingTime = document.getElementById('booking_time').value;
+        const bookingDate = document.getElementById('booking_date').value;
+
+        if (bookingDate && bookingTime) {
+            const isAvailable = availableTimes.includes(bookingTime);
+            if (!isAvailable) {
                 e.preventDefault();
-                alert('Silakan upload bukti transfer untuk metode pembayaran transfer.');
+                alert('Waktu yang dipilih tidak tersedia. Silakan pilih dari daftar waktu yang tersedia.');
                 return;
             }
         }
+
+        const method = document.getElementById('payment_method').value;
+        if (method === 'transfer') {
+            const fileInput = document.querySelector('input[name="payment_proof"]');
+            if (!fileInput || !fileInput.files.length) {
+                e.preventDefault();
+                alert('Upload bukti transfer.');
+                return;
+            }
+        }
+
+        // set hidden backgrounds before submit
+        updateHiddenBackgrounds();
     });
+
+    // Update Total
+    function updateTotal() {
+        const extrasTotal = selectedExtras.reduce((sum, item) => sum + item.price, 0);
+        const total = basePrice + extrasTotal;
+        document.getElementById('totalPriceDisplay').textContent = `IDR ${new Intl.NumberFormat('id-ID').format(total)}`;
+    }
+
+    // Initialize: apply old package if any
+    const oldPackage = "{{ old('package_name') }}";
+    if (oldPackage) {
+        const card = document.querySelector(`.package-card[data-package="${oldPackage}"]`);
+        if (card) card.click();
+    }
+
+    // If booking_date already filled (reload), fetch initial times
+    if (document.getElementById('booking_date').value) {
+        // if server already provided availableTimes we still run fetch to ensure freshness
+        fetchAvailableTimes();
+    }
+
+    updateTotal();
 });
 </script>
 @endpush

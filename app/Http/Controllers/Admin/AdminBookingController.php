@@ -11,31 +11,91 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class AdminBookingController extends Controller
 {
     /**
      * ✅ List semua booking (dengan filter & search)
      */
+    /**
+     * List semua booking (dengan filter & search)
+     */
     public function index(Request $request)
     {
-        $query = Booking::latest();
+        // Basic query with optional relations
+        $query = Booking::query();
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
-        }
-
+        // quick search on contact_name, whatsapp_number, package_name
         if ($request->filled('q')) {
-            $query->where(function ($q) use ($request) {
-                $q->where('contact_name', 'like', '%' . $request->q . '%')
-                  ->orWhere('package_name', 'like', '%' . $request->q . '%');
+            $q = $request->q;
+            $query->where(function ($sub) use ($q) {
+                $sub->where('contact_name', 'like', "%{$q}%")
+                    ->orWhere('whatsapp_number', 'like', "%{$q}%")
+                    ->orWhere('package_name', 'like', "%{$q}%");
             });
         }
 
-        $bookings = $query->paginate(10)->withQueryString();
+        // filter by status
+        if ($request->filled('status') && $request->status !== 'all') {
+            $query->where('status', $request->status);
+        }
 
-        return view('admin.bookings.index', compact('bookings'));
+        // filter by package name
+        if ($request->filled('package_name') && $request->package_name !== 'all') {
+            $query->where('package_name', $request->package_name);
+        }
+
+        // date range filter (booking_date)
+        if ($request->filled('date_from')) {
+            $query->whereDate('booking_date', '>=', $request->date_from);
+        }
+        if ($request->filled('date_to')) {
+            $query->whereDate('booking_date', '<=', $request->date_to);
+        }
+
+        // sorting (default newest booking_date desc then id)
+        $sortBy = $request->get('sort_by', 'booking_date_desc');
+        switch ($sortBy) {
+            case 'booking_date_asc':
+                $query->orderBy('booking_date', 'asc')->orderBy('booking_time', 'asc');
+                break;
+            case 'created_at_asc':
+                $query->orderBy('created_at', 'asc');
+                break;
+            case 'created_at_desc':
+                $query->orderBy('created_at', 'desc');
+                break;
+            default:
+                // default booking_date desc
+                $query->orderBy('booking_date', 'desc')->orderBy('booking_time', 'desc');
+                break;
+        }
+
+        // per-page
+        $perPage = (int) $request->get('per_page', 10);
+        if ($perPage <= 0) $perPage = 10;
+
+        // stats: counts by status (for quick badges in UI)
+        $statusCounts = Booking::selectRaw('status, count(*) as cnt')
+            ->groupBy('status')
+            ->pluck('cnt', 'status')
+            ->toArray();
+
+        // distinct packages for filter dropdown
+        $packages = Booking::select('package_name')
+            ->whereNotNull('package_name')
+            ->groupBy('package_name')
+            ->orderBy('package_name')
+            ->pluck('package_name')
+            ->toArray();
+
+        $bookings = $query->paginate($perPage)->withQueryString();
+
+        return view('admin.bookings.index', compact('bookings', 'statusCounts', 'packages'));
     }
+
 
     /**
      * ✅ Tampilkan detail booking
@@ -52,16 +112,16 @@ class AdminBookingController extends Controller
     public function create()
     {
         $customers = Customer::all();
-        
+
         // Group Backgrounds by Category
         $backgroundItems = Background::where('is_active', true)->get();
-        $babySmashBackgrounds = $backgroundItems->where('category', 'baby-smash');
-        $plainBackgrounds = $backgroundItems->where('category', 'plain');
-        $grandeBackgrounds = $backgroundItems->where('category', 'grande');
-        $royalBackgrounds = $backgroundItems->where('category', 'royal');
-        $prewedBackgrounds = $backgroundItems->where('category', 'pre-wedding');
-        $familyBackgrounds = $backgroundItems->where('category', 'family');
-        $graduationBackgrounds = $backgroundItems->where('category', 'graduation');
+        $babySmashBackgrounds = $backgroundItems->where('category', 'baby-smash')->values();
+        $plainBackgrounds = $backgroundItems->where('category', 'plain')->values();
+        $grandeBackgrounds = $backgroundItems->where('category', 'grande')->values();
+        $royalBackgrounds = $backgroundItems->where('category', 'royal')->values();
+        $prewedBackgrounds = $backgroundItems->where('category', 'pre-wedding')->values();
+        $familyBackgrounds = $backgroundItems->where('category', 'family')->values();
+        $graduationBackgrounds = $backgroundItems->where('category', 'graduation')->values();
 
         // Group Extra Items by Category
         $extraItems = ExtraItem::where('is_active', true)->get();
@@ -81,7 +141,7 @@ class AdminBookingController extends Controller
                 $selectedBackgrounds = [];
             }
         }
-        
+
         // Pastikan selected_extra_items selalu berupa array
         $selectedExtraItems = old('selected_extra_items', []);
         if (is_string($selectedExtraItems)) {
@@ -94,6 +154,10 @@ class AdminBookingController extends Controller
                 $selectedExtraItems = [];
             }
         }
+
+        // Available times for default date (used to populate the time select initially)
+        $defaultDate = old('booking_date', Carbon::now()->toDateString());
+        $availableTimes = Booking::getAvailableTimes($defaultDate);
 
         return view('admin.bookings.create', compact(
             'customers',
@@ -109,7 +173,8 @@ class AdminBookingController extends Controller
             'frameItems',
             'serviceItems',
             'selectedBackgrounds',
-            'selectedExtraItems'
+            'selectedExtraItems',
+            'availableTimes'
         ));
     }
 
@@ -119,24 +184,24 @@ class AdminBookingController extends Controller
     public function edit($id)
     {
         $booking = Booking::findOrFail($id);
-        
+
         // Hanya izinkan edit untuk booking dengan status 'booked'
         if ($booking->status !== 'booked') {
-            return redirect()->route('bookings.show', $id)
+            return redirect()->route('bookings.index')
                 ->with('errorMessage', '❌ Hanya booking dengan status "Sudah Dibooking" yang bisa di-edit.');
         }
-        
+
         $customers = Customer::all();
-        
+
         // Group Backgrounds by Category
         $backgroundItems = Background::where('is_active', true)->get();
-        $babySmashBackgrounds = $backgroundItems->where('category', 'baby-smash');
-        $plainBackgrounds = $backgroundItems->where('category', 'plain');
-        $grandeBackgrounds = $backgroundItems->where('category', 'grande');
-        $royalBackgrounds = $backgroundItems->where('category', 'royal');
-        $prewedBackgrounds = $backgroundItems->where('category', 'pre-wedding');
-        $familyBackgrounds = $backgroundItems->where('category', 'family');
-        $graduationBackgrounds = $backgroundItems->where('category', 'graduation');
+        $babySmashBackgrounds = $backgroundItems->where('category', 'baby-smash')->values();
+        $plainBackgrounds = $backgroundItems->where('category', 'plain')->values();
+        $grandeBackgrounds = $backgroundItems->where('category', 'grande')->values();
+        $royalBackgrounds = $backgroundItems->where('category', 'royal')->values();
+        $prewedBackgrounds = $backgroundItems->where('category', 'pre-wedding')->values();
+        $familyBackgrounds = $backgroundItems->where('category', 'family')->values();
+        $graduationBackgrounds = $backgroundItems->where('category', 'graduation')->values();
 
         // Group Extra Items by Category
         $extraItems = ExtraItem::where('is_active', true)->get();
@@ -149,12 +214,16 @@ class AdminBookingController extends Controller
         if (!is_array($selectedBackgrounds)) {
             $selectedBackgrounds = [];
         }
-        
+
         // Pastikan selected_extra_items selalu berupa array
         $selectedExtraItems = [];
         if (!empty($booking->selected_extra_items)) {
             $selectedExtraItems = collect($booking->selected_extra_items)->pluck('id')->toArray();
         }
+
+        // Available times based on booking date (so admin form can show correct slots)
+        $defaultDate = old('booking_date', $booking->booking_date ?? Carbon::now()->toDateString());
+        $availableTimes = Booking::getAvailableTimes($defaultDate);
 
         return view('admin.bookings.edit', compact(
             'booking',
@@ -171,7 +240,8 @@ class AdminBookingController extends Controller
             'frameItems',
             'serviceItems',
             'selectedBackgrounds',
-            'selectedExtraItems'
+            'selectedExtraItems',
+            'availableTimes'
         ));
     }
 
@@ -181,10 +251,11 @@ class AdminBookingController extends Controller
     public function update(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
-        
+
         // Hanya izinkan update untuk booking dengan status 'booked'
         if ($booking->status !== 'booked') {
-            return back()->with('errorMessage', '❌ Hanya booking dengan status "Sudah Dibooking" yang bisa di-edit.');
+            return redirect()->route('bookings.index')
+                ->with('errorMessage', '❌ Hanya booking dengan status "Sudah Dibooking" yang bisa di-edit.');
         }
 
         // Normalisasi nomor WhatsApp
@@ -202,7 +273,7 @@ class AdminBookingController extends Controller
                 'session_name'         => 'required|string|max:100',
                 'package_name'         => 'required|string|max:100',
                 'payment_method'       => 'required|in:cash,transfer',
-                'selected_backgrounds' => 'required',
+                'selected_backgrounds' => strtolower($request->package_name) === 'baby smash cake' || strtolower($request->package_name) === 'babysmash' ? 'nullable' : 'required',
                 'selected_extra_items' => 'nullable',
                 'payment_proof'        => $request->payment_method === 'transfer' ? 'nullable|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
                 'baby_name'            => 'nullable|string|max:255',
@@ -212,35 +283,35 @@ class AdminBookingController extends Controller
             return back()->withInput()->withErrors($e->errors());
         }
 
-        // ✅ Cek jadwal bentrok - SAMA DENGAN BookingController
-        $exists = Booking::where('booking_date', $request->booking_date)
-            ->where('booking_time', $request->booking_time)
-            ->where('id', '!=', $id) // Kecualikan booking yang sedang diupdate
-            ->whereIn('status', ['waiting_payment', 'pending_verification', 'booked'])
-            ->exists();
+        // Validasi booking_time harus termasuk daftar jam yang valid
+        $allTimes = Booking::getAllTimes();
+        if (!in_array($request->booking_time, $allTimes)) {
+            return back()->withInput()->with('errorMessage', 'Waktu booking tidak valid.')->withInput();
+        }
 
-        if ($exists) {
+        // ✅ Cek jadwal bentrok - gunakan helper model (kecualikan booking yang sedang diupdate)
+        if (!Booking::isSlotAvailable($request->booking_date, $request->booking_time, $id)) {
             return back()->with('errorMessage', '❌ Slot sudah terisi, silakan pilih waktu lain.')
-                         ->withInput();
+                ->withInput();
         }
 
         // ✅ Hitung ulang total harga di server - SAMA DENGAN FRONTEND
         $packagePrice = $this->getPackagePrice($request->package_name);
-        
+
         // Ambil harga dari database untuk extra items, jangan dari request
         $extraItemsPrice = 0;
         $extras = [];
 
         if ($request->filled('selected_extra_items')) {
             // Pastikan selected_extra_items adalah array
-            $selectedExtraItems = is_string($request->selected_extra_items) ? 
-                json_decode($request->selected_extra_items, true) : 
+            $selectedExtraItems = is_string($request->selected_extra_items) ?
+                json_decode($request->selected_extra_items, true) :
                 $request->selected_extra_items;
-                
+
             if (!is_array($selectedExtraItems)) {
                 $selectedExtraItems = [];
             }
-            
+
             $extras = ExtraItem::whereIn('id', $selectedExtraItems)
                 ->get(['id', 'name', 'price'])
                 ->map(function ($item) use (&$extraItemsPrice) {
@@ -268,30 +339,30 @@ class AdminBookingController extends Controller
         // ✅ Background terpilih - SAMA DENGAN BookingController
         $backgrounds = [];
         $maxBackgrounds = $this->getMaxBackgrounds($request->package_name);
-        
+
         // Jika bukan Baby Smash Cake, kita harus memilih background
         if (strtolower($request->package_name) !== 'baby smash cake' && strtolower($request->package_name) !== 'babysmash') {
             if ($request->filled('selected_backgrounds')) {
                 // Pastikan selected_backgrounds adalah array
-                $selectedBackgrounds = is_string($request->selected_backgrounds) ? 
-                    json_decode($request->selected_backgrounds, true) : 
+                $selectedBackgrounds = is_string($request->selected_backgrounds) ?
+                    json_decode($request->selected_backgrounds, true) :
                     $request->selected_backgrounds;
-                    
+
                 if (!is_array($selectedBackgrounds)) {
                     $selectedBackgrounds = [];
                 }
-                
+
                 // Validasi jumlah background sesuai paket
                 if (count($selectedBackgrounds) < 1) {
                     return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                                 ->withInput();
+                        ->withInput();
                 }
-                
+
                 if (count($selectedBackgrounds) > $maxBackgrounds) {
                     return back()->with('errorMessage', "❌ Paket {$request->package_name} hanya membolehkan maksimal {$maxBackgrounds} background.")
-                                 ->withInput();
+                        ->withInput();
                 }
-                
+
                 $backgrounds = Background::whereIn('id', $selectedBackgrounds)
                     ->get(['id', 'name', 'image'])
                     ->map(fn($bg) => [
@@ -301,7 +372,7 @@ class AdminBookingController extends Controller
                     ])->values()->toArray();
             } else {
                 return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                             ->withInput();
+                    ->withInput();
             }
         }
 
@@ -326,17 +397,184 @@ class AdminBookingController extends Controller
                 // Tidak mengupdate status karena harus tetap 'booked'
             ]);
 
-            return redirect()->route('bookings.show', $id)
-                ->with('successMessage', '✅ Booking berhasil diperbarui.');
+            // Ambil data terbaru setelah update
+            $booking->refresh();
+
+            return redirect()->route('bookings.index')
+                ->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Admin update booking gagal: ' . $e->getMessage(), [
-                'payload' => $request->all(), 
+                'payload' => $request->all(),
                 'booking_id' => $id,
                 'exception' => $e
             ]);
-            
-            return back()->withInput()->with('errorMessage', 'Terjadi kesalahan saat memperbarui booking.');
+
+            return back()->withInput()->with('errorMessage', 'Terjadi kesalahan saat memperbarui booking. Silakan coba lagi.');
         }
+    }
+
+    /**
+     * ✅ Batalkan booking (admin)
+     *
+     * Sekarang: bisa dibatalkan di berbagai status kecuali 'completed' atau 'cancelled'.
+     * Jika frontend tidak mengirimkan `cancellation_reason`, kita pakai fallback message.
+     */
+    public function cancelBooking(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        // Tidak boleh batalkan jika sudah selesai atau sudah dibatalkan
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return back()->with('errorMessage', '❌ Booking tidak dapat dibatalkan pada status saat ini.');
+        }
+
+        // Terima alasan pembatalan jika ada (opsional)
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:255',
+        ]);
+
+        $reason = $request->input('cancellation_reason') ?? 'Dibatalkan oleh admin';
+
+        try {
+            DB::transaction(function () use ($booking, $reason) {
+                $booking->update([
+                    'status' => 'cancelled',
+                    'auto_cancelled_at' => now(),
+                    'cancellation_reason' => $reason,
+                    'cancellation_requested' => false,
+                    'cancellation_requested_at' => null,
+                ]);
+            });
+
+            Log::info("Admin membatalkan booking #{$booking->id}", [
+                'booking_id' => $booking->id,
+                'admin_id' => auth('web')->id(),
+                'reason' => $reason,
+            ]);
+
+            return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dibatalkan.');
+        } catch (\Exception $e) {
+            Log::error('Gagal membatalkan booking (admin): ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'exception' => $e,
+            ]);
+            return back()->with('errorMessage', 'Terjadi kesalahan saat membatalkan booking. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * ✅ Paksa batalkan booking (admin override)
+     *
+     * Sama seperti cancelBooking tetapi selalu mengizinkan (kecuali sudah 'completed'/'cancelled').
+     */
+    public function forceCancel(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if (in_array($booking->status, ['completed', 'cancelled'])) {
+            return back()->with('errorMessage', '❌ Booking tidak dapat dibatalkan pada status saat ini.');
+        }
+
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:255',
+        ]);
+
+        $reason = $request->input('cancellation_reason') ?? 'Dibatalkan paksa oleh admin';
+
+        try {
+            DB::transaction(function () use ($booking, $reason) {
+                $booking->update([
+                    'status' => 'cancelled',
+                    'auto_cancelled_at' => now(),
+                    'cancellation_reason' => $reason,
+                    'cancellation_requested' => false,
+                    'cancellation_requested_at' => null,
+                ]);
+            });
+
+            Log::warning("Admin paksa membatalkan booking #{$booking->id}", [
+                'booking_id' => $booking->id,
+                'admin_id' => auth('web')->id(),
+                'reason' => $reason,
+            ]);
+
+            return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dibatalkan paksa.');
+        } catch (\Exception $e) {
+            Log::error('Gagal paksa membatalkan booking (admin): ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'exception' => $e,
+            ]);
+            return back()->with('errorMessage', 'Terjadi kesalahan saat membatalkan booking. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * ✅ Verifikasi pembayaran
+     */
+    public function verifyPayment(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        // Hanya izinkan verifikasi untuk booking dengan status 'pending_verification'
+        if ($booking->status !== 'pending_verification') {
+            return back()->with('errorMessage', '❌ Booking tidak dalam status menunggu verifikasi.');
+        }
+
+        // Update status menjadi 'booked'
+        $booking->update([
+            'status' => 'booked',
+        ]);
+
+        return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diverifikasi dan dikonfirmasi.');
+    }
+
+    /**
+     * ✅ Tandai booking selesai
+     */
+    public function completeBooking(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        // Hanya izinkan menandai selesai untuk booking dengan status 'booked'
+        if ($booking->status !== 'booked') {
+            return back()->with('errorMessage', '❌ Booking tidak dalam status bisa ditandai selesai.');
+        }
+
+        // Update status menjadi 'completed'
+        $booking->update([
+            'status' => 'completed',
+        ]);
+
+        return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil ditandai selesai.');
+    }
+
+    /**
+     * ✅ Proses pembatalan + refund
+     */
+    public function processCancellation(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        $request->validate([
+            'refund_amount' => 'required|numeric|min:0',
+            'refund_proof' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'cancellation_reason' => 'required|string|max:255',
+        ]);
+
+        $refundPath = null;
+        if ($request->hasFile('refund_proof')) {
+            $refundPath = $request->file('refund_proof')->store('refund_proofs', 'public');
+        }
+
+        $booking->update([
+            'status' => 'cancelled',
+            'refund_amount' => $request->refund_amount,
+            'refund_proof' => $refundPath,
+            'auto_cancelled_at' => now(),
+            'cancellation_reason' => $request->cancellation_reason,
+        ]);
+
+        return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dibatalkan dengan refund.');
     }
 
     /**
@@ -359,7 +597,7 @@ class AdminBookingController extends Controller
                 'session_name'         => 'required|string|max:100',
                 'package_name'         => 'required|string|max:100',
                 'payment_method'       => 'required|in:cash,transfer',
-                'selected_backgrounds' => 'required',
+                'selected_backgrounds' => strtolower($request->package_name) === 'baby smash cake' || strtolower($request->package_name) === 'babysmash' ? 'nullable' : 'required',
                 'selected_extra_items' => 'nullable',
                 'payment_proof'        => $request->payment_method === 'transfer' ? 'required|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
                 'baby_name'            => 'nullable|string|max:255',
@@ -369,34 +607,35 @@ class AdminBookingController extends Controller
             return back()->withInput()->withErrors($e->errors());
         }
 
-        // ✅ Cek jadwal bentrok
-        $exists = Booking::where('booking_date', $request->booking_date)
-            ->where('booking_time', $request->booking_time)
-            ->whereIn('status', ['waiting_payment', 'pending_verification', 'booked'])
-            ->exists();
+        // Validasi booking_time harus termasuk daftar jam yang valid
+        $allTimes = Booking::getAllTimes();
+        if (!in_array($request->booking_time, $allTimes)) {
+            return back()->withInput()->with('errorMessage', 'Waktu booking tidak valid.');
+        }
 
-        if ($exists) {
+        // ✅ Cek jadwal bentrok (gunakan helper model)
+        if (!Booking::isSlotAvailable($request->booking_date, $request->booking_time)) {
             return back()->with('errorMessage', '❌ Slot sudah terisi, silakan pilih waktu lain.')
-                         ->withInput();
+                ->withInput();
         }
 
         // ✅ Hitung ulang total harga di server
         $packagePrice = $this->getPackagePrice($request->package_name);
-        
+
         // Ambil harga dari database untuk extra items
         $extraItemsPrice = 0;
         $extras = [];
 
         if ($request->filled('selected_extra_items')) {
             // Pastikan selected_extra_items adalah array
-            $selectedExtraItems = is_string($request->selected_extra_items) ? 
-                json_decode($request->selected_extra_items, true) : 
+            $selectedExtraItems = is_string($request->selected_extra_items) ?
+                json_decode($request->selected_extra_items, true) :
                 $request->selected_extra_items;
-                
+
             if (!is_array($selectedExtraItems)) {
                 $selectedExtraItems = [];
             }
-            
+
             $extras = ExtraItem::whereIn('id', $selectedExtraItems)
                 ->get(['id', 'name', 'price'])
                 ->map(function ($item) use (&$extraItemsPrice) {
@@ -420,30 +659,30 @@ class AdminBookingController extends Controller
         // ✅ Background terpilih
         $backgrounds = [];
         $maxBackgrounds = $this->getMaxBackgrounds($request->package_name);
-        
+
         // Jika bukan Baby Smash Cake, kita harus memilih background
         if (strtolower($request->package_name) !== 'baby smash cake' && strtolower($request->package_name) !== 'babysmash') {
             if ($request->filled('selected_backgrounds')) {
                 // Pastikan selected_backgrounds adalah array
-                $selectedBackgrounds = is_string($request->selected_backgrounds) ? 
-                    json_decode($request->selected_backgrounds, true) : 
+                $selectedBackgrounds = is_string($request->selected_backgrounds) ?
+                    json_decode($request->selected_backgrounds, true) :
                     $request->selected_backgrounds;
-                    
+
                 if (!is_array($selectedBackgrounds)) {
                     $selectedBackgrounds = [];
                 }
-                
+
                 // Validasi jumlah background sesuai paket
                 if (count($selectedBackgrounds) < 1) {
                     return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                                 ->withInput();
+                        ->withInput();
                 }
-                
+
                 if (count($selectedBackgrounds) > $maxBackgrounds) {
                     return back()->with('errorMessage', "❌ Paket {$request->package_name} hanya membolehkan maksimal {$maxBackgrounds} background.")
-                                 ->withInput();
+                        ->withInput();
                 }
-                
+
                 $backgrounds = Background::whereIn('id', $selectedBackgrounds)
                     ->get(['id', 'name', 'image'])
                     ->map(fn($bg) => [
@@ -453,14 +692,14 @@ class AdminBookingController extends Controller
                     ])->values()->toArray();
             } else {
                 return back()->with('errorMessage', "❌ Paket {$request->package_name} harus memilih minimal 1 background.")
-                             ->withInput();
+                    ->withInput();
             }
         }
 
         // ✅ Tentukan status otomatis - SEMUA LANGSUNG BOOKED KARENA ADMIN OFFLINE
         $status = 'booked'; // Semua langsung booked karena sudah dibayar di tempat
         $paymentDeadline = null;
-        
+
         // ✅ Simpan booking
         try {
             $booking = Booking::create([
@@ -484,10 +723,55 @@ class AdminBookingController extends Controller
                 'baby_age'             => $request->baby_age,
             ]);
 
-            return redirect()->route('bookings.index')->with('successMessage', '✅ Booking berhasil ditambahkan.');
+            return redirect()->route('bookings.index')->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil ditambahkan.');
         } catch (\Exception $e) {
             Log::error('Admin booking gagal: ' . $e->getMessage(), ['payload' => $request->all(), 'exception' => $e]);
             return back()->withInput()->with('errorMessage', 'Terjadi kesalahan saat menyimpan booking.');
+        }
+    }
+
+    /**
+     * ✅ HAPUS booking - hanya untuk status 'completed' atau 'cancelled'
+     *
+     * Menghapus file bukti pembayaran/refund jika ada, lalu hapus record.
+     */
+    public function destroy($id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        // Hanya izinkan hapus untuk booking yang sudah selesai atau sudah dibatalkan
+        if (!in_array($booking->status, ['completed', 'cancelled'])) {
+            return back()->with('errorMessage', '❌ Hanya pesanan dengan status "Selesai" atau "Dibatalkan" yang boleh dihapus.');
+        }
+
+        try {
+            DB::transaction(function () use ($booking) {
+                // Hapus file payment_proof jika ada
+                if (!empty($booking->payment_proof) && Storage::disk('public')->exists($booking->payment_proof)) {
+                    Storage::disk('public')->delete($booking->payment_proof);
+                }
+
+                // Hapus file refund_proof jika ada
+                if (!empty($booking->refund_proof) && Storage::disk('public')->exists($booking->refund_proof)) {
+                    Storage::disk('public')->delete($booking->refund_proof);
+                }
+
+                // Hapus record booking (hard delete). Jika ingin soft delete, gunakan $booking->delete() dengan SoftDeletes di model.
+                $booking->delete();
+            });
+
+            Log::info("Admin menghapus booking #{$booking->id}", [
+                'booking_id' => $booking->id,
+                'admin_id' => auth('web')->id(),
+            ]);
+
+            return redirect()->route('bookings.index')->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dihapus.');
+        } catch (\Exception $e) {
+            Log::error('Gagal menghapus booking: ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'exception' => $e,
+            ]);
+            return back()->with('errorMessage', 'Terjadi kesalahan saat menghapus booking. Silakan coba lagi.');
         }
     }
 
@@ -521,7 +805,7 @@ class AdminBookingController extends Controller
                 return 0;
         }
     }
-    
+
     /**
      * ✅ Helper untuk dapatkan jumlah maksimal background per paket
      */
@@ -551,7 +835,7 @@ class AdminBookingController extends Controller
                 return 1;
         }
     }
-    
+
     /**
      * ✅ Helper untuk normalisasi nomor WhatsApp
      */
@@ -559,19 +843,19 @@ class AdminBookingController extends Controller
     {
         $s = (string)$raw;
         $s = preg_replace('/[^\d+]/', '', $s);
-        
+
         if (strpos($s, '+') === 0) {
             return $s;
         }
-        
+
         if (strpos($s, '62') === 0) {
             return '+' . $s;
         }
-        
+
         if (strpos($s, '0') === 0) {
             return '+62' . substr($s, 1);
         }
-        
+
         return '+62' . $s;
     }
 }
