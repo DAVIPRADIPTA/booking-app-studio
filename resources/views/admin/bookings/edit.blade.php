@@ -1,707 +1,806 @@
 @extends('layouts.app')
-@section('title', 'Edit Booking — Admin')
+
+@section('title', 'Edit Booking - Admin')
 
 @push('styles')
-<style>
-/* Small focused overrides to make UI polished */
-:root{
-  --brand: #dc2626;
-  --muted: #6b7280;
-  --card: #ffffff;
-  --surface: #f8fafc;
-  --accent-100: rgba(220,38,38,0.06);
-}
-.fade { transition: all .18s ease; }
-.package-card { border: 1px solid #e6e9ef; border-radius: 12px; background: var(--card); padding: 14px; cursor: pointer; display:flex; flex-direction:column; gap:8px; }
-.package-card:focus { outline: none; box-shadow: 0 8px 30px rgba(59,130,246,0.08); transform: translateY(-3px); }
-.package-card.selected { border-color: var(--brand); background: linear-gradient(90deg, var(--accent-100), #fff6f6); box-shadow: 0 14px 40px rgba(220,38,38,0.06); }
-.background-option { border: 1px solid #e6e9ef; border-radius: 10px; overflow:hidden; cursor:pointer; }
-.background-option.selected { border-color: var(--brand); box-shadow: 0 12px 30px rgba(220,38,38,0.06); transform: translateY(-4px); }
-.segmented button { padding:8px 12px; border-radius:8px; border:1px solid #e6e9ef; background:#fff; cursor:pointer; }
-.segmented button.active { background: linear-gradient(90deg,#fee2e2,#fff6f6); border-color:#fca5a5; color:#7f1d1d; }
-.small-muted { font-size:0.86rem; color:var(--muted); }
-.kv { font-weight:600; color:#0f172a; }
-.sticky-right { position: sticky; top:22px; }
-.qty-input { width:74px; }
-.badge { font-size:0.78rem; background:#f1f5f9; padding:4px 8px; border-radius:999px; color:#0f172a; }
-</style>
+    <style>
+        /* Use same aesthetic as create page for 1:1 consistency */
+        @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
+
+        :root{
+            --red: #dc2626;
+            --muted: #6b7280;
+            --card-bg: #f9fafb;
+        }
+
+        body { font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial; color:#111827; }
+
+        .container { max-width: 1100px; margin: 24px auto; padding: 20px; }
+        .card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 6px 24px rgba(0,0,0,0.04); border:1px solid #ececec; }
+
+        .header-row { display:flex; justify-content:space-between; align-items:center; gap:12px; margin-bottom:18px; }
+        .title { font-size:1.25rem; font-weight:700; color:#0f172a; }
+        .subtitle { color:var(--muted); font-size:0.95rem; }
+
+        /* Form fields like create */
+        .form-grid { display:grid; gap:14px; }
+        .row-2 { display:grid; grid-template-columns: 1fr 1fr; gap:14px; }
+        .input, select, textarea { width:100%; padding:12px 14px; border-radius:10px; border:1px solid #d1d5db; background:#fff; font-size:0.95rem; }
+        .input:focus, select:focus, textarea:focus { outline:none; border-color: var(--red); box-shadow: 0 0 0 6px rgba(220,38,38,0.06); }
+
+        /* package cards — mimic create */
+        .packages-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(220px,1fr)); gap:14px; margin-top:8px; }
+        .package-card { border-radius:12px; padding:16px; border:2px solid #e5e7eb; background:var(--card-bg); cursor:pointer; transition:all .18s; }
+        .package-card:hover { transform:translateY(-4px); border-color:var(--red); box-shadow:0 10px 25px rgba(0,0,0,0.06); }
+        .package-card.selected { border-color:var(--red); background:#fff6f6; box-shadow:0 12px 30px rgba(220,38,38,0.06); }
+        .package-title { font-family:'Dancing Script', cursive; font-size:1.15rem; font-weight:600; }
+        .package-price { color:var(--red); font-weight:700; margin-top:6px; }
+
+        /* background grid consistent with create */
+        .bg-grid { display:grid; grid-template-columns: repeat(auto-fill,minmax(160px,1fr)); gap:12px; margin-top:10px; }
+        .background-option { border-radius:10px; overflow:hidden; border:2px solid #e5e7eb; background:#fff; cursor:pointer; transition:all .18s; }
+        .background-option img { width:100%; height:120px; object-fit:cover; display:block; }
+        .background-option .meta { padding:8px; background:#f8fafc; }
+        .background-option.selected { border-color:var(--red); background:#fff6f6; box-shadow:0 10px 25px rgba(220,38,38,0.06); }
+
+        /* extras */
+        .extras-grid { display:grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap:10px; margin-top:8px; }
+        .extra-item { display:flex; gap:10px; align-items:center; padding:10px; border-radius:10px; border:1px solid #f3f4f6; background:#fff; }
+
+        .availability-info { margin-top:8px; padding:10px; border-radius:8px; font-size:0.95rem; display:none; }
+        .availability-info.available { display:block; background: linear-gradient(135deg, rgba(59,130,246,0.06), rgba(59,130,246,0.02)); border:1px solid #93c5fd; color:#0f172a; }
+        .availability-info.limited { display:block; background: linear-gradient(135deg, rgba(250,204,21,0.06), rgba(250,204,21,0.02)); border:1px solid #facc15; color:#92400e; }
+        .availability-info.full { display:block; background: linear-gradient(135deg, rgba(239,68,68,0.06), rgba(239,68,68,0.02)); border:1px solid #fecaca; color:#7f1d1d; }
+
+        .actions { margin-top:12px; display:flex; gap:10px; align-items:center; }
+        .btn { padding:10px 14px; border-radius:10px; font-weight:700; cursor:pointer; border:none; }
+        .btn-primary { background:var(--red); color:#fff; box-shadow:0 8px 30px rgba(220,38,38,0.08); }
+        .btn-ghost { background:#f3f4f6; color:#111827; }
+
+        .small { font-size:0.88rem; color:var(--muted); }
+
+        @media (min-width:1024px){
+            .layout { display:grid; grid-template-columns: 2fr 1fr; gap:18px; align-items:start; }
+        }
+    </style>
 @endpush
 
 @section('content')
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <div class="flex items-start justify-between mb-6 gap-4">
-    <div>
-      <h1 class="text-2xl font-semibold">Edit Booking #{{ $booking->id }}</h1>
-      <p class="text-sm text-gray-500 mt-1">Desain dipoles: fokus ke kecepatan kerja admin & visibilitas info. Editing hanya untuk status <strong>booked</strong>.</p>
-    </div>
-    <div class="flex items-center gap-3">
-      <a href="{{ route('bookings.index') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 rounded-md text-sm">← Kembali</a>
-    </div>
-  </div>
-
-  @if($booking->status !== \App\Models\Booking::STATUS_BOOKED)
-    <div class="bg-white p-6 rounded-lg shadow">
-      <p class="text-sm text-gray-700">Booking berstatus <strong>{{ $booking->status }}</strong>. Editing tidak diperbolehkan lewat halaman ini. Gunakan view detail jika perlu tindakan lain.</p>
-      <div class="mt-4">
-        <a href="{{ route('bookings.show', $booking->id) }}" class="px-4 py-2 rounded-md border">Lihat detail</a>
-      </div>
-    </div>
-  @else
-
-  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    {{-- MAIN FORM (left 2/3) --}}
-    <form id="mainForm" action="{{ route('bookings.update', $booking->id) }}" method="POST" enctype="multipart/form-data" class="lg:col-span-2 space-y-6">
-      @csrf @method('PUT')
-
-      {{-- Customer + Contact --}}
-      <div class="bg-white p-6 rounded-lg shadow">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Customer</label>
-            <select name="customer_id" class="mt-2 block w-full rounded-md border-slate-200" required>
-              <option value="">-- Pilih Customer --</option>
-              @foreach($customers as $c)
-                <option value="{{ $c->id }}" {{ old('customer_id', $booking->customer_id) == $c->id ? 'selected' : '' }}>
-                  {{ $c->name }} — {{ $c->email }}
-                </option>
-              @endforeach
-            </select>
-            @error('customer_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Nama Kontak</label>
-            <input name="contact_name" value="{{ old('contact_name', $booking->contact_name) }}" maxlength="100" required class="mt-2 block w-full rounded-md border-slate-200">
-            @error('contact_name') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Nomor WhatsApp</label>
-            <input name="whatsapp_number" value="{{ old('whatsapp_number', $booking->whatsapp_number) }}" maxlength="25" required class="mt-2 block w-full rounded-md border-slate-200">
-            <p class="text-xs text-gray-400 mt-1">Format: 0812... atau +628...</p>
-            @error('whatsapp_number') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Tanggal Pemotretan</label>
-            <input id="booking_date" name="booking_date" type="date" min="{{ now()->format('Y-m-d') }}" value="{{ old('booking_date', $booking->booking_date) }}" required class="mt-2 block w-full rounded-md border-slate-200">
-            @error('booking_date') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-          </div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Waktu Pemotretan</label>
-            <select id="booking_time" name="booking_time" required class="mt-2 block w-full rounded-md border-slate-200">
-              <option value="{{ old('booking_time', $booking->booking_time) }}">{{ old('booking_time', $booking->booking_time) }} WIB</option>
-            </select>
-            <div id="time-message" class="text-xs text-gray-500 mt-1">Memuat status slot...</div>
-            @error('booking_time') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Metode Pembayaran</label>
-            <select id="payment_method" name="payment_method" required class="mt-2 block w-full rounded-md border-slate-200">
-              <option value="cash" {{ old('payment_method', $booking->payment_method) == 'cash' ? 'selected' : '' }}>Cash</option>
-              <option value="transfer" {{ old('payment_method', $booking->payment_method) == 'transfer' ? 'selected' : '' }}>Transfer</option>
-            </select>
-
-            <div id="proofArea" class="mt-3 {{ old('payment_method', $booking->payment_method) !== 'transfer' ? 'hidden' : '' }}">
-              <label class="block text-sm font-medium text-gray-700">Upload Bukti Transfer</label>
-              <input type="file" name="payment_proof" accept="image/*" class="mt-2 block w-full">
-              @if($booking->payment_proof && $booking->payment_method === 'transfer')
-                <a href="{{ asset('storage/' . $booking->payment_proof) }}" target="_blank" class="text-sm text-brand mt-2 inline-block" style="color:var(--brand)">Lihat bukti sekarang</a>
-              @endif
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {{-- Paket --}}
-      <div class="bg-white p-6 rounded-lg shadow">
-        <div class="flex items-center justify-between">
-          <h2 class="text-lg font-medium">Pilih Paket</h2>
-          <div class="text-sm text-gray-500">Klik / tekan Enter untuk memilih</div>
-        </div>
-
-        <div id="packageGrid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-          @php
-            $packages = [
-              ['name'=>'Baby Smash Cake','price'=>550000,'bg'=>0,'cat'=>'baby-smash'],
-              ['name'=>'Plain','price'=>300000,'bg'=>1,'cat'=>'plain'],
-              ['name'=>'Grande','price'=>500000,'bg'=>2,'cat'=>'grande'],
-              ['name'=>'Royal','price'=>700000,'bg'=>4,'cat'=>'royal'],
-              ['name'=>'Prewed I','price'=>700000,'bg'=>2,'cat'=>'pre-wedding'],
-              ['name'=>'Prewed II','price'=>1000000,'bg'=>3,'cat'=>'pre-wedding'],
-            ];
-          @endphp
-
-          @foreach($packages as $p)
-            <div tabindex="0" role="button" aria-pressed="{{ (old('package_name', $booking->package_name) === $p['name']) ? 'true' : 'false' }}"
-                 class="package-card fade {{ old('package_name', $booking->package_name) === $p['name'] ? 'selected' : '' }}"
-                 data-package="{{ $p['name'] }}" data-price="{{ $p['price'] }}" data-bg="{{ $p['bg'] }}" data-cat="{{ $p['cat'] }}">
-              <div class="flex items-center justify-between">
-                <div class="text-lg font-semibold">{{ $p['name'] }}</div>
-                <div class="text-red-600 font-bold">IDR {{ number_format($p['price'],0,',','.') }}</div>
-              </div>
-              <div class="text-sm text-gray-500">Max background: <span class="kv">{{ $p['bg'] }}</span></div>
-              <div class="text-xs text-gray-400 mt-1">Klik untuk memilih paket ini</div>
-            </div>
-          @endforeach
-        </div>
-
-        <input type="hidden" name="package_name" id="package_name" value="{{ old('package_name', $booking->package_name) }}">
-        @error('package_name') <p class="text-sm text-red-600 mt-2">{{ $message }}</p> @enderror
-
-        {{-- Session segmented control --}}
-        <div id="sessionWrap" class="mt-4 hidden">
-          <label class="text-sm font-medium text-gray-700">Jenis Sesi (Plain / Grande / Royal)</label>
-          <div class="segmented inline-flex gap-2 mt-2">
-            <button type="button" data-val="family">Family</button>
-            <button type="button" data-val="graduation">Graduation</button>
-            <button type="button" data-val="maternity">Maternity</button>
-          </div>
-          <input type="hidden" id="session_name" name="session_name" value="{{ old('session_name', $booking->session_name) }}">
-          <p class="text-xs text-gray-400 mt-2">Wajib dipilih untuk paket Group (Plain, Grande, Royal).</p>
-        </div>
-      </div>
-
-      {{-- Backgrounds: search + grid --}}
-      <div id="bgSection" class="bg-white p-6 rounded-lg shadow hidden">
-        <div class="flex items-center justify-between gap-4">
-          <h3 class="text-lg font-medium">Pilih Background</h3>
-          <div class="flex items-center gap-2">
-            <input id="bgSearch" placeholder="Cari background..." class="rounded-md border-slate-200 px-3 py-2 text-sm" />
-            <span class="badge" id="bgCounterBadge">0</span>
-          </div>
-        </div>
-
-        <div id="bgGrid" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 mt-4" aria-live="polite">
-          {{-- JS akan render tiles --}}
-        </div>
-
-        <input type="hidden" name="selected_backgrounds" id="selected_backgrounds" value='{{ json_encode($selectedBackgrounds ?? []) }}'>
-        <p class="text-xs text-gray-400 mt-3">* Pilih maksimal sesuai paket. Gunakan search untuk cepat menemukan background.</p>
-        @error('selected_backgrounds') <p class="text-sm text-red-600 mt-2">{{ $message }}</p> @enderror
-      </div>
-
-      {{-- Extras with quantity & subtotal calculation --}}
-      <div class="bg-white p-6 rounded-lg shadow">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-medium">Extra Items</h3>
-          <div class="text-sm text-gray-500">Pilih dan atur jumlah</div>
-        </div>
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-          <div>
-            <h4 class="text-sm font-semibold">Cetak Foto</h4>
-            <div class="mt-3 space-y-3">
-              @foreach($printItems as $it)
-                <div class="flex items-center justify-between gap-3">
-                  <label class="flex items-center gap-3">
-                    <input type="checkbox" class="extra-checkbox" data-id="{{ $it->id }}" data-price="{{ $it->price }}" name="selected_extra_items[]" value="{{ $it->id }}" @if(in_array($it->id, (array)$selectedExtraItems)) checked @endif>
-                    <div>
-                      <div class="text-sm font-medium">{{ $it->name }}</div>
-                      <div class="text-xs text-gray-400">IDR {{ number_format($it->price,0,',','.') }}</div>
-                    </div>
-                  </label>
-                  <input type="number" min="1" value="{{ (in_array($it->id, (array)$selectedExtraItems) ? 1 : 1) }}" class="qty-input rounded-md border-slate-200 p-1 text-sm" data-extra-id="{{ $it->id }}" name="extra_qty[{{ $it->id }}]">
-                </div>
-              @endforeach
-            </div>
-          </div>
-
-          <div>
-            <h4 class="text-sm font-semibold">Frame Foto</h4>
-            <div class="mt-3 space-y-3">
-              @foreach($frameItems as $it)
-                <div class="flex items-center justify-between gap-3">
-                  <label class="flex items-center gap-3">
-                    <input type="checkbox" class="extra-checkbox" data-id="{{ $it->id }}" data-price="{{ $it->price }}" name="selected_extra_items[]" value="{{ $it->id }}" @if(in_array($it->id, (array)$selectedExtraItems)) checked @endif>
-                    <div>
-                      <div class="text-sm font-medium">{{ $it->name }}</div>
-                      <div class="text-xs text-gray-400">IDR {{ number_format($it->price,0,',','.') }}</div>
-                    </div>
-                  </label>
-                  <input type="number" min="1" value="1" class="qty-input rounded-md border-slate-200 p-1 text-sm" data-extra-id="{{ $it->id }}" name="extra_qty[{{ $it->id }}]">
-                </div>
-              @endforeach
-            </div>
-          </div>
-
-          <div>
-            <h4 class="text-sm font-semibold">Tambahan & Layanan</h4>
-            <div class="mt-3 space-y-3">
-              @foreach($serviceItems as $it)
-                <div class="flex items-center justify-between gap-3">
-                  <label class="flex items-center gap-3">
-                    <input type="checkbox" class="extra-checkbox" data-id="{{ $it->id }}" data-price="{{ $it->price }}" name="selected_extra_items[]" value="{{ $it->id }}" @if(in_array($it->id, (array)$selectedExtraItems)) checked @endif>
-                    <div>
-                      <div class="text-sm font-medium">{{ $it->name }}</div>
-                      <div class="text-xs text-gray-400">IDR {{ number_format($it->price,0,',','.') }}</div>
-                    </div>
-                  </label>
-                  <input type="number" min="1" value="1" class="qty-input rounded-md border-slate-200 p-1 text-sm" data-extra-id="{{ $it->id }}" name="extra_qty[{{ $it->id }}]">
-                </div>
-              @endforeach
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {{-- Baby info & notes --}}
-      <div class="bg-white p-6 rounded-lg shadow grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="container">
+    <div class="header-row">
         <div>
-          <label class="block text-sm font-medium text-gray-700">Nama Bayi (opsional)</label>
-          <input name="baby_name" value="{{ old('baby_name', $booking->baby_name) }}" class="mt-2 block w-full rounded-md border-slate-200" />
+            <div class="title">Edit Booking #{{ $booking->id }}</div>
+            <div class="subtitle">Sama persis dengan tampilan Tambah Booking — dioptimalkan agar konsisten. Editing hanya diizinkan untuk status <strong>booked</strong>.</div>
         </div>
+
         <div>
-          <label class="block text-sm font-medium text-gray-700">Usia Bayi (opsional)</label>
-          <input name="baby_age" value="{{ old('baby_age', $booking->baby_age) }}" class="mt-2 block w-full rounded-md border-slate-200" />
+            <a href="{{ route('bookings.index') }}" class="btn btn-ghost">Kembali</a>
         </div>
-        <div class="md:col-span-2">
-          <label class="block text-sm font-medium text-gray-700">Catatan Tambahan</label>
-          <textarea name="notes" rows="3" class="mt-2 block w-full rounded-md border-slate-200">{{ old('notes', $booking->notes) }}</textarea>
-        </div>
-      </div>
-
-      {{-- invisible submit hook (we use sidebar button) --}}
-      <div class="text-right lg:text-left mt-2">
-        <p class="text-xs text-gray-400">Tekan "Simpan" di panel kanan untuk menyimpan perubahan.</p>
-      </div>
-    </form>
-
-    {{-- RIGHT SIDEBAR (summary & actions) --}}
-    <aside class="lg:col-span-1">
-      <div class="bg-white p-6 rounded-lg shadow sticky-right">
-        <h3 class="text-lg font-semibold">Ringkasan & Aksi</h3>
-
-        <div class="mt-4 space-y-3">
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500">Paket</div>
-            <div id="summaryPackage" class="kv">{{ $booking->package_name }}</div>
-          </div>
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500">Sesi</div>
-            <div id="summarySession" class="kv">{{ $booking->session_name ?? '-' }}</div>
-          </div>
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500">Tanggal</div>
-            <div id="summaryDate" class="kv">{{ $booking->booking_date }}</div>
-          </div>
-          <div class="flex items-center justify-between">
-            <div class="text-sm text-gray-500">Waktu</div>
-            <div id="summaryTime" class="kv">{{ $booking->booking_time }}</div>
-          </div>
-
-          <div class="border-t pt-3">
-            <div class="flex items-center justify-between">
-              <div class="text-sm text-gray-500">Harga Paket</div>
-              <div id="packagePrice" class="kv">IDR {{ number_format($booking->total_price ?? 0,0,',','.') }}</div>
-            </div>
-            <div class="mt-2 text-sm text-gray-500">Extras</div>
-            <div id="extrasBreakdown" class="mt-2 text-sm text-gray-700"></div>
-
-            <div class="mt-4 flex items-center justify-between">
-              <div class="text-sm font-medium">Total</div>
-              <div id="grandTotal" class="text-2xl font-bold text-red-600">IDR {{ number_format($booking->total_price ?? 0,0,',','.') }}</div>
-            </div>
-          </div>
-
-          <div class="mt-4">
-            <button id="submitBtn" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700">💾 Simpan Perubahan</button>
-            <a href="{{ route('bookings.show', $booking->id) }}" class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 mt-2 rounded-md border text-sm">Batal</a>
-          </div>
-        </div>
-
-      </div>
-
-      <div class="bg-white p-4 rounded-lg shadow mt-4 text-sm text-gray-500">
-        <div>Dibuat: {{ $booking->created_at->format('d M Y H:i') }}</div>
-        <div class="mt-2">ID Booking: #{{ $booking->id }}</div>
-        <div class="mt-2">Status: <span class="badge">{{ $booking->status }}</span></div>
-      </div>
-    </aside>
-  </div>
-
-  {{-- Image preview modal --}}
-  <div id="previewModal" class="fixed inset-0 z-50 hidden items-center justify-center">
-    <div class="absolute inset-0 bg-black/60" tabindex="-1" data-modal-backdrop></div>
-    <div class="relative z-10 max-w-3xl w-full mx-4">
-      <button id="closePreview" class="absolute right-2 top-2 bg-white rounded-full p-1 shadow">✕</button>
-      <img id="previewImg" src="" alt="Preview" class="rounded-md w-full object-contain max-h-[80vh]">
     </div>
-  </div>
-  @endif
+
+    {{-- Jika status bukan booked, tampilkan notice dan jangan tampilkan form --}}
+    @if($booking->status !== 'booked')
+        <div class="card">
+            <p class="small">Booking ini berstatus <strong>{{ $booking->status }}</strong>. Untuk keamanan, editing lewat halaman ini tidak diperbolehkan.</p>
+            <div style="margin-top:12px;">
+                <a href="{{ route('bookings.show', $booking->id) }}" class="btn btn-ghost">Lihat Detail</a>
+            </div>
+        </div>
+    @else
+
+    <div class="layout">
+        {{-- LEFT: form (mirip create) --}}
+        <form action="{{ route('bookings.update', $booking->id) }}" method="POST" enctype="multipart/form-data" class="card" id="adminBookingForm">
+            @csrf
+            @method('PUT')
+
+            <div class="form-grid">
+                {{-- customer --}}
+                <div class="row-2">
+                    <div>
+                        <label class="small">Pilih Customer</label>
+                        <select name="customer_id" class="input" required>
+                            <option value="">-- Pilih Customer --</option>
+                            @foreach($customers as $c)
+                                <option value="{{ $c->id }}" {{ old('customer_id', $booking->customer_id) == $c->id ? 'selected' : '' }}>
+                                    {{ $c->name }} ({{ $c->email }})
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('customer_id') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div>
+                        <label class="small">Nama Kontak</label>
+                        <input type="text" name="contact_name" class="input" required maxlength="100" value="{{ old('contact_name', $booking->contact_name) }}">
+                        @error('contact_name') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                {{-- whatsapp & session (session hidden input + display) --}}
+                <div class="row-2">
+                    <div>
+                        <label class="small">Nomor WhatsApp</label>
+                        <input type="text" name="whatsapp_number" class="input" required maxlength="20" value="{{ old('whatsapp_number', $booking->whatsapp_number) }}">
+                        <div class="small">Contoh: 081234567890 atau +6281234567890</div>
+                        @error('whatsapp_number') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div>
+                        <label class="small">Nama Sesi</label>
+                        {{-- hidden authoritative field --}}
+                        <input type="hidden" id="session_name" name="session_name" value="{{ old('session_name', $booking->session_name) }}">
+                        {{-- visible label for UX --}}
+                        <div class="input" id="sessionNameDisplay" style="background:#f8fafc; cursor:default;">{{ old('session_name', $booking->session_name) ?? '-' }}</div>
+                    </div>
+                </div>
+
+                {{-- date & time --}}
+                <div class="row-2">
+                    <div>
+                        <label class="small">Tanggal Pemotretan</label>
+                        <input type="date" id="booking_date" name="booking_date" class="input" min="{{ now()->format('Y-m-d') }}" required value="{{ old('booking_date', $booking->booking_date) }}">
+                        @error('booking_date') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div>
+                        <label class="small">Waktu Pemotretan</label>
+                        {{-- ensure current booking time present so JS comparisons work --}}
+                        <select id="booking_time" name="booking_time" class="input" required>
+                            @if(old('booking_time', $booking->booking_time))
+                                <option value="{{ old('booking_time', $booking->booking_time) }}">{{ old('booking_time', $booking->booking_time) }} WIB</option>
+                            @else
+                                <option value="">{{ 'Pilih tanggal terlebih dahulu' }}</option>
+                            @endif
+                        </select>
+                        <div id="time-availability-info" class="availability-info"></div>
+                        @error('booking_time') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                {{-- payment method --}}
+                <div>
+                    <label class="small">Metode Pembayaran</label>
+                    <select name="payment_method" id="payment_method" class="input" required>
+                        <option value="cash" {{ old('payment_method', $booking->payment_method) == 'cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="transfer" {{ old('payment_method', $booking->payment_method) == 'transfer' ? 'selected' : '' }}>Transfer</option>
+                    </select>
+                    <div id="uploadProofSection" style="margin-top:8px; {{ old('payment_method', $booking->payment_method) !== 'transfer' ? 'display:none;' : '' }}">
+                        <label class="small">Upload Bukti Transfer</label>
+                        <input type="file" name="payment_proof" class="input" accept="image/*">
+                        @if($booking->payment_proof && $booking->payment_method === 'transfer')
+                            <div class="small" style="margin-top:6px;">
+                                Bukti sekarang: <a href="{{ asset('storage/' . $booking->payment_proof) }}" target="_blank" class="small" style="color:var(--red)">Lihat</a>
+                            </div>
+                        @endif
+                        <div class="small">Hanya jika metode = Transfer</div>
+                    </div>
+                </div>
+
+                {{-- paket (mirip create) --}}
+                <div>
+                    <label class="small">Pilih Paket</label>
+                    <div class="packages-grid" id="packageGrid">
+                        @php
+                        $packages = [
+                            ['name'=>'Baby Smash Cake','price'=>550000,'bg'=>0,'cat'=>'baby-smash'],
+                            ['name'=>'Plain','price'=>300000,'bg'=>1,'cat'=>'plain'],
+                            ['name'=>'Grande','price'=>500000,'bg'=>2,'cat'=>'grande'],
+                            ['name'=>'Royal','price'=>700000,'bg'=>4,'cat'=>'royal'],
+                            ['name'=>'Prewed I','price'=>700000,'bg'=>2,'cat'=>'pre-wedding'],
+                            ['name'=>'Prewed II','price'=>1000000,'bg'=>3,'cat'=>'pre-wedding'],
+                        ];
+                        @endphp
+
+                        @foreach($packages as $p)
+                            <div tabindex="0" class="package-card {{ (old('package_name', $booking->package_name) === $p['name']) ? 'selected' : '' }}"
+                                 data-package="{{ $p['name'] }}" data-price="{{ $p['price'] }}" data-backgrounds="{{ $p['bg'] }}" data-category="{{ $p['cat'] }}">
+                                <div class="package-title">{{ $p['name'] }}</div>
+                                <div class="package-price">IDR {{ number_format($p['price'],0,',','.') }}</div>
+                                <div class="small" style="margin-top:8px">Max Background: {{ $p['bg'] }}</div>
+                            </div>
+                        @endforeach
+                    </div>
+
+                    <input type="hidden" name="package_name" id="package_name" value="{{ old('package_name', $booking->package_name) }}">
+                </div>
+
+                {{-- session selector for group packages --}}
+                <div id="sessionSelectWrapper" class="bg-gray-50 p-4 rounded-lg border mt-2 {{ in_array(old('package_name', $booking->package_name), ['Plain','Grande','Royal','plain','grande','royal']) ? '' : 'hidden' }}">
+                    <label class="small">Jenis Sesi (hanya untuk Plain / Grande / Royal)</label>
+                    <select id="sessionSelect" class="input" aria-describedby="session-error">
+                        <option value="">-- Pilih Jenis Sesi --</option>
+                        <option value="family" {{ old('session_name', $booking->session_name) == 'family' ? 'selected' : '' }}>Family</option>
+                        <option value="graduation" {{ old('session_name', $booking->session_name) == 'graduation' ? 'selected' : '' }}>Graduation</option>
+                        <option value="maternity" {{ old('session_name', $booking->session_name) == 'maternity' ? 'selected' : '' }}>Maternity</option>
+                    </select>
+                    <p id="session-error" class="text-red-500 text-sm mt-1 hidden"></p>
+                </div>
+
+                {{-- backgrounds (mirip create) --}}
+                <div>
+                    <div style="display:flex; justify-content:space-between; align-items:center">
+                        <label class="small">Pilih Background (Maks: <span id="maxBackgroundsLabel">0</span>)</label>
+                        <div class="small">Terpilih: <span id="backgroundCounter">0</span></div>
+                    </div>
+
+                    <div id="background-container" class="bg-grid" style="margin-top:10px;">
+                        {{-- filled by JS --}}
+                    </div>
+
+                    @php
+                        // Normalize $selectedBackgrounds to array of IDs for JS (string)
+                        $selectedBgIds = [];
+                        if(!empty($selectedBackgrounds ?? [])) {
+                            foreach($selectedBackgrounds as $sb) {
+                                if(is_array($sb) && isset($sb['id'])) $selectedBgIds[] = (string)$sb['id'];
+                                elseif(is_object($sb) && isset($sb->id)) $selectedBgIds[] = (string)$sb->id;
+                                else $selectedBgIds[] = (string)$sb;
+                            }
+                        }
+                    @endphp
+
+                    <input type="hidden" name="selected_backgrounds" id="selected_backgrounds" value='{{ old('selected_backgrounds') ? json_encode(old('selected_backgrounds')) : json_encode($selectedBgIds) }}'>
+
+                    <div class="small" style="margin-top:8px">* Pilih minimal 1 background jika paket mewajibkan.</div>
+                    @error('selected_backgrounds') <div class="small" style="color:#b91c1c">{{ $message }}</div> @enderror
+                </div>
+
+                {{-- extra items --}}
+                <div>
+                    <label class="small">Tambah & Item</label>
+                    <div class="extras-grid">
+                        <div>
+                            <div class="small" style="font-weight:700">Cetak Foto</div>
+                            @foreach($printItems as $it)
+                                <label class="extra-item">
+                                    <input type="checkbox" name="selected_extra_items[]" value="{{ $it->id }}" class="extra-checkbox" data-price="{{ $it->price }}" data-name="{{ $it->name }}" @if(in_array($it->id, (array)$selectedExtraItems)) checked @endif>
+                                    <div>
+                                        <div style="font-weight:700">{{ $it->name }}</div>
+                                        <div class="small">IDR {{ number_format($it->price,0,',','.') }}</div>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+
+                        <div>
+                            <div class="small" style="font-weight:700">Frame Foto</div>
+                            @foreach($frameItems as $it)
+                                <label class="extra-item">
+                                    <input type="checkbox" name="selected_extra_items[]" value="{{ $it->id }}" class="extra-checkbox" data-price="{{ $it->price }}" data-name="{{ $it->name }}" @if(in_array($it->id, (array)$selectedExtraItems)) checked @endif>
+                                    <div>
+                                        <div style="font-weight:700">{{ $it->name }}</div>
+                                        <div class="small">IDR {{ number_format($it->price,0,',','.') }}</div>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+
+                        <div>
+                            <div class="small" style="font-weight:700">Tambahan & Layanan</div>
+                            @foreach($serviceItems as $it)
+                                <label class="extra-item">
+                                    <input type="checkbox" name="selected_extra_items[]" value="{{ $it->id }}" class="extra-checkbox" data-price="{{ $it->price }}" data-name="{{ $it->name }}" @if(in_array($it->id, (array)$selectedExtraItems)) checked @endif>
+                                    <div>
+                                        <div style="font-weight:700">{{ $it->name }}</div>
+                                        <div class="small">IDR {{ number_format($it->price,0,',','.') }}</div>
+                                    </div>
+                                </label>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                {{-- baby info, notes --}}
+                <div class="row-2">
+                    <div>
+                        <label class="small">Nama Bayi (opsional)</label>
+                        <input type="text" name="baby_name" class="input" value="{{ old('baby_name', $booking->baby_name) }}">
+                    </div>
+                    <div>
+                        <label class="small">Usia Bayi (opsional)</label>
+                        <input type="text" name="baby_age" class="input" value="{{ old('baby_age', $booking->baby_age) }}">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="small">Catatan Tambahan</label>
+                    <textarea name="notes" rows="3" class="input">{{ old('notes', $booking->notes) }}</textarea>
+                </div>
+
+                {{-- total & submit --}}
+                <div style="display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                    <div>
+                        <div class="small">Total (server authoritative)</div>
+                        <div id="totalPriceDisplay" style="font-weight:700; font-size:1.1rem; color:var(--red)">{{ 'IDR ' . number_format(old('total_price', $booking->total_price ?? 0),0,',','.') }}</div>
+                    </div>
+
+                    <div class="actions">
+                        <button type="submit" class="btn btn-primary">Simpan Perubahan</button>
+                        <a href="{{ route('bookings.show', $booking->id) }}" class="btn btn-ghost">Batal</a>
+                    </div>
+                </div>
+
+                {{-- hidden server total (still send) --}}
+                <input type="hidden" name="total_price" id="hidden_total_price" value="{{ old('total_price', $booking->total_price ?? 0) }}">
+            </div>
+        </form>
+
+        {{-- RIGHT column: payment status, metadata --}}
+        <aside>
+            <div class="card">
+                <div class="small" style="font-weight:700; margin-bottom:8px">Informasi Pembayaran</div>
+                <div class="small">Status: <strong>{{ $booking->status }}</strong></div>
+                <div class="small">Metode: <strong>{{ $booking->payment_method }}</strong></div>
+                @if($booking->payment_deadline)
+                    <div class="small">Deadline pembayaran: <strong>{{ $booking->payment_deadline->format('d M Y H:i') }}</strong></div>
+                @endif
+
+                {{-- Hanya tampilkan area bukti ketika metode = transfer --}}
+                @if($booking->payment_method === 'transfer')
+                    @if($booking->payment_proof)
+                        <div style="margin-top:10px;">
+                            <div class="small" style="font-weight:700">Bukti Pembayaran</div>
+                            <img src="{{ asset('storage/' . $booking->payment_proof) }}" alt="Bukti" style="width:100%; border-radius:8px; margin-top:8px; border:1px solid #ececec;">
+                            <a href="{{ asset('storage/' . $booking->payment_proof) }}" target="_blank" class="small" style="color:var(--red); display:block; margin-top:6px">Lihat Bukti</a>
+                        </div>
+                    @else
+                        <div class="small" style="margin-top:10px; color:#92400e;">
+                            Metode pembayaran: <strong>Transfer</strong> — belum ada bukti transfer yang diunggah.
+                        </div>
+                    @endif
+                @endif
+            </div>
+
+            <div class="card" style="margin-top:12px;">
+                <div class="small" style="font-weight:700; margin-bottom:8px">Informasi Lain</div>
+                <div class="small">Dibuat: {{ $booking->created_at->format('d M Y H:i') }}</div>
+                <div class="small">ID Booking: #{{ $booking->id }}</div>
+            </div>
+        </aside>
+    </div>
+
+    @endif {{-- end status check --}}
 </div>
 @endsection
 
 @push('scripts')
 <script>
-document.addEventListener('DOMContentLoaded', function(){
+document.addEventListener('DOMContentLoaded', function () {
+    // ----- state & DOM refs -----
+    let selectedPackage = null;
+    let basePrice = 0;
+    let maxBackgrounds = 0;
+    let packageCategory = '';
+    let selectedBackgrounds = @json($selectedBgIds ?? []);
+    selectedBackgrounds = Array.isArray(selectedBackgrounds) ? selectedBackgrounds.map(String) : [];
+    let selectedExtras = @json($selectedExtraItems ?? []);
+    selectedExtras = Array.isArray(selectedExtras) ? selectedExtras.map(String) : [];
 
-  // --- Helpers ---
-  const idr = n => 'IDR ' + new Intl.NumberFormat('id-ID').format(n || 0);
-  const $ = s => document.querySelector(s);
-  const $$ = s => Array.from(document.querySelectorAll(s));
+    const packageCards = document.querySelectorAll('.package-card');
+    const packageNameInput = document.getElementById('package_name');
+    const sessionNameInput = document.getElementById('session_name');
+    const sessionNameDisplay = document.getElementById('sessionNameDisplay');
+    const sessionSelectWrapper = document.getElementById('sessionSelectWrapper');
+    const sessionSelect = document.getElementById('sessionSelect');
+    const bgContainer = document.getElementById('background-container');
+    const bgCounter = document.getElementById('backgroundCounter');
+    const maxBgLabel = document.getElementById('maxBackgroundsLabel');
+    const selectedBackgroundsInput = document.getElementById('selected_backgrounds');
+    const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+    const bookingDateInput = document.getElementById('booking_date');
+    const bookingTimeSelect = document.getElementById('booking_time');
+    const timeAvailabilityInfo = document.getElementById('time-availability-info');
+    const paymentMethodSelect = document.getElementById('payment_method');
+    const uploadProofSection = document.getElementById('uploadProofSection');
+    const totalPriceDisplay = document.getElementById('totalPriceDisplay');
+    const hiddenTotalPrice = document.getElementById('hidden_total_price');
 
-  // --- Elements ---
-  const mainForm = $('#mainForm');
-  const submitBtn = $('#submitBtn');
-  const packageGrid = document.getElementById('packageGrid');
-  const packageInput = $('#package_name');
-  const sessionWrap = $('#sessionWrap');
-  const sessionHidden = $('#session_name');
-  const sessionButtons = sessionWrap ? sessionWrap.querySelectorAll('button') : [];
-  const bgSection = $('#bgSection');
-  const bgGrid = $('#bgGrid');
-  const bgSearch = $('#bgSearch');
-  const selectedBgInput = $('#selected_backgrounds');
-  const bgCounterBadge = $('#bgCounterBadge');
-  const bookingDate = $('#booking_date');
-  const bookingTime = $('#booking_time');
-  const timeMsg = $('#time-message');
-  const paymentMethod = $('#payment_method');
-  const proofArea = $('#proofArea');
-  const summaryPackage = $('#summaryPackage');
-  const summarySession = $('#summarySession');
-  const summaryDate = $('#summaryDate');
-  const summaryTime = $('#summaryTime');
-  const extrasBreakdown = $('#extrasBreakdown');
-  const grandTotal = $('#grandTotal');
-  const packagePriceEl = $('#packagePrice');
-  const qtyInputs = () => $$('.qty-input');
-  const extraCheckboxes = $$('.extra-checkbox');
+    // server-original values (used to allow partial edits)
+    const originalBookingDate = @json(old('booking_date', $booking->booking_date ?? ''));
+    const originalBookingTime = @json(old('booking_time', $booking->booking_time ?? ''));
+    const originalPackageName = @json(old('package_name', $booking->package_name ?? ''));
 
-  // data maps (from controller)
-  const maps = {
-    'baby-smash': @json($babySmashBackgrounds ?? []),
-    'plain': @json($plainBackgrounds ?? []),
-    'grande': @json($grandeBackgrounds ?? []),
-    'royal': @json($royalBackgrounds ?? []),
-    'pre-wedding': @json($prewedBackgrounds ?? []),
-    'family': @json($familyBackgrounds ?? []),
-    'graduation': @json($graduationBackgrounds ?? []),
-    'maternity': @json($maternityBackgrounds ?? []),
-    'all': @json($backgroundItems ?? []),
-  };
+    // helper
+    const idr = (n) => 'IDR ' + new Intl.NumberFormat('id-ID').format(n || 0);
+    const safeLower = s => (s||'').toString().toLowerCase();
 
-  // initial state from server
-  let selectedBackgrounds = Array.isArray(@json($selectedBackgrounds ?? [])) ? @json($selectedBackgrounds ?? []).map(String) : [];
-  let selectedExtras = Array.from(document.querySelectorAll('.extra-checkbox:checked')).map(cb => ({ id: cb.dataset.id, price: Number(cb.dataset.price || 0), qty: 1 }));
-  // initialize qtys from DOM if present
-  qtyInputs().forEach(q => {
-    const id = q.dataset.extraId;
-    const cb = document.querySelector('.extra-checkbox[data-id="'+id+'"]');
-    if (cb && cb.checked) {
-      const ex = selectedExtras.find(e => e.id === id);
-      if (ex) ex.qty = Number(q.value || 1);
-    }
-  });
+    // Background lists from controller (category buckets)
+    const singleCategoryMap = {
+        'baby-smash': @json($babySmashBackgrounds ?? []),
+        'plain': @json($plainBackgrounds ?? []),
+        'grande': @json($grandeBackgrounds ?? []),
+        'royal': @json($royalBackgrounds ?? []),
+        'pre-wedding': @json($prewedBackgrounds ?? []),
+        'family': @json($familyBackgrounds ?? []),
+        'graduation': @json($graduationBackgrounds ?? []),
+        'maternity': @json($maternityBackgrounds ?? []),
+        'all': @json($backgroundItems ?? []),
+    };
 
-  let currentPkg = packageInput.value || '{{ $booking->package_name }}';
-  let currentCat = (packageGrid.querySelector('.selected') || {}).dataset?.cat || '';
-  let currentMaxBg = parseInt((packageGrid.querySelector('.selected') || {}).dataset?.bg || 0) || 0;
-
-  // utility: render backgrounds list
-  function renderBackgroundTiles(list) {
-    bgGrid.innerHTML = '';
-    if (!Array.isArray(list) || list.length === 0) {
-      bgGrid.innerHTML = `<div class="text-sm text-gray-400">Belum ada background untuk kategori ini.</div>`;
-      return;
-    }
-    list.forEach(bg => {
-      const id = String(bg.id);
-      const selected = selectedBackgrounds.includes(id);
-      const card = document.createElement('div');
-      card.className = 'background-option p-0 fade ' + (selected ? 'selected' : '');
-      card.tabIndex = 0;
-      card.innerHTML = `
-        ${ bg.image ? `<img src="{{ asset('storage') }}/${bg.image}" class="w-full h-40 object-cover">` : `<div class="w-full h-40 bg-slate-100"></div>` }
-        <div class="p-2"><div class="font-medium text-sm">${bg.name || 'Background'}</div></div>
-      `;
-      card.addEventListener('click', () => toggleBg(id, card));
-      card.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleBg(id, card); } });
-
-      // image preview
-      const imgEl = card.querySelector('img');
-      if (imgEl) {
-        imgEl.style.cursor = 'zoom-in';
-        imgEl.addEventListener('click', ev => { ev.stopPropagation(); openPreview(`{{ asset('storage') }}/${bg.image}`); });
-      }
-      bgGrid.appendChild(card);
-    });
-    updateBgCounter();
-  }
-
-  function toggleBg(id, el) {
-    const idx = selectedBackgrounds.indexOf(id);
-    if (idx > -1) {
-      selectedBackgrounds.splice(idx,1);
-      el.classList.remove('selected');
-    } else {
-      if (currentMaxBg > 0 && selectedBackgrounds.length >= currentMaxBg) {
-        alert(`Paket hanya boleh memilih maksimal ${currentMaxBg} background.`);
-        return;
-      }
-      selectedBackgrounds.push(id);
-      el.classList.add('selected');
-    }
-    updateBgCounter();
-    pushSelectedBg();
-  }
-
-  function updateBgCounter(){
-    bgCounterBadge.textContent = `${selectedBackgrounds.length}${currentMaxBg ? ' / '+currentMaxBg : ''}`;
-  }
-
-  function pushSelectedBg(){
-    const normalized = selectedBackgrounds.map(s => isNaN(s) ? s : Number(s));
-    selectedBgInput.value = JSON.stringify(normalized);
-  }
-
-  // package selection handling
-  $$('.package-card').forEach(card => {
-    card.addEventListener('click', () => {
-      $$('.package-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      const pkg = card.dataset.package;
-      const bg = Number(card.dataset.bg || 0);
-      const cat = card.dataset.cat || '';
-      packageInput.value = pkg;
-      currentPkg = pkg;
-      currentCat = cat;
-      currentMaxBg = bg;
-      summaryPackage.textContent = pkg;
-      packagePriceEl.textContent = idr(Number(card.dataset.price || 0));
-      // session control only for group packages
-      if (['plain','grande','royal'].includes((cat || '').toLowerCase())) {
-        sessionWrap.classList.remove('hidden');
-      } else {
-        sessionWrap.classList.add('hidden');
-        sessionHidden.value = '';
-        summarySession.textContent = '-';
-      }
-
-      // show bg section according to max bg
-      if (currentMaxBg === 0) {
-        bgSection.classList.add('hidden');
-        selectedBackgrounds = [];
-        pushSelectedBg();
-      } else {
-        bgSection.classList.remove('hidden');
-        // render backgrounds for category (union with session if session active)
-        const sessVal = sessionHidden.value || '';
-        let arr = maps[cat] || maps['all'];
-        if (sessVal) {
-          const sessArr = maps[sessVal] || [];
-          // union
-          const merged = [...arr, ...sessArr].reduce((acc, cur) => { if (!acc.find(x=>String(x.id) === String(cur.id))) acc.push(cur); return acc; }, []);
-          arr = merged;
+    // ----- package select & init -----
+    function initPackage() {
+        const serverPackage = packageNameInput.value || null;
+        let node = null;
+        if (serverPackage) {
+            node = Array.from(packageCards).find(c => safeLower(c.dataset.package) === safeLower(serverPackage));
         }
-        renderBackgroundTiles(arr);
-      }
-      updateTotals();
-    });
-    card.addEventListener('keydown', (e)=>{ if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); card.click(); } });
-  });
-
-  // session segments
-  sessionButtons.forEach(btn=>{
-    btn.addEventListener('click', ()=>{
-      sessionButtons.forEach(b=>b.classList.remove('active'));
-      btn.classList.add('active');
-      const val = btn.dataset.val;
-      sessionHidden.value = val;
-      summarySession.textContent = btn.textContent;
-      // re-render backgrounds with union
-      const cat = currentCat || 'all';
-      const arr = (maps[cat] || []).concat(maps[val] || []);
-      const merged = arr.reduce((acc, cur) => { if (!acc.find(x=>String(x.id) === String(cur.id))) acc.push(cur); return acc; }, []);
-      renderBackgroundTiles(merged);
-    });
-  });
-
-  // bg search
-  if (bgSearch) {
-    bgSearch.addEventListener('input', function(){
-      const q = this.value.trim().toLowerCase();
-      const cat = currentCat || 'all';
-      let arr = maps[cat] || maps['all'];
-      if (sessionHidden.value) arr = [...arr, ...(maps[sessionHidden.value]||[])].reduce((acc, cur) => { if (!acc.find(x=>String(x.id) === String(cur.id))) acc.push(cur); return acc; }, []);
-      if (q) {
-        arr = arr.filter(b => (b.name || '').toLowerCase().includes(q));
-      }
-      renderBackgroundTiles(arr);
-    });
-  }
-
-  // extras handling: checkbox + qty
-  function updateSelectedExtrasFromDom(){
-    selectedExtras = [];
-    $$('.extra-checkbox').forEach(cb=>{
-      const id = cb.dataset.id;
-      const price = Number(cb.dataset.price || 0);
-      const qty = Number(document.querySelector(`input[data-extra-id="${id}"]`)?.value || 1);
-      if (cb.checked) selectedExtras.push({ id, price, qty });
-    });
-    renderExtrasBreakdown();
-    updateTotals();
-  }
-  $$('.extra-checkbox').forEach(cb => cb.addEventListener('change', updateSelectedExtrasFromDom));
-  qtyInputs().forEach(q => q.addEventListener('input', updateSelectedExtrasFromDom));
-
-  // initial extras
-  updateSelectedExtrasFromDom();
-
-  function renderExtrasBreakdown(){
-    extrasBreakdown.innerHTML = '';
-    if (selectedExtras.length === 0) {
-      extrasBreakdown.innerHTML = '<div class="text-xs text-gray-400">Tidak ada extras.</div>';
-      return;
+        if (!node && packageCards.length) node = Array.from(packageCards)[0];
+        if (node) selectPackage(node, false);
     }
-    selectedExtras.forEach(e => {
-      const div = document.createElement('div');
-      div.className = 'flex items-center justify-between text-sm';
-      div.innerHTML = `<div>${e.id} × ${e.qty}</div><div>${idr(e.price * e.qty)}</div>`;
-      extrasBreakdown.appendChild(div);
-    });
-  }
 
-  // totals calculation: package price + extras
-  function updateTotals(){
-    const pkgBtn = $$('.package-card').find(c => c.classList.contains('selected')) || null;
-    const pkgPrice = pkgBtn ? Number(pkgBtn.dataset.price || 0) : 0;
-    const extrasTotal = selectedExtras.reduce((s, ex) => s + (ex.price * (ex.qty || 1)), 0);
-    packagePriceEl.textContent = idr(pkgPrice);
-    grandTotal.textContent = idr(pkgPrice + extrasTotal);
-  }
+    function selectPackage(card, triggerRender=true) {
+        packageCards.forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
 
-  // booking times fetch
-  async function fetchTimes(date){
-    if (!date) return;
-    bookingTime.disabled = true;
-    bookingTime.innerHTML = '<option>Memuat…</option>';
-    timeMsg.textContent = '';
-    try {
-      const res = await fetch(`/api/available-times?booking_date=${encodeURIComponent(date)}`);
-      if (!res.ok) throw new Error('fail');
-      const data = await res.json();
-      const times = data.available_times || [];
-      bookingTime.innerHTML = '';
-      if (!times.length) {
-        bookingTime.innerHTML = '<option value="">Hari ini penuh</option>';
-        bookingTime.disabled = true;
-        timeMsg.textContent = 'Tidak ada slot pada tanggal ini.';
-      } else {
-        const placeholder = document.createElement('option'); placeholder.value=''; placeholder.text = '-- Pilih Waktu --';
-        bookingTime.appendChild(placeholder);
-        times.forEach(t => { const o = document.createElement('option'); o.value = t; o.text = `${t} WIB`; bookingTime.appendChild(o); });
-        // restore old/current booking time if present
-        const oldTime = "{{ old('booking_time', $booking->booking_time) }}";
-        if (oldTime && times.includes(oldTime)) bookingTime.value = oldTime;
-        else {
-          const cur = @json($booking->booking_time);
-          if (cur && !times.includes(cur)) {
-            const opt = document.createElement('option'); opt.value = cur; opt.text = `${cur} WIB (current)`; bookingTime.prepend(opt);
-            bookingTime.value = cur;
-          }
+        selectedPackage = card.dataset.package;
+        basePrice = parseInt(card.dataset.price || 0);
+        maxBackgrounds = parseInt(card.dataset.backgrounds || 0);
+        packageCategory = (card.dataset.category || '').toString().trim();
+
+        packageNameInput.value = selectedPackage;
+
+        // compute session name for display (not authoritative when group packages: real session chosen by sessionSelect)
+        const computed = computeSessionName(selectedPackage);
+        if (!sessionSelect || !sessionSelect.value) {
+            sessionNameInput.value = computed;
+            if (sessionNameDisplay) sessionNameDisplay.textContent = computed;
         }
-        bookingTime.disabled = false;
-        timeMsg.textContent = `Ada ${times.length} slot tersedia.`;
-      }
-    } catch (e) {
-      bookingTime.innerHTML = '<option value="">Gagal muat</option>';
-      bookingTime.disabled = true;
-      timeMsg.textContent = 'Gagal memuat slot waktu.';
+
+        maxBgLabel.textContent = maxBackgrounds;
+        bgCounter.textContent = selectedBackgrounds.length;
+
+        // show/hide session selector for group packages
+        if (['plain','grande','royal'].includes(packageCategory.toLowerCase())) {
+            sessionSelectWrapper.classList.remove('hidden');
+        } else {
+            sessionSelectWrapper.classList.add('hidden');
+            if (sessionSelect) sessionSelect.value = '';
+            sessionNameInput.value = computed;
+            if (sessionNameDisplay) sessionNameDisplay.textContent = computed;
+        }
+
+        if (maxBackgrounds === 0) {
+            bgContainer.innerHTML = '<div class="small">Paket ini tidak membutuhkan pemilihan background.</div>';
+            selectedBackgrounds = [];
+            updateHiddenBackgrounds();
+        } else {
+            // If group package and session selected -> render union(pkgCategory, session)
+            const sess = (sessionSelect && sessionSelect.value) ? sessionSelect.value : '';
+            if (['plain','grande','royal'].includes(packageCategory.toLowerCase()) && sess) {
+                renderBackgroundsForPackageAndSession(packageCategory.toLowerCase(), sess);
+            } else {
+                renderBackgroundsByCategory(packageCategory || 'all');
+            }
+        }
+
+        updateTotalPreview();
     }
-  }
 
-  bookingDate.addEventListener('change', e => {
-    summaryDate.textContent = e.target.value || '-';
-    fetchTimes(e.target.value);
-  });
+    function computeSessionName(pkgName) {
+        const n = safeLower(pkgName || '');
+        if (n.includes('baby')) return 'Baby Smash Cake';
+        if (n.includes('prewed') || n.includes('pre-wedding')) return 'Pre-Wedding Session';
+        return 'Photoshoot Session';
+    }
 
-  bookingTime.addEventListener('change', e => summaryTime.textContent = e.target.value || '-');
-
-  // init fetch if date exists
-  if (bookingDate.value) fetchTimes(bookingDate.value);
-
-  // payment method toggle
-  paymentMethod.addEventListener('change', () => proofArea.classList.toggle('hidden', paymentMethod.value !== 'transfer'));
-
-  // preview modal
-  const previewModal = $('#previewModal');
-  const previewImg = $('#previewImg');
-  const closePreview = $('#closePreview');
-  if (closePreview) closePreview.addEventListener('click', ()=> { previewModal.classList.add('hidden'); previewImg.src = ''; });
-  function openPreview(src){ previewImg.src = src; previewModal.classList.remove('hidden'); }
-
-  // submit handling with client-side validation
-  submitBtn.addEventListener('click', (ev) => {
-    // require package
-    if (!packageInput.value) { alert('Silakan pilih paket.'); return; }
-    // if group package require session
-    if (['plain','grande','royal'].includes((currentCat||'').toLowerCase()) && !sessionHidden.value) { alert('Silakan pilih jenis sesi (Family/Graduation/Maternity).'); return; }
-    // background requirement
-    if (currentMaxBg > 0 && selectedBackgrounds.length === 0) { alert('Pilih minimal 1 background sesuai paket.'); return; }
-    // ensure booking time selected if changed (server will enforce anyway)
-    if (!bookingTime.value) { if (!confirm('Waktu belum dipilih. Lanjutkan?')) return; }
-    // ensure push selections
-    pushSelectedBg();
-    updateSelectedExtrasFromDom();
-    // submit main form
-    mainForm.requestSubmit();
-  });
-
-  // initial UI population
-  (function init(){
-    // mark selected package button if server had one
-    const serverPkg = packageInput.value || '{{ $booking->package_name }}';
-    $$('.package-card').forEach(c => {
-      if ((c.dataset.package||'').toLowerCase() === (serverPkg||'').toLowerCase()) {
-        c.classList.add('selected');
-        currentCat = c.dataset.cat || currentCat;
-        currentMaxBg = Number(c.dataset.bg || currentMaxBg);
-      }
+    packageCards.forEach(card => {
+        card.addEventListener('click', function () { selectPackage(this, true); });
+        card.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); selectPackage(this, true); } });
     });
 
-    // show session (if server had it)
-    const serverSess = "{{ old('session_name', $booking->session_name ?? '') }}";
-    if (['plain','grande','royal'].includes((currentCat||'').toLowerCase())) {
-      sessionWrap.classList.remove('hidden');
-      if (serverSess) {
-        sessionButtons.forEach(b => { if (b.dataset.val === serverSess) b.classList.add('active'); });
-        sessionHidden.value = serverSess;
-        summarySession.textContent = serverSess;
-      }
+    // ----- backgrounds rendering -----
+    function renderBackgroundsByCategory(catKey) {
+        const backgrounds = (singleCategoryMap[catKey] ?? singleCategoryMap['all'] ?? []);
+        renderBackgroundList(backgrounds);
     }
 
-    // show background section if needed and render initial backgrounds
-    if (currentMaxBg === 0) {
-      bgSection.classList.add('hidden');
-    } else {
-      bgSection.classList.remove('hidden');
-      // union if session selected
-      let arr = maps[currentCat] || maps['all'];
-      if (sessionHidden.value) {
-        arr = [...arr, ...(maps[sessionHidden.value]||[])].reduce((acc, cur) => { if (!acc.find(x=>String(x.id)===String(cur.id))) acc.push(cur); return acc; }, []);
-      }
-      renderBackgroundTiles(arr);
+    // Union of package category + session category (useful for group packages)
+    function renderBackgroundsForPackageAndSession(pkgKey, sessionKey) {
+        const pkgArr = singleCategoryMap[pkgKey] ?? [];
+        const sessArr = singleCategoryMap[sessionKey] ?? [];
+        // union by id
+        const map = {};
+        [...pkgArr, ...sessArr].forEach(b => { if (b && b.id) map[b.id] = b; });
+        const unionArr = Object.values(map);
+        renderBackgroundList(unionArr);
     }
 
-    // set initial selected background tiles class after render (renderBackgroundTiles handles selectedBackgrounds)
-    updateBgCounter();
+    function renderBackgroundList(list) {
+        bgContainer.innerHTML = '';
+        if (!Array.isArray(list) || list.length === 0) {
+            bgContainer.innerHTML = '<div class="small">Belum ada background untuk kategori ini.</div>';
+            updateBackgroundCounter();
+            return;
+        }
 
-    // show initial summary values
-    summaryPackage.textContent = packageInput.value || '{{ $booking->package_name }}';
-    summaryDate.textContent = '{{ $booking->booking_date }}';
-    summaryTime.textContent = '{{ $booking->booking_time }}';
-    updateTotals();
-    renderExtrasBreakdown();
-  })();
+        list.forEach(bg => {
+            const id = String(bg.id);
+            const selected = selectedBackgrounds.includes(id);
+            const div = document.createElement('div');
+            div.className = 'background-option' + (selected ? ' selected' : '');
+            div.dataset.id = id;
+
+            const imgSrc = bg.image ? `{{ asset('storage') }}/${bg.image}` : null;
+            div.innerHTML = `
+                ${ imgSrc ? `<img src="${imgSrc}" alt="${(bg.name||'Background')}">` : '<div style="height:120px;background:#f3f4f6"></div>' }
+                <div class="meta"><div style="font-weight:600">${bg.name ?? 'Background'}</div></div>
+            `;
+
+            div.addEventListener('click', function () { toggleBackground(id, div); });
+            div.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggleBackground(id, div); } });
+
+            bgContainer.appendChild(div);
+        });
+
+        // ensure classes for already-selected
+        document.querySelectorAll('.background-option').forEach(el => {
+            const id = el.dataset.id;
+            if (selectedBackgrounds.includes(id)) el.classList.add('selected');
+            else el.classList.remove('selected');
+        });
+        updateBackgroundCounter();
+        updateHiddenBackgrounds();
+    }
+
+    function toggleBackground(id, el) {
+        const idx = selectedBackgrounds.indexOf(id);
+        if (idx > -1) {
+            selectedBackgrounds.splice(idx, 1);
+            el.classList.remove('selected');
+        } else {
+            if (maxBackgrounds > 0 && selectedBackgrounds.length >= maxBackgrounds) {
+                alert(`Paket ${selectedPackage} hanya boleh ${maxBackgrounds} background.`);
+                return;
+            }
+            selectedBackgrounds.push(id);
+            el.classList.add('selected');
+            try { el.animate([{ boxShadow: '0 0 0 0 rgba(220,38,38,0.3)' }, { boxShadow: '0 0 0 10px rgba(220,38,38,0)' }], { duration: 600 }); } catch(e){}
+        }
+        updateBackgroundCounter();
+        updateHiddenBackgrounds();
+    }
+
+    function updateBackgroundCounter() {
+        const selectedCount = selectedBackgrounds.length || 0;
+        bgCounter.textContent = `${selectedCount}`;
+        // visual disable when max reached
+        const opts = document.querySelectorAll('.background-option');
+        if (maxBackgrounds > 0 && selectedCount >= maxBackgrounds) {
+            opts.forEach(o => { if (!o.classList.contains('selected')) { o.style.opacity = '0.45'; o.style.pointerEvents = 'none'; } });
+        } else {
+            opts.forEach(o => { o.style.opacity = ''; o.style.pointerEvents = ''; });
+        }
+    }
+
+    function updateHiddenBackgrounds() {
+        selectedBackgrounds = Array.from(new Set(selectedBackgrounds));
+        const arr = selectedBackgrounds.map(s => (isNaN(s) ? s : Number(s)));
+        selectedBackgroundsInput.value = JSON.stringify(arr);
+    }
+
+    // ----- session select handling (for group packages) -----
+    if (sessionSelect) {
+        sessionSelect.addEventListener('change', function () {
+            const sess = this.value;
+            sessionNameInput.value = sess || computeSessionName(packageNameInput.value);
+            if (sessionNameDisplay) sessionNameDisplay.textContent = sessionNameInput.value || '-';
+
+            // if group package selected, render union of package+session
+            if (packageCategory && ['plain','grande','royal'].includes(packageCategory.toLowerCase())) {
+                if (!sess) {
+                    renderBackgroundsByCategory(packageCategory || 'all');
+                } else {
+                    renderBackgroundsForPackageAndSession(packageCategory.toLowerCase(), sess);
+                }
+            }
+        });
+    }
+
+    // ----- extras binding & total preview -----
+    function updateTotalPreview() {
+        let extrasTotal = 0;
+        const extras = Array.from(document.querySelectorAll('.extra-checkbox:checked'));
+        extras.forEach(cb => { extrasTotal += parseInt(cb.dataset.price || 0); });
+        const total = (basePrice || 0) + extrasTotal;
+        totalPriceDisplay.textContent = idr(total);
+        hiddenTotalPrice.value = total;
+    }
+    document.querySelectorAll('.extra-checkbox').forEach(cb => cb.addEventListener('change', updateTotalPreview));
+
+    // ----- payment proof toggle -----
+    if (paymentMethodSelect) {
+        paymentMethodSelect.addEventListener('change', () => {
+            if (paymentMethodSelect.value === 'transfer') uploadProofSection.style.display = 'block';
+            else uploadProofSection.style.display = 'none';
+        });
+    }
+
+    // ----- availability / times -----
+    let availableTimes = [];
+    async function fetchAvailableTimes() {
+        const date = bookingDateInput.value;
+        if (!date) return;
+        bookingTimeSelect.disabled = true;
+        bookingTimeSelect.innerHTML = '<option>Memuat...</option>';
+        timeAvailabilityInfo.style.display = 'none';
+
+        try {
+            const res = await fetch(`/api/available-times?booking_date=${encodeURIComponent(date)}`);
+            if (!res.ok) throw new Error('fetch error');
+            const data = await res.json();
+            availableTimes = data.available_times || [];
+            bookingTimeSelect.innerHTML = '';
+
+            if (!availableTimes.length) {
+                const opt = document.createElement('option');
+                opt.value = '';
+                opt.disabled = true;
+                opt.textContent = 'Hari ini penuh';
+                bookingTimeSelect.appendChild(opt);
+                bookingTimeSelect.disabled = true;
+
+                timeAvailabilityInfo.className = 'availability-info full';
+                timeAvailabilityInfo.textContent = 'Tidak ada slot pada tanggal ini.';
+            } else {
+                const placeholder = document.createElement('option');
+                placeholder.value = '';
+                placeholder.textContent = '-- Pilih Waktu --';
+                bookingTimeSelect.appendChild(placeholder);
+
+                availableTimes.forEach(t => {
+                    const opt = document.createElement('option');
+                    opt.value = t;
+                    opt.textContent = `${t} WIB`;
+                    bookingTimeSelect.appendChild(opt);
+                });
+
+                // restore old time if available, else keep current booking time as first option (so comparisons work)
+                const oldTime = @json(old('booking_time', $booking->booking_time));
+                if (oldTime && availableTimes.includes(oldTime)) {
+                    bookingTimeSelect.value = oldTime;
+                } else {
+                    const currentBookingTime = @json($booking->booking_time);
+                    if (currentBookingTime && !availableTimes.includes(currentBookingTime)) {
+                        const cur = document.createElement('option');
+                        cur.value = currentBookingTime;
+                        cur.textContent = `${currentBookingTime} WIB (current)`;
+                        bookingTimeSelect.prepend(cur);
+                        bookingTimeSelect.value = currentBookingTime;
+                    }
+                }
+
+                bookingTimeSelect.disabled = false;
+                timeAvailabilityInfo.className = (data.status === 'limited') ? 'availability-info limited' : 'availability-info available';
+                timeAvailabilityInfo.textContent = `Tersedia ${availableTimes.length} slot.`;
+            }
+            timeAvailabilityInfo.style.display = 'block';
+        } catch (err) {
+            console.error(err);
+            bookingTimeSelect.innerHTML = '<option value="">Gagal muat</option>';
+            bookingTimeSelect.disabled = true;
+            timeAvailabilityInfo.className = 'availability-info';
+            timeAvailabilityInfo.textContent = 'Gagal memuat slot waktu. Coba lagi nanti.';
+            timeAvailabilityInfo.style.display = 'block';
+            availableTimes = [];
+        }
+    }
+
+    if (bookingDateInput) {
+        bookingDateInput.addEventListener('change', fetchAvailableTimes);
+        if (bookingDateInput.value) fetchAvailableTimes();
+    }
+
+    // ----- form submit validations (partial-edit friendly) -----
+    const form = document.getElementById('adminBookingForm');
+    if (form) {
+        form.addEventListener('submit', function (e) {
+            // require package
+            if (!packageNameInput.value) {
+                e.preventDefault();
+                alert('Silakan pilih paket.');
+                return;
+            }
+
+            // if group package - require session
+            const pkgCat = (packageCategory || '').toLowerCase();
+            if (['plain','grande','royal'].includes(pkgCat) && (!sessionSelect || !sessionSelect.value)) {
+                e.preventDefault();
+                alert('Silakan pilih jenis sesi untuk paket ini.');
+                return;
+            }
+
+            // background requirement
+            if (maxBackgrounds > 0 && selectedBackgrounds.length === 0) {
+                e.preventDefault();
+                alert('Pilih minimal 1 background sesuai paket.');
+                return;
+            }
+
+            // determine whether user changed date/time
+            const chosenDate = bookingDateInput.value;
+            const chosenTime = bookingTimeSelect.value;
+
+            const dateChanged = String(chosenDate || '') !== String(originalBookingDate || '');
+            const timeChanged = String(chosenTime || '') !== String(originalBookingTime || '');
+
+            // if neither date nor time changed, skip availability validation (allow partial edit)
+            if (!dateChanged && !timeChanged) {
+                updateHiddenBackgrounds();
+                return;
+            }
+
+            // if date or time changed, require both
+            if (!chosenDate || !chosenTime) {
+                e.preventDefault(); alert('Pilih tanggal dan waktu yang valid.'); return;
+            }
+
+            // if date changed and times not loaded => block (can't trust)
+            if (dateChanged && availableTimes.length === 0) {
+                e.preventDefault(); alert('Slot waktu belum dimuat atau hari penuh. Silakan pilih tanggal lain.'); return;
+            }
+
+            // if availableTimes present and chosenTime not included -> block
+            if (availableTimes.length && !availableTimes.includes(chosenTime)) {
+                e.preventDefault(); alert('Waktu yang dipilih tidak tersedia. Mohon pilih waktu lain dari daftar.'); return;
+            }
+
+            // payment proof when transfer
+            const method = paymentMethodSelect ? paymentMethodSelect.value : 'cash';
+            if (method === 'transfer') {
+                const fileInput = document.querySelector('input[name="payment_proof"]');
+                // IMPORTANT: editing may already have payment_proof on server; require upload only if none on server and no file selected
+                const hasServerProof = @json(!empty($booking->payment_proof) ? true : false);
+                if (!hasServerProof && (!fileInput || !fileInput.files.length)) {
+                    e.preventDefault();
+                    alert('Upload bukti transfer karena metode pembayaran transfer dan belum ada bukti sebelumnya.');
+                    return;
+                }
+            }
+
+            // ensure selected_backgrounds hidden input is updated
+            updateHiddenBackgrounds();
+        });
+    }
+
+    // ----- initialize UI (package, backgrounds, extras, totals) -----
+    (function initAll(){
+        // set base price if the package was already selected
+        const pkg = packageNameInput.value;
+        if (pkg) {
+            const found = Array.from(packageCards).find(c => c.dataset.package && c.dataset.package.toLowerCase() === pkg.toLowerCase());
+            if (found) selectPackage(found, false);
+        } else if (packageCards.length) {
+            // not necessary to auto-select if you want admin to choose; but keep first for convenience
+            // selectPackage(packageCards[0], false);
+        }
+
+        // if session present in server data, ensure session wrapper visible
+        const serverSession = @json(old('session_name', $booking->session_name ?? ''));
+        if (serverSession && ['plain','grande','royal'].includes((packageCategory||'').toLowerCase())) {
+            if (sessionSelectWrapper) sessionSelectWrapper.classList.remove('hidden');
+            if (sessionSelect) {
+                sessionSelect.value = serverSession;
+                sessionNameInput.value = serverSession;
+                if (sessionNameDisplay) sessionNameDisplay.textContent = serverSession;
+            }
+            // re-render backgrounds as union
+            if (packageCategory) renderBackgroundsForPackageAndSession(packageCategory.toLowerCase(), serverSession);
+        } else {
+            // if selectedBackgrounds exist, render by package
+            if (selectedBackgrounds.length && packageCategory) {
+                renderBackgroundsByCategory(packageCategory || 'all');
+            } else if (packageCategory) {
+                renderBackgroundsByCategory(packageCategory || 'all');
+            }
+        }
+
+        // ensure checkbox extras state read & total preview set
+        updateTotalPreview();
+
+        // ensure hidden backgrounds input current
+        updateHiddenBackgrounds();
+    })();
 
 });
 </script>
