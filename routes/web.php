@@ -64,7 +64,7 @@ Route::prefix('customer')->group(function () {
 // ========================
 // CUSTOMER PAGES (requires customer.auth middleware)
 // ========================
-// Ensure you have middleware 'customer.auth' implemented (you referenced it earlier)
+// Ensure you have middleware 'customer.auth' implemented
 Route::middleware(['customer.auth'])->group(function () {
     // Customer booking flows
     Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
@@ -150,8 +150,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/bookings/{id}/reject-cancellation', [AdminBookingController::class, 'rejectCancellation'])
         ->where('id', '[0-9]+')->name('bookings.cancellations.reject');
 
-    // NOTE: removed admin "mark cancellation request" route to enforce that only customers request cancellations.
-
     // Other booking actions
     Route::post('/bookings/{id}/verify-payment', [AdminBookingController::class, 'verifyPayment'])->name('bookings.verifyPayment');
     Route::post('/bookings/{id}/cancel-booking', [AdminBookingController::class, 'cancelBooking'])->name('bookings.cancelBooking');
@@ -185,6 +183,17 @@ Route::middleware(['auth'])->group(function () {
 // ========================
 Route::get('/api/available-times', [BookingAvailabilityController::class, 'getAvailableTimes'])
     ->name('api.available.times');
+
+// API untuk background berdasarkan kombinasi package + session
+// contoh: /api/backgrounds?package=plain&session=family
+Route::get('/api/backgrounds', [BookingController::class, 'apiBackgrounds'])
+    ->name('api.backgrounds');
+
+// Serve payment/refund proof file (controller akan memeriksa otorisasi)
+// GET /bookings/{booking}/proof/{type} where type = payment|refund
+Route::get('/bookings/{booking}/proof/{type}', [BookingController::class, 'serveProof'])
+    ->where(['booking' => '[0-9]+', 'type' => 'payment|refund'])
+    ->name('booking.proof');
 
 // ========================
 // ADMIN AUTH (Breeze) — keep default Breeze auth routes

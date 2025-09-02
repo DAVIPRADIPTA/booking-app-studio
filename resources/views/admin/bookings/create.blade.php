@@ -99,7 +99,7 @@
                         @else
                             <option value="">Pilih tanggal dulu...</option>
                         @endif
-                    </select> 
+                    </select>
                     <div id="time-availability-info" class="hidden mt-2 p-3 rounded-lg border">
                         <span id="availability-message"></span>
                     </div>
@@ -132,9 +132,9 @@
             <div class="package-section-container bg-gray-50 p-6 rounded-lg border">
                 <h2 class="text-xl font-semibold text-gray-700 mb-6">Pilih Paket</h2>
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                    <!-- (package cards same as before) -->
+                    <!-- packages (same markup as you already have) -->
                     <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ in_array(old('package_name'), ['Baby Smash Cake', 'babysmash']) ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
-                        data-package="Baby Smash Cake" data-price="550000" data-backgrounds="0" data-category="baby-smash">
+                        data-package="Baby Smash Cake" data-price="550000" data-backgrounds="0" data-category="baby-smash" tabindex="0" role="button" aria-pressed="false">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Baby Smash Cake</h3>
                             <div class="package-price text-lg font-bold">IDR 550k</div>
@@ -152,9 +152,8 @@
                         </div>
                     </div>
 
-                    <!-- Plain -->
                     <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ old('package_name') == 'Plain' ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
-                        data-package="Plain" data-price="300000" data-backgrounds="1" data-category="plain">
+                        data-package="Plain" data-price="300000" data-backgrounds="1" data-category="plain" tabindex="0" role="button" aria-pressed="false">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Plain</h3>
                             <div class="package-price text-lg font-bold">IDR 300k</div>
@@ -170,9 +169,8 @@
                         </ul>
                     </div>
 
-                    <!-- Grande -->
                     <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ old('package_name') == 'Grande' ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
-                        data-package="Grande" data-price="500000" data-backgrounds="2" data-category="grande">
+                        data-package="Grande" data-price="500000" data-backgrounds="2" data-category="grande" tabindex="0" role="button" aria-pressed="false">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Grande</h3>
                             <div class="package-price text-lg font-bold">IDR 500k</div>
@@ -188,9 +186,8 @@
                         </ul>
                     </div>
 
-                    <!-- Royal -->
                     <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ old('package_name') == 'Royal' ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
-                        data-package="Royal" data-price="700000" data-backgrounds="4" data-category="royal">
+                        data-package="Royal" data-price="700000" data-backgrounds="4" data-category="royal" tabindex="0" role="button" aria-pressed="false">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Royal</h3>
                             <div class="package-price text-lg font-bold">IDR 700k</div>
@@ -206,9 +203,8 @@
                         </ul>
                     </div>
 
-                    <!-- Prewed I -->
                     <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ in_array(old('package_name'), ['Prewed I', 'prewed1']) ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
-                        data-package="Prewed I" data-price="700000" data-backgrounds="2" data-category="pre-wedding">
+                        data-package="Prewed I" data-price="700000" data-backgrounds="2" data-category="pre-wedding" tabindex="0" role="button" aria-pressed="false">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Prewed I</h3>
                             <div class="package-price text-lg font-bold">IDR 700k</div>
@@ -223,9 +219,8 @@
                         </ul>
                     </div>
 
-                    <!-- Prewed II -->
                     <div class="package-card cursor-pointer border-2 rounded-lg p-4 hover:border-red-500 transition {{ in_array(old('package_name'), ['Prewed II', 'prewed2']) ? 'border-red-500 bg-red-50' : 'border-gray-200' }}"
-                        data-package="Prewed II" data-price="1000000" data-backgrounds="3" data-category="pre-wedding">
+                        data-package="Prewed II" data-price="1000000" data-backgrounds="3" data-category="pre-wedding" tabindex="0" role="button" aria-pressed="false">
                         <div class="package-header">
                             <h3 class="package-title font-dancing text-2xl">Prewed II</h3>
                             <div class="package-price text-lg font-bold">IDR 1000k</div>
@@ -242,10 +237,23 @@
                 </div>
 
                 <input type="hidden" name="package_name" id="package_name" value="{{ old('package_name') }}">
-                <input type="hidden" name="session_name" id="session_name" value="Photoshoot Session">
+                <!-- session_name will be filled by JS when required -->
+                <input type="hidden" name="session_name" id="session_name" value="{{ old('session_name') ?? '' }}">
                 @error('package_name')
                     <p class="text-red-500 text-sm mt-1">{{ $message }}</p>
                 @enderror
+            </div>
+
+            <!-- Session selector (only visible when group package selected) -->
+            <div id="sessionSelectWrapper" class="bg-gray-50 p-6 rounded-lg border hidden">
+                <label class="block font-semibold text-gray-700 mb-2">Jenis Sesi (hanya untuk Plain/Grande/Royal)</label>
+                <select id="sessionSelect" class="w-full border border-gray-300 rounded-lg p-3" aria-describedby="session-error">
+                    <option value="">-- Pilih Jenis Sesi --</option>
+                    <option value="family" {{ old('session_name') == 'family' ? 'selected' : '' }}>Family</option>
+                    <option value="graduation" {{ old('session_name') == 'graduation' ? 'selected' : '' }}>Graduation</option>
+                    <option value="maternity" {{ old('session_name') == 'maternity' ? 'selected' : '' }}>Maternity</option>
+                </select>
+                <p id="session-error" class="text-red-500 text-sm mt-1 hidden"></p>
             </div>
 
             <!-- Pilih Background -->
@@ -370,21 +378,19 @@
 @push('scripts')
     <script>
         document.addEventListener('DOMContentLoaded', function () {
-            // Normalisasi data dari Blade:
-            // controller mengirim $availableTimes sebagai struktur: ['available_times'=>[], 'booked_times'=>[], 'status'=>..., 'date'=>...]
+            // Data dari controller
+            const combinedBackgroundsMap = @json($combinedBackgroundsMap ?? []);
+            const singleCategoryMap = @json($singleCategoryMap ?? []);
             let availableTimes = @json($availableTimes['available_times'] ?? []);
-            // selectedBackgrounds dari Blade bisa berupa array angka atau string — kita normalisasi jadi array string
             let selectedBackgrounds = @json($selectedBackgrounds ?? []);
             selectedBackgrounds = Array.isArray(selectedBackgrounds) ? selectedBackgrounds.map(String) : [];
 
-            // selectedExtras: ambil dari checkbox yang tercentang di awal (lebih aman)
-            let selectedExtras = Array.from(document.querySelectorAll('.extra-checkbox:checked')).map(cb => {
-                return {
-                    id: cb.value,
-                    name: cb.dataset.name,
-                    price: parseInt(cb.dataset.price || 0)
-                };
-            });
+            // extras from initial checked boxes
+            let selectedExtras = Array.from(document.querySelectorAll('.extra-checkbox:checked')).map(cb => ({
+                id: cb.value,
+                name: cb.dataset.name,
+                price: parseInt(cb.dataset.price || 0)
+            }));
 
             let selectedPackage = null;
             let basePrice = 0;
@@ -394,6 +400,9 @@
             // DOM refs
             const packageCards = document.querySelectorAll('.package-card');
             const packageInput = document.getElementById('package_name');
+            const sessionInputHidden = document.getElementById('session_name');
+            const sessionSelectWrapper = document.getElementById('sessionSelectWrapper');
+            const sessionSelect = document.getElementById('sessionSelect');
             const backgroundSection = document.getElementById('background-section');
             const bgContainer = document.getElementById('background-container');
             const bgCounter = document.getElementById('backgroundCounter');
@@ -403,11 +412,13 @@
             const paymentMethod = document.getElementById('payment_method');
             const proofSection = document.getElementById('uploadProofSection');
 
-            // safe helpers
-            const toIdStr = v => (v === null || v === undefined) ? '' : String(v);
             const idr = v => 'IDR ' + new Intl.NumberFormat('id-ID').format(v || 0);
 
-            // selectPackage (dipakai juga untuk inisialisasi)
+            // Helpers
+            function stratifyName(name) {
+                return (name || '').toString().trim().toLowerCase().replace(/\s+/g, ' ').replace(/ /g, ' ');
+            }
+
             function selectPackageCard(card, triggerUpdate = true) {
                 packageCards.forEach(c => c.classList.remove('selected', 'border-red-500', 'bg-red-50'));
                 card.classList.add('selected', 'border-red-500', 'bg-red-50');
@@ -415,19 +426,39 @@
                 selectedPackage = String(card.dataset.package || '');
                 basePrice = parseInt(card.dataset.price || 0);
                 maxBackgrounds = parseInt(card.dataset.backgrounds || 0);
-                packageCategory = card.dataset.category || '';
+                packageCategory = (card.dataset.category || '').toString().trim();
 
                 packageInput.value = selectedPackage;
                 maxBgLabel.textContent = maxBackgrounds;
                 bgCounter.textContent = selectedBackgrounds.length;
 
+                // Show/hide session selector for group packages (plain/grande/royal)
+                const pkgKey = packageCategory.toLowerCase();
+                const isGroup = ['plain','grande','royal'].includes(pkgKey);
+                if (isGroup) {
+                    sessionSelectWrapper.classList.remove('hidden');
+                } else {
+                    sessionSelectWrapper.classList.add('hidden');
+                    // clear session if package doesn't need it
+                    sessionSelect.value = '';
+                    sessionInputHidden.value = '';
+                }
+
+                // render appropriate backgrounds:
                 if (maxBackgrounds === 0) {
                     backgroundSection.classList.add('hidden');
                     selectedBackgrounds = [];
                     updateHiddenBackgrounds();
                 } else {
+                    // if group and session selected -> use combined map
+                    const sessionVal = (sessionSelect && sessionSelect.value) ? sessionSelect.value : '';
+                    if (isGroup && sessionVal) {
+                        renderBackgroundsForCombo(pkgKey, sessionVal);
+                    } else {
+                        // use single category map
+                        renderBackgroundsByCategory(packageCategory || 'all');
+                    }
                     backgroundSection.classList.remove('hidden');
-                    renderBackgroundsByCategory(packageCategory);
                 }
 
                 if (triggerUpdate) updateTotal();
@@ -437,45 +468,68 @@
                 card.addEventListener('click', function () {
                     selectPackageCard(this, true);
                 });
+                card.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        selectPackageCard(this, true);
+                    }
+                });
             });
 
-            // init package from hidden input (old value) if present; else leave unselected (admin should pick)
+            // init package if old value present
             (function initPackageFromInput() {
-                const pkg = packageInput.value || '';
+                const pkg = (packageInput.value || '').toString().trim();
                 if (!pkg) return;
-                const found = Array.from(packageCards).find(c => c.dataset.package && c.dataset.package.toLowerCase() === pkg.toLowerCase());
-                if (found) {
-                    // use function rather than .click() to avoid double side-effects
-                    selectPackageCard(found, true);
-                }
+                const found = Array.from(packageCards).find(c => (c.dataset.package || '').toLowerCase() === pkg.toLowerCase());
+                if (found) selectPackageCard(found, false);
             })();
 
-            // Render backgrounds by category, normalizing ids to string
-            function renderBackgroundsByCategory(category) {
-                const map = {
-                    'baby-smash': @json($babySmashBackgrounds ?? []),
-                    'plain': @json($plainBackgrounds ?? []),
-                    'grande': @json($grandeBackgrounds ?? []),
-                    'royal': @json($royalBackgrounds ?? []),
-                    'pre-wedding': @json($prewedBackgrounds ?? []),
-                    'family': @json($familyBackgrounds ?? []),
-                    'graduation': @json($graduationBackgrounds ?? []),
-                    'all': @json($backgroundItems ?? [])
-                };
-                const backgrounds = map[category] ?? map['all'] ?? [];
+            // Session select handling
+            if (sessionSelect) {
+                sessionSelect.addEventListener('change', function () {
+                    const sessionVal = this.value || '';
+                    sessionInputHidden.value = sessionVal;
+                    // if package selected and is group -> render combined backgrounds
+                    if (packageCategory && ['plain','grande','royal'].includes(packageCategory.toLowerCase())) {
+                        if (!sessionVal) {
+                            // require selecting session
+                            renderBackgroundsByCategory(packageCategory || 'all');
+                        } else {
+                            renderBackgroundsForCombo(packageCategory.toLowerCase(), sessionVal.toLowerCase());
+                        }
+                    }
+                });
+            }
 
+            // Render backgrounds for combo (package_session)
+            function renderBackgroundsForCombo(pkgKey, sessionKey) {
+                const comboKey = `${pkgKey}_${sessionKey}`;
+                const arr = combinedBackgroundsMap[comboKey] ?? [];
+                // fallback if none: try single category (pkg) or session
+                const fallback = (singleCategoryMap[pkgKey] ?? []).concat(singleCategoryMap[sessionKey] ?? []);
+                const backgrounds = (arr.length ? arr : fallback);
+
+                renderBackgroundsList(backgrounds);
+            }
+
+            function renderBackgroundsByCategory(categoryKey) {
+                const arr = singleCategoryMap[categoryKey] ?? singleCategoryMap['all'] ?? [];
+                renderBackgroundsList(arr);
+            }
+
+            function renderBackgroundsList(backgrounds) {
                 bgContainer.innerHTML = '';
-                if (!backgrounds.length) {
+                if (!Array.isArray(backgrounds) || backgrounds.length === 0) {
                     bgContainer.innerHTML = '<div class="text-sm text-gray-500">Belum ada background untuk kategori ini.</div>';
                     return;
                 }
 
                 backgrounds.forEach(bg => {
-                    const idStr = toIdStr(bg.id);
-                    const selected = selectedBackgrounds.includes(idStr);
+                    const idStr = String(bg.id ?? bg['id'] ?? '');
                     const div = document.createElement('div');
-                    div.className = 'background-option cursor-pointer border-2 rounded-lg overflow-hidden transition ' + (selected ? 'border-red-500 bg-red-50' : 'border-gray-200');
-                    div.dataset.id = idStr;
+                    div.className = 'background-option cursor-pointer border-2 rounded-lg overflow-hidden transition ' + (selectedBackgrounds.includes(idStr) ? 'border-red-500 bg-red-50' : 'border-gray-200');
+                    div.dataset.background = idStr;
+                    div.dataset.name = bg.name ?? ('BG ' + idStr);
 
                     const imgSrc = bg.image ? `{{ asset('storage') }}/${bg.image}` : null;
                     div.innerHTML = `
@@ -484,44 +538,55 @@
                     `;
 
                     div.addEventListener('click', function () {
-                        const id = this.dataset.id;
-                        const idx = selectedBackgrounds.indexOf(id);
-                        if (idx > -1) {
-                            selectedBackgrounds.splice(idx, 1);
-                            this.classList.remove('border-red-500', 'bg-red-50');
-                        } else {
-                            if (selectedBackgrounds.length >= maxBackgrounds) {
-                                alert(`Paket ${selectedPackage} hanya boleh ${maxBackgrounds} background.`);
-                                return;
-                            }
-                            selectedBackgrounds.push(id);
-                            this.classList.add('border-red-500', 'bg-red-50', 'pulse');
-                            setTimeout(() => this.classList.remove('pulse'), 1400);
-                        }
-                        bgCounter.textContent = selectedBackgrounds.length;
-                        updateHiddenBackgrounds();
+                        handleBackgroundToggle(this);
                     });
+                    div.addEventListener('keydown', function(e) { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBackgroundToggle(this); } });
 
                     bgContainer.appendChild(div);
                 });
 
-                // ensure selected classes
-                document.querySelectorAll('.background-option').forEach(el => {
-                    if (selectedBackgrounds.includes(el.dataset.id)) el.classList.add('border-red-500', 'bg-red-50');
-                    else el.classList.remove('border-red-500', 'bg-red-50');
-                });
+                updateBackgroundCounter();
+            }
 
-                bgCounter.textContent = selectedBackgrounds.length;
+            function handleBackgroundToggle(el) {
+                const id = String(el.dataset.background);
+                const idx = selectedBackgrounds.indexOf(id);
+                if (idx > -1) {
+                    selectedBackgrounds.splice(idx, 1);
+                    el.classList.remove('border-red-500', 'bg-red-50');
+                } else {
+                    if (selectedBackgrounds.length >= maxBackgrounds && maxBackgrounds > 0) {
+                        alert(`Paket ${selectedPackage} hanya boleh ${maxBackgrounds} background.`);
+                        return;
+                    }
+                    selectedBackgrounds.push(id);
+                    el.classList.add('border-red-500', 'bg-red-50', 'pulse');
+                    setTimeout(() => el.classList.remove('pulse'), 1400);
+                }
+                updateBackgroundCounter();
                 updateHiddenBackgrounds();
             }
 
-            function updateHiddenBackgrounds() {
-                // store as array of numeric strings or numbers, server-mutator will handle
-                selectedBackgrounds = Array.from(new Set(selectedBackgrounds)); // unique
-                selectedBackgroundsInput.value = JSON.stringify(selectedBackgrounds.map(s => isNaN(s) ? s : Number(s)));
+            function updateBackgroundCounter() {
+                const selectedCount = selectedBackgrounds.length || 0;
+                bgCounter.textContent = `${selectedCount}/${maxBackgrounds} dipilih`;
+                // visually disable non-selected when max reached
+                const options = document.querySelectorAll('.background-option');
+                if (selectedCount >= maxBackgrounds && maxBackgrounds > 0) {
+                    options.forEach(opt => { if (!opt.classList.contains('border-red-500')) { opt.style.opacity = '0.35'; opt.style.pointerEvents = 'none'; } });
+                } else {
+                    options.forEach(opt => { opt.style.opacity = ''; opt.style.pointerEvents = ''; });
+                }
             }
 
-            // extras binding: repr every change and update total
+            function updateHiddenBackgrounds() {
+                selectedBackgrounds = Array.from(new Set(selectedBackgrounds));
+                // store numbers where possible
+                const arr = selectedBackgrounds.map(s => (isNaN(s) ? s : Number(s)));
+                selectedBackgroundsInput.value = JSON.stringify(arr);
+            }
+
+            // extras binding
             document.querySelectorAll('.extra-checkbox').forEach(cb => {
                 cb.addEventListener('change', () => {
                     selectedExtras = Array.from(document.querySelectorAll('.extra-checkbox:checked')).map(x => ({
@@ -541,7 +606,7 @@
                 });
             }
 
-            // Fetch available times (expects API to return { available_times: [...], status: 'available'|'limited'|'full' })
+            // Fetch available times
             async function fetchAvailableTimes() {
                 const date = document.getElementById('booking_date').value;
                 if (!date) return;
@@ -584,7 +649,6 @@
                             select.appendChild(opt);
                         });
 
-                        // Restore old booking_time if present and available
                         const oldTime = "{{ old('booking_time') }}";
                         if (oldTime && availableTimes.includes(oldTime)) {
                             select.value = oldTime;
@@ -610,7 +674,6 @@
             const bookingDateInput = document.getElementById('booking_date');
             if (bookingDateInput) {
                 bookingDateInput.addEventListener('change', fetchAvailableTimes);
-                // If there is already a date (reload with old), fetch to refresh
                 if (bookingDateInput.value) fetchAvailableTimes();
             }
 
@@ -622,6 +685,14 @@
                     if (!packageInput.value) {
                         e.preventDefault();
                         alert('Silakan pilih paket.');
+                        return;
+                    }
+
+                    // if package is group - require session
+                    const pkgCat = (packageCategory || '').toLowerCase();
+                    if (['plain','grande','royal'].includes(pkgCat) && (!sessionSelect || !sessionSelect.value)) {
+                        e.preventDefault();
+                        alert('Silakan pilih jenis sesi untuk paket ini.');
                         return;
                     }
 
@@ -659,14 +730,13 @@
                 });
             }
 
-            // update total: basePrice + extras
             function updateTotal() {
                 const extrasTotal = selectedExtras.reduce((s, it) => s + (it.price || 0), 0);
                 const total = (basePrice || 0) + extrasTotal;
                 totalPriceDisplay.textContent = idr(total);
             }
 
-            // initial total (account for potentially pre-checked extras)
+            // initial inits
             (function initTotalsAndBackgrounds() {
                 // set base price if a package was already selected via hidden input
                 const pkg = packageInput.value;
@@ -677,22 +747,26 @@
 
                 // if selectedBackgrounds exist from server, render current package backgrounds
                 if (selectedBackgrounds.length && packageInput.value) {
-                    // ensure they are strings
                     selectedBackgrounds = selectedBackgrounds.map(String);
-                    // render if package selected
                     const found = Array.from(packageCards).find(c => c.dataset.package && c.dataset.package.toLowerCase() === packageInput.value.toLowerCase());
                     if (found) {
-                        // set maxBackgrounds from card dataset
                         maxBackgrounds = parseInt(found.dataset.backgrounds || 0);
                         packageCategory = found.dataset.category || '';
-                        renderBackgroundsByCategory(packageCategory);
+                        // if session already provided
+                        const sessVal = "{{ old('session_name') }}";
+                        if (sessVal && ['plain','grande','royal'].includes((packageCategory||'').toLowerCase())) {
+                            sessionSelectWrapper.classList.remove('hidden');
+                            sessionSelect.value = sessVal;
+                            sessionInputHidden.value = sessVal;
+                            renderBackgroundsForCombo(packageCategory.toLowerCase(), sessVal);
+                        } else {
+                            renderBackgroundsByCategory(packageCategory || 'all');
+                        }
                     } else {
-                        // fallback show all backgrounds
                         renderBackgroundsByCategory('');
                     }
                 }
 
-                // ensure selectedExtras populated (already done above from checked checkboxes)
                 updateTotal();
                 updateHiddenBackgrounds();
             })();

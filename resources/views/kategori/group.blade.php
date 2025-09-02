@@ -4,28 +4,28 @@
 @push('styles')
     <style>
         /* ========================================
-           DOKUMENTASI KODE HALAMAN GROUP PHOTOGRAPHY
-           ========================================
+               DOKUMENTASI KODE HALAMAN GROUP PHOTOGRAPHY
+               ========================================
 
-           Halaman ini berisi sistem booking group photography dengan fitur:
-           - Pemilihan paket (Plain, Grande, Royal)
-           - Dynamic background berdasarkan jenis sesi
-           - Extra items dengan kalkulasi harga otomatis
-           - Modal syarat & ketentuan yang responsif
-           - Integrasi WhatsApp untuk booking
-           - Form validation lengkap
-           - Responsive design untuk semua perangkat
+               Halaman ini berisi sistem booking group photography dengan fitur:
+               - Pemilihan paket (Plain, Grande, Royal)
+               - Dynamic background berdasarkan jenis sesi
+               - Extra items dengan kalkulasi harga otomatis
+               - Modal syarat & ketentuan yang responsif
+               - Integrasi WhatsApp untuk booking
+               - Form validation lengkap
+               - Responsive design untuk semua perangkat
 
-           Background System:
-           - Family: family/1-6
-           - Maternity: maternity/1-7
-           - Graduation: wisuda/1-6
-           - Friends/Personal: family/1-3
-           ======================================== */
+               Background System:
+               - Family: family/1-6
+               - Maternity: maternity/1-7
+               - Graduation: wisuda/1-6
+               - Friends/Personal: family/1-3
+               ======================================== */
 
         /* ========================================
-           1. BASE STYLES & TYPOGRAPHY
-           ======================================== */
+               1. BASE STYLES & TYPOGRAPHY
+               ======================================== */
 
         @import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&family=Inter:wght@300;400;500;600&display=swap');
 
@@ -48,8 +48,8 @@
         }
 
         /* ========================================
-           2. LAYOUT & CONTAINER
-           ======================================== */
+               2. LAYOUT & CONTAINER
+               ======================================== */
 
         .main-container {
             min-height: 100vh;
@@ -95,8 +95,8 @@
         }
 
         /* ========================================
-           3. HERO SECTION
-           ======================================== */
+               3. HERO SECTION
+               ======================================== */
 
         .hero-section {
             text-align: center;
@@ -151,8 +151,8 @@
         }
 
         /* ========================================
-           4. CONTENT GRID & PRICING
-           ======================================== */
+               4. CONTENT GRID & PRICING
+               ======================================== */
 
         .content-grid {
             display: flex;
@@ -190,8 +190,8 @@
         }
 
         /* ========================================
-           5. PACKAGE CARDS
-           ======================================== */
+               5. PACKAGE CARDS
+               ======================================== */
 
         .package-section {
             display: flex;
@@ -321,8 +321,8 @@
         }
 
         /* ========================================
-           6. BOOKING FORM
-           ======================================== */
+               6. BOOKING FORM
+               ======================================== */
 
         .booking-section {
             width: 100%;
@@ -473,9 +473,7 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports
-        (-moz - appearance)
-            {
+        @supports (-moz - appearance) {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -484,8 +482,8 @@
 
 
         /* ========================================
-           7. BACKGROUND SELECTION - DYNAMIC
-           ======================================== */
+               7. BACKGROUND SELECTION - DYNAMIC
+               ======================================== */
 
         .background-section {
             margin-bottom: clamp(2rem, 4vw, 2.8rem);
@@ -693,8 +691,8 @@
         }
 
         /* ========================================
-           8. EXTRA ITEMS SECTION
-           ======================================== */
+               8. EXTRA ITEMS SECTION
+               ======================================== */
 
         .extras-section {
             margin-bottom: clamp(2rem, 4vw, 2.8rem);
@@ -805,8 +803,8 @@
         }
 
         /* ========================================
-           9. NOTES & TEXTAREA
-           ======================================== */
+               9. NOTES & TEXTAREA
+               ======================================== */
 
         .notes-section {
             margin-bottom: clamp(3rem, 5vw, 4rem);
@@ -859,8 +857,8 @@
         }
 
         /* ========================================
-           10. PRICING & TOTAL
-           ======================================== */
+               10. PRICING & TOTAL
+               ======================================== */
 
         .total-payment-section {
             margin-bottom: clamp(2.5rem, 4vw, 3rem);
@@ -897,8 +895,8 @@
         }
 
         /* ========================================
-           11. SUBMIT BUTTON & ACTIONS
-           ======================================== */
+               11. SUBMIT BUTTON & ACTIONS
+               ======================================== */
 
         .submit-section {
             display: flex;
@@ -1081,8 +1079,8 @@
         }
 
         /* ========================================
-           12. SUCCESS & ERROR MESSAGES
-           ======================================== */
+               12. SUCCESS & ERROR MESSAGES
+               ======================================== */
 
         .success-message {
             background: linear-gradient(135deg,
@@ -1117,8 +1115,8 @@
         }
 
         /* ========================================
-           13. TERMS & CONDITIONS MODAL
-           ======================================== */
+               13. TERMS & CONDITIONS MODAL
+               ======================================== */
 
         .terms-modal-overlay {
             position: fixed;
@@ -1411,8 +1409,8 @@
         }
 
         /* ========================================
-           14. RESPONSIVE BREAKPOINTS
-           ======================================== */
+               14. RESPONSIVE BREAKPOINTS
+               ======================================== */
 
         @media (max-width: 768px) {
             .terms-modal-actions {
@@ -1470,8 +1468,8 @@
         }
 
         /* ========================================
-           15. ACCESSIBILITY & UTILITIES
-           ======================================== */
+               15. ACCESSIBILITY & UTILITIES
+               ======================================== */
 
         .sr-only {
             position: absolute;
@@ -1499,8 +1497,8 @@
         }
 
         /* ========================================
-           16. PERFORMANCE OPTIMIZATIONS
-           ======================================== */
+               16. PERFORMANCE OPTIMIZATIONS
+               ======================================== */
 
         * {
             will-change: auto;
@@ -1821,9 +1819,9 @@
                                             d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                                     </svg>
                                 </div>
-                                <div class="btn-text-content">
-                                    <span class="btn-text">Kirim Pemesanan</span>
-                                    <span class="btn-subtext">Kami akan menghubungi Anda via WhatsApp</span>
+                               <div class="btn-text-content">
+                                    <span class="btn-text">Submit Pemesanan</span>
+                                    <span class="btn-subtext">Menuju Halaman Pembayaran</span>
                                 </div>
                             </div>
                             <div class="btn-loading" id="btnLoading" style="display: none;">
@@ -1838,7 +1836,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami</span>
+                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk memesan layanan kami</span>
                         </div>
                     </div>
                 </form>
@@ -1904,490 +1902,507 @@
 @endsection
 
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    /* ===================================================
-       FINAL - Script Booking (Packages adjusted to UI image)
-       Packages:
-         - plain  : IDR 300k  (1 background, 20 menit)
-         - grande : IDR 500k  (2 backgrounds, 35 menit)  <- default selected if available
-         - royal  : IDR 700k  (4 backgrounds, 50 menit)
-       Submission => POST /booking (JSON) -> expects { redirect_url } on success
-       =================================================== */
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            /* ===================================================
+               FINAL - Script Booking (Packages adjusted to UI image)
+               Packages:
+                 - plain  : IDR 300k  (1 background, 20 menit)
+                 - grande : IDR 500k  (2 backgrounds, 35 menit)  <- default selected if available
+                 - royal  : IDR 700k  (4 backgrounds, 50 menit)
+               Submission => POST /booking (JSON) -> expects { redirect_url } on success
+               =================================================== */
 
-    /* -------------------------
-       Elements & State
-    ------------------------- */
-    const packageCards = document.querySelectorAll('.package-card');
-    const sessionSelect = document.getElementById('sessionType');
-    const backgroundGrid = document.getElementById('backgroundGrid');
-    const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
-    const totalPriceElement = document.getElementById('totalPrice');
-    const bookingForm = document.getElementById('bookingForm');
-    const submitBtn = document.getElementById('submitBtn');
-    const packageNotice = document.getElementById('packageNotice');
-    const sessionNotice = document.getElementById('sessionNotice');
-    const backgroundSection = document.getElementById('backgroundSection');
-    const backgroundCounter = document.getElementById('backgroundCounter');
-    const sessionIndicator = document.getElementById('sessionIndicator');
-    const successMessage = document.getElementById('successMessage');
+            /* -------------------------
+               Elements & State
+            ------------------------- */
+            const packageCards = document.querySelectorAll('.package-card');
+            const sessionSelect = document.getElementById('sessionType');
+            const backgroundGrid = document.getElementById('backgroundGrid');
+            const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+            const totalPriceElement = document.getElementById('totalPrice');
+            const bookingForm = document.getElementById('bookingForm');
+            const submitBtn = document.getElementById('submitBtn');
+            const packageNotice = document.getElementById('packageNotice');
+            const sessionNotice = document.getElementById('sessionNotice');
+            const backgroundSection = document.getElementById('backgroundSection');
+            const backgroundCounter = document.getElementById('backgroundCounter');
+            const sessionIndicator = document.getElementById('sessionIndicator');
+            const successMessage = document.getElementById('successMessage');
 
-    // Terms modal
-    const termsModal = document.getElementById('termsModal');
-    const termsModalClose = document.getElementById('termsModalClose');
-    const termsCheckbox = document.getElementById('termsCheckbox');
-    const termsCancelBtn = document.getElementById('termsCancelBtn');
-    const termsSubmitBtn = document.getElementById('termsSubmitBtn');
+            // Terms modal
+            const termsModal = document.getElementById('termsModal');
+            const termsModalClose = document.getElementById('termsModalClose');
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            const termsCancelBtn = document.getElementById('termsCancelBtn');
+            const termsSubmitBtn = document.getElementById('termsSubmitBtn');
 
-    // Date/time availability UI (IDs used in your template)
-    const dateInputMain = document.getElementById('date');
-    const timeSelectMain = document.getElementById('time');
-    const timeInfoBox = document.getElementById('time-availability-info');
-    const availabilityMessage = document.getElementById('availability-message');
+            // Date/time availability UI (IDs used in your template)
+            const dateInputMain = document.getElementById('date');
+            const timeSelectMain = document.getElementById('time');
+            const timeInfoBox = document.getElementById('time-availability-info');
+            const availabilityMessage = document.getElementById('availability-message');
 
-    // Package definitions (match the image)
-    const packageDefinitions = {
-        'plain':  { id: 'plain',  name: 'Plain',  price: 300000,  maxBackgrounds: 1, duration: '20 Menit', edited_photos: 10, printed_size: '12RS', wardrobes: 1 },
-        'grande': { id: 'grande', name: 'Grande', price: 500000,  maxBackgrounds: 2, duration: '35 Menit', edited_photos: 20, printed_size: '16RS', wardrobes: 2 },
-        'royal':  { id: 'royal',  name: 'Royal',  price: 700000,  maxBackgrounds: 4, duration: '50 Menit', edited_photos: 30, printed_size: '16RS', wardrobes: 2 }
-    };
-
-    // State
-    let selectedPackage = null;           // {id, name, price, maxBackgrounds, ...}
-    let selectedSession = null;           // string
-    let selectedBackgrounds = [];         // [{id, name}]
-    let selectedExtras = [];              // [{id, name, price}]
-    let basePrice = 0;
-    let maxBackgrounds = 0;
-    let isFormSubmitting = false;
-
-    /* -------------------------
-       Utilities
-    ------------------------- */
-    function formatPrice(price) {
-        if (typeof price !== 'number') price = Number(price) || 0;
-        return `Rp${price.toLocaleString('id-ID')}`;
-    }
-
-    function showNotification(message, type = 'info') {
-        const n = document.createElement('div');
-        n.className = `notification notification-${type}`;
-        n.textContent = message;
-        const bg = { error: 'rgba(239,68,68,0.9)', warning: 'rgba(245,158,11,0.9)', info: 'rgba(59,130,246,0.9)' }[type] || 'rgba(0,0,0,0.85)';
-        n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: ${bg}; color: #fff; padding: .75rem 1rem; border-radius: .5rem; z-index: 9999;`;
-        document.body.appendChild(n);
-        setTimeout(() => n.remove(), 4000);
-    }
-
-    function isValidPhone(phone) {
-        const clean = (phone || '').toString().replace(/\s+/g, '').replace(/[^\d+]/g, '');
-        return /^\+?\d{9,15}$/.test(clean);
-    }
-    function normalizePhone(raw) {
-        let s = (raw || '').toString().trim();
-        s = s.replace(/[^\d+]/g, '');
-        if (s.startsWith('+')) return s;
-        if (s.startsWith('62')) return '+' + s;
-        if (s.startsWith('0')) return '+62' + s.slice(1);
-        return '+62' + s;
-    }
-
-    /* -------------------------
-       Available times (date -> time options)
-    ------------------------- */
-    async function fetchAvailableTimes() {
-        const dateInput = dateInputMain;
-        const timeSelect = timeSelectMain;
-        const infoBox = timeInfoBox;
-        const messageSpan = availabilityMessage;
-        if (!dateInput || !timeSelect) return;
-        const selectedDate = (dateInput.value || '').trim();
-        if (!selectedDate) return;
-
-        timeSelect.disabled = true;
-        timeSelect.innerHTML = '<option value="">Memuat...</option>';
-        if (infoBox) infoBox.classList.add('hidden');
-
-        try {
-            const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers: { 'Accept': 'application/json' }});
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
-
-            timeSelect.innerHTML = '';
-
-            if (data.status === 'full') {
-                const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'Hari ini full booked'; opt.disabled = true;
-                timeSelect.appendChild(opt); timeSelect.disabled = true;
-                if (messageSpan) messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
-                if (infoBox) { infoBox.classList.remove('hidden'); infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))'; infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)'; }
-            } else {
-                (data.available_times || []).forEach(time => {
-                    const option = document.createElement('option');
-                    option.value = time;
-                    option.textContent = `${time} WIB`;
-                    timeSelect.appendChild(option);
-                });
-                timeSelect.disabled = false;
-                if (messageSpan) {
-                    if (data.status === 'limited') {
-                        messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                        infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
-                        infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
-                    } else {
-                        messageSpan.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
-                        infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
-                        infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
-                    }
-                    infoBox.classList.remove('hidden');
-                }
-            }
-        } catch (err) {
-            console.error('Gagal memuat ketersediaan waktu:', err);
-            timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-            timeSelect.disabled = true;
-            if (infoBox) { infoBox.classList.remove('hidden'); if (availabilityMessage) availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.'; }
-        }
-    }
-    if (dateInputMain && dateInputMain.value) fetchAvailableTimes();
-    if (dateInputMain) dateInputMain.addEventListener('change', fetchAvailableTimes);
-
-    /* -------------------------
-       Generate backgrounds (API)
-    ------------------------- */
-    async function generateBackgroundOptions(sessionType) {
-        if (!backgroundGrid) return;
-        backgroundGrid.innerHTML = '<p class="text-center text-gray-500 mt-4">Memuat background...</p>';
-        try {
-            const apiUrl = `/api/backgrounds/${encodeURIComponent(sessionType)}`;
-            const resp = await fetch(apiUrl, { headers: { 'Accept': 'application/json' }});
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const backgrounds = await resp.json();
-            if (!Array.isArray(backgrounds) || backgrounds.length === 0) {
-                backgroundGrid.innerHTML = '<p class="text-center text-gray-500 mt-4">Tidak ada background yang tersedia untuk sesi ini.</p>';
-                return;
-            }
-            backgroundGrid.innerHTML = '';
-            backgrounds.forEach(bg => {
-                const div = document.createElement('div');
-                div.className = 'background-option';
-                div.setAttribute('data-background', String(bg.id));
-                div.setAttribute('data-name', bg.name || `BG ${bg.id}`);
-                div.setAttribute('tabindex', '0');
-                div.setAttribute('role', 'button');
-                div.setAttribute('aria-label', `Select ${bg.name || bg.id} background`);
-                const imagePath = bg.image ? `/storage/${bg.image}` : '/images/default-bg.png';
-                div.innerHTML = `
-                    <img src="${imagePath}" alt="${bg.name || ''}" class="background-image" loading="lazy" />
-                    <div class="background-name">${bg.name || ''}</div>
-                `;
-                div.addEventListener('click', handleBackgroundSelection);
-                div.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBackgroundSelection.call(div); }});
-                backgroundGrid.appendChild(div);
-            });
-            updateBackgroundCounter();
-        } catch (err) {
-            console.error('Error fetching backgrounds:', err);
-            backgroundGrid.innerHTML = '<p class="text-red-500">Terjadi kesalahan saat memuat background.</p>';
-        }
-    }
-
-    /* -------------------------
-       Session selection
-    ------------------------- */
-    if (sessionSelect) {
-        sessionSelect.addEventListener('change', function () {
-            const sessionType = (this.value || '').trim();
-            if (!sessionType) {
-                selectedSession = null;
-                if (backgroundGrid) backgroundGrid.innerHTML = '';
-                if (sessionIndicator) sessionIndicator.classList.add('hidden');
-                disableBackgroundSection();
-                return;
-            }
-            selectedSession = sessionType;
-            updateSessionIndicator(sessionType);
-            generateBackgroundOptions(sessionType);
-            selectedBackgrounds = [];
-            if (selectedPackage) enableBackgroundSection(); else showSessionNotice();
-            updateBackgroundCounter();
-        });
-    }
-    function updateSessionIndicator(sessionType) {
-        if (!sessionIndicator) return;
-        const names = { 'family': 'Family Session', 'maternity': 'Maternity Session', 'graduation': 'Graduation Session', 'friends': 'Friends', 'personal': 'Personal' };
-        sessionIndicator.textContent = names[sessionType] || sessionType;
-        sessionIndicator.className = `session-indicator ${sessionType}`;
-        sessionIndicator.classList.remove('hidden');
-    }
-    function showSessionNotice() { if (sessionNotice) sessionNotice.classList.remove('hidden'); if (packageNotice) packageNotice.classList.add('hidden'); }
-    function enableBackgroundSection() { if (backgroundSection) backgroundSection.classList.remove('disabled'); if (sessionNotice) sessionNotice.classList.add('hidden'); if (packageNotice) packageNotice.classList.add('hidden'); }
-    function disableBackgroundSection() { if (backgroundSection) backgroundSection.classList.add('disabled'); if (packageNotice && !selectedPackage) packageNotice.classList.remove('hidden'); }
-
-    /* -------------------------
-       Package selection (uses packageDefinitions)
-    ------------------------- */
-    packageCards.forEach(card => {
-        card.addEventListener('click', handlePackageSelection);
-        card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePackageSelection.call(card); }});
-    });
-
-    function handlePackageSelection() {
-        // clear previous
-        packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected', 'false'); });
-        this.classList.add('selected'); this.setAttribute('aria-selected', 'true');
-
-        const key = (this.dataset.package || '').toString().trim().toLowerCase();
-        const def = packageDefinitions[key];
-
-        if (def) {
-            selectedPackage = Object.assign({}, def);
-        } else {
-            // fallback: read dataset
-            selectedPackage = {
-                id: this.dataset.package || '',
-                name: this.querySelector('.package-title') ? this.querySelector('.package-title').textContent : (this.dataset.package || 'Paket'),
-                price: parseInt(this.dataset.price || 0, 10) || 0,
-                maxBackgrounds: parseInt(this.dataset.backgrounds || 0, 10) || 0
+            // Package definitions (match the image)
+            const packageDefinitions = {
+                'plain': { id: 'plain', name: 'Plain', price: 300000, maxBackgrounds: 1, duration: '20 Menit', edited_photos: 10, printed_size: '12RS', wardrobes: 1 },
+                'grande': { id: 'grande', name: 'Grande', price: 500000, maxBackgrounds: 2, duration: '35 Menit', edited_photos: 20, printed_size: '16RS', wardrobes: 2 },
+                'royal': { id: 'royal', name: 'Royal', price: 700000, maxBackgrounds: 4, duration: '50 Menit', edited_photos: 30, printed_size: '16RS', wardrobes: 2 }
             };
-        }
 
-        basePrice = Number(selectedPackage.price) || 0;
-        maxBackgrounds = Number(selectedPackage.maxBackgrounds) || 0;
+            // State
+            let selectedPackage = null;           // {id, name, price, maxBackgrounds, ...}
+            let selectedSession = null;           // string
+            let selectedBackgrounds = [];         // [{id, name}]
+            let selectedExtras = [];              // [{id, name, price}]
+            let basePrice = 0;
+            let maxBackgrounds = 0;
+            let isFormSubmitting = false;
 
-        // reset background picks visually
-        const backgroundOptions = document.querySelectorAll('.background-option');
-        backgroundOptions.forEach(o => { o.classList.remove('selected'); o.setAttribute('aria-selected', 'false'); });
-        selectedBackgrounds = [];
-
-        if (selectedSession) enableBackgroundSection(); else showSessionNotice();
-        updateBackgroundCounter();
-        updateTotalPrice();
-    }
-
-    // default-select 'grande' if exists (image shows Grande highlighted)
-    (function tryDefaultSelectGrande() {
-        const auto = Array.from(packageCards).find(c => (c.dataset.package || '').toLowerCase() === 'grande');
-        if (auto && !Array.from(packageCards).some(c => c.classList.contains('selected'))) {
-            auto.click();
-        }
-    })();
-
-    /* -------------------------
-       Background selection handler
-    ------------------------- */
-    function handleBackgroundSelection() {
-        if (this.classList.contains('disabled')) { showNotification('Background ini tidak tersedia', 'error'); return; }
-
-        const bgIdRaw = this.dataset.background;
-        const bgId = Number(bgIdRaw);
-        const bgName = this.dataset.name || bgIdRaw;
-        const already = selectedBackgrounds.find(b => Number(b.id) === bgId);
-        if (already) {
-            this.classList.remove('selected'); this.setAttribute('aria-selected', 'false');
-            selectedBackgrounds = selectedBackgrounds.filter(b => Number(b.id) !== bgId);
-        } else {
-            if (selectedPackage && selectedBackgrounds.length >= (selectedPackage.maxBackgrounds || 0)) {
-                showNotification(`Maksimal ${selectedPackage.maxBackgrounds} background untuk paket ini`, 'error'); return;
+            /* -------------------------
+               Utilities
+            ------------------------- */
+            function formatPrice(price) {
+                if (typeof price !== 'number') price = Number(price) || 0;
+                return `Rp${price.toLocaleString('id-ID')}`;
             }
-            this.classList.add('selected'); this.setAttribute('aria-selected', 'true');
-            selectedBackgrounds.push({ id: bgId, name: bgName });
-        }
-        updateBackgroundCounter();
-    }
-    function updateBackgroundCounter() {
-        const selectedCount = selectedBackgrounds.length;
-        if (backgroundCounter) backgroundCounter.textContent = `${selectedCount}/${maxBackgrounds} dipilih`;
-        const backgroundOptions = document.querySelectorAll('.background-option');
-        if (selectedCount >= maxBackgrounds && maxBackgrounds > 0) {
-            if (backgroundCounter) backgroundCounter.classList.add('warning');
-            backgroundOptions.forEach(option => { if (!option.classList.contains('selected')) { option.style.opacity='0.3'; option.style.pointerEvents='none'; }});
-        } else {
-            if (backgroundCounter) backgroundCounter.classList.remove('warning');
-            backgroundOptions.forEach(option => { option.style.opacity=''; option.style.pointerEvents=''; });
-        }
-    }
 
-    /* -------------------------
-       Extras management
-    ------------------------- */
-    extraCheckboxes.forEach(cb => cb.addEventListener('change', function () {
-        const id = parseInt(this.value || this.dataset.id || 0, 10) || 0;
-        const name = this.dataset.name || `extra-${id}`;
-        const price = parseInt(this.dataset.price || 0, 10) || 0;
-        if (this.checked) selectedExtras.push({ id, name, price }); else selectedExtras = selectedExtras.filter(x => x.id !== id);
-        updateTotalPrice();
-    }));
+            function showNotification(message, type = 'info') {
+                const n = document.createElement('div');
+                n.className = `notification notification-${type}`;
+                n.textContent = message;
+                const bg = { error: 'rgba(239,68,68,0.9)', warning: 'rgba(245,158,11,0.9)', info: 'rgba(59,130,246,0.9)' }[type] || 'rgba(0,0,0,0.85)';
+                n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: ${bg}; color: #fff; padding: .75rem 1rem; border-radius: .5rem; z-index: 9999;`;
+                document.body.appendChild(n);
+                setTimeout(() => n.remove(), 4000);
+            }
 
-    /* -------------------------
-       Price update
-    ------------------------- */
-    function updateTotalPrice() {
-        const extrasTotal = selectedExtras.reduce((s, i) => s + (i.price || 0), 0);
-        const total = (Number(basePrice) || 0) + extrasTotal;
-        if (totalPriceElement) {
-            totalPriceElement.classList.add('updating');
-            setTimeout(() => totalPriceElement.classList.remove('updating'), 200);
-            totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
-            totalPriceElement.setAttribute('data-total', String(total));
-            totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
-        }
-    }
+            function isValidPhone(phone) {
+                const clean = (phone || '').toString().replace(/\s+/g, '').replace(/[^\d+]/g, '');
+                return /^\+?\d{9,15}$/.test(clean);
+            }
+            function normalizePhone(raw) {
+                let s = (raw || '').toString().trim();
+                s = s.replace(/[^\d+]/g, '');
+                if (s.startsWith('+')) return s;
+                if (s.startsWith('62')) return '+' + s;
+                if (s.startsWith('0')) return '+62' + s.slice(1);
+                return '+62' + s;
+            }
 
-    /* -------------------------
-       Validation helpers
-    ------------------------- */
-    const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
-    formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
+            /* -------------------------
+               Available times (date -> time options)
+            ------------------------- */
+            async function fetchAvailableTimes() {
+                const dateInput = dateInputMain;
+                const timeSelect = timeSelectMain;
+                const infoBox = timeInfoBox;
+                const messageSpan = availabilityMessage;
+                if (!dateInput || !timeSelect) return;
+                const selectedDate = (dateInput.value || '').trim();
+                if (!selectedDate) return;
 
-    function validateField(e) {
-        const field = e.target;
-        const name = field.name;
-        const val = (field.value || '').toString().trim();
-        const errEl = document.getElementById(`${name}-error`);
-        let msg = '';
-        if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
-        else if ((name === 'phone' || name === 'whatsapp_number') && val && !isValidPhone(val)) msg = 'Nomor WhatsApp tidak valid';
-        else if (name === 'date' && val) {
-            const today = new Date(); today.setHours(0,0,0,0);
-            const chosen = new Date(val);
-            if (isNaN(chosen.getTime()) || chosen < today) msg = 'Tanggal tidak boleh di masa lalu';
-        }
-        if (errEl) { errEl.textContent = msg; field.setAttribute('aria-invalid', msg ? 'true' : 'false'); field.style.borderColor = msg ? '#ef4444' : ''; }
-        return !msg;
-    }
-    function clearFieldError(e) {
-        const field = e.target; const errEl = document.getElementById(`${field.name}-error`);
-        if (errEl) { errEl.textContent = ''; field.setAttribute('aria-invalid', 'false'); field.style.borderColor = ''; }
-    }
+                timeSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Memuat...</option>';
+                if (infoBox) infoBox.classList.add('hidden');
 
-    /* -------------------------
-       Terms modal
-    ------------------------- */
-    function showTermsModal() { if (!termsModal) return; termsModal.classList.add('show'); document.body.style.overflow = 'hidden'; if (termsCheckbox) termsCheckbox.checked = false; updateTermsSubmitButton(); }
-    function hideTermsModal() { if (!termsModal) return; termsModal.classList.remove('show'); document.body.style.overflow = ''; }
-    function updateTermsSubmitButton() { if (!termsSubmitBtn) return; termsSubmitBtn.disabled = !(termsCheckbox && termsCheckbox.checked); if (termsCheckbox && termsCheckbox.checked) termsSubmitBtn.classList.add('enabled'); else termsSubmitBtn.classList.remove('enabled'); }
-    if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsSubmitButton);
-    if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
-    if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
-    if (termsModal) termsModal.addEventListener('click', (e) => { if (e.target === termsModal) hideTermsModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
+                try {
+                    const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const data = await resp.json();
 
-    /* -------------------------
-       Submit flow -> payment
-    ------------------------- */
-    if (bookingForm) {
-        bookingForm.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            if (isFormSubmitting) return;
+                    timeSelect.innerHTML = '';
 
-            if (!selectedPackage) { showNotification('Silakan pilih paket terlebih dahulu', 'error'); if (packageCards[0]) packageCards[0].focus(); return; }
-            if (!selectedSession) { showNotification('Silakan pilih jenis sesi terlebih dahulu', 'error'); if (sessionSelect) sessionSelect.focus(); return; }
-            if (selectedBackgrounds.length === 0) { showNotification('Silakan pilih minimal 1 background', 'error'); if (backgroundSection) backgroundSection.scrollIntoView({behavior:'smooth', block:'center'}); return; }
-
-            let hasErrors = false;
-            formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErrors = true; });
-            if (hasErrors) { showNotification('Mohon perbaiki kesalahan pada form', 'error'); return; }
-
-            showTermsModal();
-        });
-    }
-
-    if (termsSubmitBtn) {
-        termsSubmitBtn.addEventListener('click', async function () {
-            if (!(termsCheckbox && termsCheckbox.checked)) return;
-            hideTermsModal();
-            isFormSubmitting = true; setSubmitButtonLoading(true);
-
-            try {
-                const fd = new FormData(bookingForm);
-                const payload = {
-                    contact_name: fd.get('contactName') || fd.get('contact_name') || '',
-                    whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
-                    booking_date: fd.get('date') || '',
-                    booking_time: fd.get('time') || '',
-                    session_name: fd.get('sessionType') || '',
-                    package_id: selectedPackage ? selectedPackage.id : '',
-                    package_name: selectedPackage ? selectedPackage.name : '',
-                    package_price: selectedPackage ? Number(selectedPackage.price) : 0,
-                    selected_backgrounds: selectedBackgrounds.map(b => Number(b.id)),
-                    selected_extra_items: selectedExtras.map(e => Number(e.id)),
-                    total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (basePrice + selectedExtras.reduce((s,i)=>s+(i.price||0),0))),
-                    notes: fd.get('notes') || null,
-                    group_size: fd.get('groupSize') || fd.get('group_size') || null,
-                    status: 'waiting_payment'
-                };
-
-                const resp = await fetch('/booking', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                let result = {};
-                try { result = await resp.json(); } catch (err) { result = {}; }
-
-                if (resp.ok) {
-                    if (result.redirect_url) {
-                        if (typeof showSuccessMessage === 'function') showSuccessMessage();
-                        window.location.href = result.redirect_url;
-                        return;
+                    if (data.status === 'full') {
+                        const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'Hari ini full booked'; opt.disabled = true;
+                        timeSelect.appendChild(opt); timeSelect.disabled = true;
+                        if (messageSpan) messageSpan.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
+                        if (infoBox) { infoBox.classList.remove('hidden'); infoBox.style.background = 'linear-gradient(135deg, rgba(239, 68, 68, 0.18), rgba(239, 68, 68, 0.10))'; infoBox.style.borderColor = 'rgba(239, 68, 68, 0.4)'; }
                     } else {
-                        showNotification('Pesanan dibuat. Lanjutkan ke halaman pembayaran.', 'info');
-                        window.location.href = result.redirect_url || '/';
+                        (data.available_times || []).forEach(time => {
+                            const option = document.createElement('option');
+                            option.value = time;
+                            option.textContent = `${time} WIB`;
+                            timeSelect.appendChild(option);
+                        });
+                        timeSelect.disabled = false;
+                        if (messageSpan) {
+                            if (data.status === 'limited') {
+                                messageSpan.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                                infoBox.style.background = 'linear-gradient(135deg, rgba(234, 179, 8, 0.18), rgba(234, 179, 8, 0.10))';
+                                infoBox.style.borderColor = 'rgba(234, 179, 8, 0.4)';
+                            } else {
+                                messageSpan.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
+                                infoBox.style.background = 'linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(59, 130, 246, 0.10))';
+                                infoBox.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                            }
+                            infoBox.classList.remove('hidden');
+                        }
+                    }
+                } catch (err) {
+                    console.error('Gagal memuat ketersediaan waktu:', err);
+                    timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+                    timeSelect.disabled = true;
+                    if (infoBox) { infoBox.classList.remove('hidden'); if (availabilityMessage) availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.'; }
+                }
+            }
+            if (dateInputMain && dateInputMain.value) fetchAvailableTimes();
+            if (dateInputMain) dateInputMain.addEventListener('change', fetchAvailableTimes);
+
+            /* -------------------------
+               Generate backgrounds (API)
+            ------------------------- */
+            async function generateBackgroundOptions(sessionType) {
+                if (!backgroundGrid) return;
+                backgroundGrid.innerHTML = '<p class="text-center text-gray-500 mt-4">Memuat background...</p>';
+                try {
+                    const apiUrl = `/api/backgrounds/${encodeURIComponent(sessionType)}`;
+                    const resp = await fetch(apiUrl, { headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const backgrounds = await resp.json();
+                    if (!Array.isArray(backgrounds) || backgrounds.length === 0) {
+                        backgroundGrid.innerHTML = '<p class="text-center text-gray-500 mt-4">Tidak ada background yang tersedia untuk sesi ini.</p>';
                         return;
                     }
-                } else {
-                    if (resp.status === 409) {
-                        showNotification(result.message || 'Slot sudah diambil. Silakan pilih waktu lain.', 'error'); return;
-                    }
-                    if (resp.status === 422) {
-                        showNotification('Mohon perbaiki kesalahan pada form.', 'error'); console.error('Validation errors:', result.errors || result); scrollToFirstError(); return;
-                    }
-                    const msg = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
-                    showNotification(msg, 'error'); console.error('API Error:', result);
+                    backgroundGrid.innerHTML = '';
+                    backgrounds.forEach(bg => {
+                        const div = document.createElement('div');
+                        div.className = 'background-option';
+                        div.setAttribute('data-background', String(bg.id));
+                        div.setAttribute('data-name', bg.name || `BG ${bg.id}`);
+                        div.setAttribute('tabindex', '0');
+                        div.setAttribute('role', 'button');
+                        div.setAttribute('aria-label', `Select ${bg.name || bg.id} background`);
+                        const imagePath = bg.image ? `/storage/${bg.image}` : '/images/default-bg.png';
+                        div.innerHTML = `
+                        <img src="${imagePath}" alt="${bg.name || ''}" class="background-image" loading="lazy" />
+                        <div class="background-name">${bg.name || ''}</div>
+                    `;
+                        div.addEventListener('click', handleBackgroundSelection);
+                        div.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleBackgroundSelection.call(div); } });
+                        backgroundGrid.appendChild(div);
+                    });
+                    updateBackgroundCounter();
+                } catch (err) {
+                    console.error('Error fetching backgrounds:', err);
+                    backgroundGrid.innerHTML = '<p class="text-red-500">Terjadi kesalahan saat memuat background.</p>';
                 }
-            } catch (err) {
-                console.error('Form submission error:', err);
-                showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-            } finally {
-                isFormSubmitting = false; setSubmitButtonLoading(false);
             }
-        });
-    }
 
-    function scrollToFirstError() {
-        const first = document.querySelector('[aria-invalid="true"]');
-        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
+            /* -------------------------
+               Session selection
+            ------------------------- */
+            if (sessionSelect) {
+                sessionSelect.addEventListener('change', function () {
+                    const sessionType = (this.value || '').trim();
+                    if (!sessionType) {
+                        selectedSession = null;
+                        if (backgroundGrid) backgroundGrid.innerHTML = '';
+                        if (sessionIndicator) sessionIndicator.classList.add('hidden');
+                        disableBackgroundSection();
+                        return;
+                    }
+                    selectedSession = sessionType;
+                    updateSessionIndicator(sessionType);
+                    generateBackgroundOptions(sessionType);
+                    selectedBackgrounds = [];
+                    if (selectedPackage) enableBackgroundSection(); else showSessionNotice();
+                    updateBackgroundCounter();
+                });
+            }
+            function updateSessionIndicator(sessionType) {
+                if (!sessionIndicator) return;
+                const names = { 'family': 'Family Session', 'maternity': 'Maternity Session', 'graduation': 'Graduation Session', 'friends': 'Friends', 'personal': 'Personal' };
+                sessionIndicator.textContent = names[sessionType] || sessionType;
+                sessionIndicator.className = `session-indicator ${sessionType}`;
+                sessionIndicator.classList.remove('hidden');
+            }
+            function showSessionNotice() { if (sessionNotice) sessionNotice.classList.remove('hidden'); if (packageNotice) packageNotice.classList.add('hidden'); }
+            function enableBackgroundSection() { if (backgroundSection) backgroundSection.classList.remove('disabled'); if (sessionNotice) sessionNotice.classList.add('hidden'); if (packageNotice) packageNotice.classList.add('hidden'); }
+            function disableBackgroundSection() { if (backgroundSection) backgroundSection.classList.add('disabled'); if (packageNotice && !selectedPackage) packageNotice.classList.remove('hidden'); }
 
-    function setSubmitButtonLoading(loading) {
-        const btnContent = document.getElementById('btnContent');
-        const btnLoading = document.getElementById('btnLoading');
-        if (!submitBtn) return;
-        if (loading) {
-            submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy', 'true');
-            if (btnContent) btnContent.style.display = 'none'; if (btnLoading) btnLoading.style.display = 'flex';
-        } else {
-            submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy', 'false');
-            if (btnLoading) btnLoading.style.display = 'none'; if (btnContent) btnContent.style.display = 'flex';
-        }
-    }
+            /* -------------------------
+               Package selection (uses packageDefinitions)
+            ------------------------- */
+            packageCards.forEach(card => {
+                card.addEventListener('click', handlePackageSelection);
+                card.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handlePackageSelection.call(card); } });
+            });
 
-    function showSuccessMessage() { if (!successMessage) return; successMessage.classList.add('show'); successMessage.focus(); setTimeout(()=> successMessage.classList.remove('show'), 8000); }
-    function resetForm() { bookingForm && bookingForm.reset(); packageCards.forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-selected','false');}); extraCheckboxes.forEach(cb=>cb.checked=false); selectedPackage=null; selectedSession=null; selectedBackgrounds=[]; selectedExtras=[]; basePrice=0; maxBackgrounds=0; if (backgroundGrid) backgroundGrid.innerHTML = ''; if (backgroundCounter) backgroundCounter.textContent = '0/0 dipilih'; updateTotalPrice(); }
+            function handlePackageSelection() {
+                // clear previous
+                packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected', 'false'); });
+                this.classList.add('selected'); this.setAttribute('aria-selected', 'true');
 
-    // init
-    (function init() {
-        const today = new Date(); today.setHours(0,0,0,0);
-        if (dateInputMain) dateInputMain.setAttribute('min', today.toISOString().split('T')[0]);
-        updateTotalPrice();
-        console.log('✨ Booking script initialized with Plain/Grande/Royal package defaults.');
-    })();
+                const key = (this.dataset.package || '').toString().trim().toLowerCase();
+                const def = packageDefinitions[key];
 
-}); // DOMContentLoaded
-</script>
+                if (def) {
+                    selectedPackage = Object.assign({}, def);
+                } else {
+                    // fallback: read dataset
+                    selectedPackage = {
+                        id: this.dataset.package || '',
+                        name: this.querySelector('.package-title') ? this.querySelector('.package-title').textContent : (this.dataset.package || 'Paket'),
+                        price: parseInt(this.dataset.price || 0, 10) || 0,
+                        maxBackgrounds: parseInt(this.dataset.backgrounds || 0, 10) || 0
+                    };
+                }
+
+                basePrice = Number(selectedPackage.price) || 0;
+                maxBackgrounds = Number(selectedPackage.maxBackgrounds) || 0;
+
+                // reset background picks visually
+                const backgroundOptions = document.querySelectorAll('.background-option');
+                backgroundOptions.forEach(o => { o.classList.remove('selected'); o.setAttribute('aria-selected', 'false'); });
+                selectedBackgrounds = [];
+
+                if (selectedSession) enableBackgroundSection(); else showSessionNotice();
+                updateBackgroundCounter();
+                updateTotalPrice();
+            }
+
+            // default-select 'grande' if exists (image shows Grande highlighted)
+            (function tryDefaultSelectGrande() {
+                const auto = Array.from(packageCards).find(c => (c.dataset.package || '').toLowerCase() === 'grande');
+                if (auto && !Array.from(packageCards).some(c => c.classList.contains('selected'))) {
+                    auto.click();
+                }
+            })();
+
+            /* -------------------------
+               Background selection handler
+            ------------------------- */
+            function handleBackgroundSelection() {
+                if (this.classList.contains('disabled')) { showNotification('Background ini tidak tersedia', 'error'); return; }
+
+                const bgIdRaw = this.dataset.background;
+                const bgId = Number(bgIdRaw);
+                const bgName = this.dataset.name || bgIdRaw;
+                const already = selectedBackgrounds.find(b => Number(b.id) === bgId);
+                if (already) {
+                    this.classList.remove('selected'); this.setAttribute('aria-selected', 'false');
+                    selectedBackgrounds = selectedBackgrounds.filter(b => Number(b.id) !== bgId);
+                } else {
+                    if (selectedPackage && selectedBackgrounds.length >= (selectedPackage.maxBackgrounds || 0)) {
+                        showNotification(`Maksimal ${selectedPackage.maxBackgrounds} background untuk paket ini`, 'error'); return;
+                    }
+                    this.classList.add('selected'); this.setAttribute('aria-selected', 'true');
+                    selectedBackgrounds.push({ id: bgId, name: bgName });
+                }
+                updateBackgroundCounter();
+            }
+            function updateBackgroundCounter() {
+                const selectedCount = selectedBackgrounds.length;
+                if (backgroundCounter) backgroundCounter.textContent = `${selectedCount}/${maxBackgrounds} dipilih`;
+                const backgroundOptions = document.querySelectorAll('.background-option');
+                if (selectedCount >= maxBackgrounds && maxBackgrounds > 0) {
+                    if (backgroundCounter) backgroundCounter.classList.add('warning');
+                    backgroundOptions.forEach(option => { if (!option.classList.contains('selected')) { option.style.opacity = '0.3'; option.style.pointerEvents = 'none'; } });
+                } else {
+                    if (backgroundCounter) backgroundCounter.classList.remove('warning');
+                    backgroundOptions.forEach(option => { option.style.opacity = ''; option.style.pointerEvents = ''; });
+                }
+            }
+
+            /* -------------------------
+               Extras management
+            ------------------------- */
+            extraCheckboxes.forEach(cb => cb.addEventListener('change', function () {
+                const id = parseInt(this.value || this.dataset.id || 0, 10) || 0;
+                const name = this.dataset.name || `extra-${id}`;
+                const price = parseInt(this.dataset.price || 0, 10) || 0;
+
+                if (this.checked) {
+                    // Perbaikan: Simpan dalam format yang sesuai dengan yang diharapkan server
+                    selectedExtras.push({
+                        id,
+                        name,
+                        unitPrice: price,  // Nama properti disesuaikan
+                        qty: 1,            // Tambahkan qty default 1
+                        price: price       // Tetap simpan price untuk kompatibilitas
+                    });
+                } else {
+                    selectedExtras = selectedExtras.filter(x => x.id !== id);
+                }
+                updateTotalPrice();
+            }));
+
+            /* -Price update- */
+            function updateTotalPrice() {
+                // Perbaikan: Hitung berdasarkan unitPrice * qty
+                const extrasTotal = selectedExtras.reduce((s, i) => s + (i.unitPrice * i.qty || 0), 0);
+                const total = (Number(basePrice) || 0) + extrasTotal;
+
+                if (totalPriceElement) {
+                    totalPriceElement.classList.add('updating');
+                    setTimeout(() => totalPriceElement.classList.remove('updating'), 200);
+                    totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
+                    totalPriceElement.setAttribute('data-total', String(total));
+                }
+            }
+
+            /* -------------------------
+               Validation helpers
+            ------------------------- */
+            const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
+            formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
+
+            function validateField(e) {
+                const field = e.target;
+                const name = field.name;
+                const val = (field.value || '').toString().trim();
+                const errEl = document.getElementById(`${name}-error`);
+                let msg = '';
+                if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
+                else if ((name === 'phone' || name === 'whatsapp_number') && val && !isValidPhone(val)) msg = 'Nomor WhatsApp tidak valid';
+                else if (name === 'date' && val) {
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    const chosen = new Date(val);
+                    if (isNaN(chosen.getTime()) || chosen < today) msg = 'Tanggal tidak boleh di masa lalu';
+                }
+                if (errEl) { errEl.textContent = msg; field.setAttribute('aria-invalid', msg ? 'true' : 'false'); field.style.borderColor = msg ? '#ef4444' : ''; }
+                return !msg;
+            }
+            function clearFieldError(e) {
+                const field = e.target; const errEl = document.getElementById(`${field.name}-error`);
+                if (errEl) { errEl.textContent = ''; field.setAttribute('aria-invalid', 'false'); field.style.borderColor = ''; }
+            }
+
+            /* -------------------------
+               Terms modal
+            ------------------------- */
+            function showTermsModal() { if (!termsModal) return; termsModal.classList.add('show'); document.body.style.overflow = 'hidden'; if (termsCheckbox) termsCheckbox.checked = false; updateTermsSubmitButton(); }
+            function hideTermsModal() { if (!termsModal) return; termsModal.classList.remove('show'); document.body.style.overflow = ''; }
+            function updateTermsSubmitButton() { if (!termsSubmitBtn) return; termsSubmitBtn.disabled = !(termsCheckbox && termsCheckbox.checked); if (termsCheckbox && termsCheckbox.checked) termsSubmitBtn.classList.add('enabled'); else termsSubmitBtn.classList.remove('enabled'); }
+            if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsSubmitButton);
+            if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
+            if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
+            if (termsModal) termsModal.addEventListener('click', (e) => { if (e.target === termsModal) hideTermsModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
+
+            /* -------------------------
+               Submit flow -> payment
+            ------------------------- */
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', function (ev) {
+                    ev.preventDefault();
+                    if (isFormSubmitting) return;
+
+                    if (!selectedPackage) { showNotification('Silakan pilih paket terlebih dahulu', 'error'); if (packageCards[0]) packageCards[0].focus(); return; }
+                    if (!selectedSession) { showNotification('Silakan pilih jenis sesi terlebih dahulu', 'error'); if (sessionSelect) sessionSelect.focus(); return; }
+                    if (selectedBackgrounds.length === 0) { showNotification('Silakan pilih minimal 1 background', 'error'); if (backgroundSection) backgroundSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+                    let hasErrors = false;
+                    formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErrors = true; });
+                    if (hasErrors) { showNotification('Mohon perbaiki kesalahan pada form', 'error'); return; }
+
+                    showTermsModal();
+                });
+            }
+
+            if (termsSubmitBtn) {
+                termsSubmitBtn.addEventListener('click', async function () {
+                    if (!(termsCheckbox && termsCheckbox.checked)) return;
+                    hideTermsModal();
+                    isFormSubmitting = true; setSubmitButtonLoading(true);
+
+                    try {
+                        const fd = new FormData(bookingForm);
+                        const payload = {
+                            contact_name: fd.get('contactName') || fd.get('contact_name') || '',
+                            whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
+                            booking_date: fd.get('date') || '',
+                            booking_time: fd.get('time') || '',
+                            session_name: 'prewed',
+                            package_name: selectedPackage ? selectedPackage.name : '',
+                            package_id: selectedPackage ? selectedPackage.id : '',
+                            package_price: Number(selectedPackage ? selectedPackage.price : basePrice),
+                            // <<---  KIRIM DETAIL extras: id, qty, price (unit)
+                            selected_extra_items: selectedExtras.map(e => ({
+                                id: e.id,
+                                qty: Number(e.qty || 1),
+                                price: Number(e.unitPrice || 0)
+                            })),
+                            // kirim backgrounds sebagai array id (server akan ambil detail background)
+                            selected_backgrounds: selectedBackgrounds.map(b => b.id),
+                            total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (basePrice + selectedExtras.reduce((s, i) => s + (i.totalPrice || i.unitPrice * i.qty || 0), 0))),
+                            notes: fd.get('notes') || null,
+                            // client boleh kirim status, tapi server akan menentukan status final sendiri.
+                        };
+
+                        // fetch with JSON
+                        const resp = await fetch('/booking', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+                        let result = {};
+                        try { result = await resp.json(); } catch (err) { result = {}; }
+
+                        if (resp.ok) {
+                            if (result.redirect_url) {
+                                if (typeof showSuccessMessage === 'function') showSuccessMessage();
+                                window.location.href = result.redirect_url;
+                                return;
+                            } else {
+                                showNotification('Pesanan dibuat. Lanjutkan ke halaman pembayaran.', 'info');
+                                window.location.href = result.redirect_url || '/';
+                                return;
+                            }
+                        } else {
+                            if (resp.status === 409) {
+                                showNotification(result.message || 'Slot sudah diambil. Silakan pilih waktu lain.', 'error'); return;
+                            }
+                            if (resp.status === 422) {
+                                showNotification('Mohon perbaiki kesalahan pada form.', 'error'); console.error('Validation errors:', result.errors || result); scrollToFirstError(); return;
+                            }
+                            const msg = result.message || 'Terjadi kesalahan saat menyimpan pesanan.';
+                            showNotification(msg, 'error'); console.error('API Error:', result);
+                        }
+                    } catch (err) {
+                        console.error('Form submission error:', err);
+                        showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+                    } finally {
+                        isFormSubmitting = false; setSubmitButtonLoading(false);
+                    }
+                });
+            }
+
+            function scrollToFirstError() {
+                const first = document.querySelector('[aria-invalid="true"]');
+                if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+
+            function setSubmitButtonLoading(loading) {
+                const btnContent = document.getElementById('btnContent');
+                const btnLoading = document.getElementById('btnLoading');
+                if (!submitBtn) return;
+                if (loading) {
+                    submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy', 'true');
+                    if (btnContent) btnContent.style.display = 'none'; if (btnLoading) btnLoading.style.display = 'flex';
+                } else {
+                    submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy', 'false');
+                    if (btnLoading) btnLoading.style.display = 'none'; if (btnContent) btnContent.style.display = 'flex';
+                }
+            }
+
+            function showSuccessMessage() { if (!successMessage) return; successMessage.classList.add('show'); successMessage.focus(); setTimeout(() => successMessage.classList.remove('show'), 8000); }
+            function resetForm() { bookingForm && bookingForm.reset(); packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected', 'false'); }); extraCheckboxes.forEach(cb => cb.checked = false); selectedPackage = null; selectedSession = null; selectedBackgrounds = []; selectedExtras = []; basePrice = 0; maxBackgrounds = 0; if (backgroundGrid) backgroundGrid.innerHTML = ''; if (backgroundCounter) backgroundCounter.textContent = '0/0 dipilih'; updateTotalPrice(); }
+
+            // init
+            (function init() {
+                const today = new Date(); today.setHours(0, 0, 0, 0);
+                if (dateInputMain) dateInputMain.setAttribute('min', today.toISOString().split('T')[0]);
+                updateTotalPrice();
+                console.log('✨ Booking script initialized with Plain/Grande/Royal package defaults.');
+            })();
+
+        }); // DOMContentLoaded
+    </script>
 @endpush

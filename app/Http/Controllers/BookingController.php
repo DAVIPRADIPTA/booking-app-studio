@@ -44,15 +44,6 @@ class BookingController extends Controller
 
         $data = $request->validate($rules);
 
-        Log::info('BookingController@store - incoming booking', [
-            'isCustomer' => $isCustomer,
-            'isAdmin' => $isAdmin,
-            'contact_name' => $data['contact_name'] ?? null,
-            'booking_date' => $data['booking_date'] ?? null,
-            'booking_time' => $data['booking_time'] ?? null,
-            'package_name' => $data['package_name'] ?? null,
-        ]);
-
         // Normalize phone
         $data['whatsapp_number'] = $this->normalizePhone($data['whatsapp_number']);
 
@@ -64,16 +55,19 @@ class BookingController extends Controller
             }
         }
 
-        // Normalize selections
-        $selectedBgIds = $this->normalizeSelectedIds($data['selected_backgrounds'] ?? []);
-        $selectedExIds = $this->normalizeSelectedIds($data['selected_extra_items'] ?? []);
+        // -----------------------
+        // Extras: normalize robustly (accept ids OR objects {id, qty, price})
+        // -----------------------
+        $extras = $this->normalizeExtrasInput($data['selected_extra_items'] ?? []);
+        // extras is array of entries: ['id'=>..., 'name'=>..., 'price'=>int, 'qty'=>int, 'total'=>int]
 
+        // Backgrounds: convert ids->structured array (reuse existing helper)
+        $selectedBgIds = $this->normalizeSelectedIds($data['selected_backgrounds'] ?? []);
         $backgrounds = $this->fetchBackgroundsByIds($selectedBgIds);
-        $extras = $this->fetchExtrasByIds($selectedExIds);
 
         // Price calculation (server-side)
         $packagePrice = $this->getPackagePrice($data['package_name']);
-        $extraItemsPrice = array_sum(array_map(fn($e) => (int)($e['price'] ?? 0), $extras));
+        $extraItemsPrice = array_sum(array_map(fn($e) => (int)($e['total'] ?? 0), $extras));
         $totalPrice = $packagePrice + $extraItemsPrice;
 
         // Backgrounds validation per package
@@ -90,7 +84,7 @@ class BookingController extends Controller
             $backgrounds = [];
         }
 
-        // Slot availability
+        // Slot availability (same as before)
         if (method_exists(Booking::class, 'isSlotAvailable')) {
             $isAvailable = Booking::isSlotAvailable($data['booking_date'], $data['booking_time']);
             if (!$isAvailable) {
@@ -113,6 +107,7 @@ class BookingController extends Controller
             $bookingDate = $data['booking_date'];
         }
 
+        // Build payload: store structured selected_extra_items (with price & qty)
         $payload = [
             'contact_name' => trim($data['contact_name']),
             'whatsapp_number' => $data['whatsapp_number'],
@@ -128,11 +123,8 @@ class BookingController extends Controller
             'baby_age' => $data['baby_age'] ?? null,
         ];
 
-        //
-        // Ensure server-side status logic (do not trust client)
-        //
+        // status/payment logic (same as previous behavior)
         if ($isAdmin && !$isCustomer) {
-            // admin flow (status depends on payment method & whether admin uploaded proof)
             $payload['user_id'] = auth('web')->id();
             $payload['customer_id'] = $data['customer_id'];
             $payload['payment_method'] = $data['payment_method'] ?? 'transfer';
@@ -151,12 +143,10 @@ class BookingController extends Controller
                     }
                 } catch (\Throwable $e) {
                     Log::warning('Gagal menyimpan payment_proof (admin create): ' . $e->getMessage());
-                    // fallback: set booked if cash else waiting_payment
                     $payload['status'] = ($data['payment_method'] ?? 'transfer') === 'cash' ? Booking::STATUS_BOOKED : Booking::STATUS_WAITING_PAYMENT;
                     $payload['payment_deadline'] = $payload['status'] === Booking::STATUS_WAITING_PAYMENT ? now()->addMinutes(10) : null;
                 }
             } else {
-                // no proof file uploaded by admin
                 if (($data['payment_method'] ?? 'transfer') === 'cash') {
                     $payload['status'] = Booking::STATUS_BOOKED;
                     $payload['payment_deadline'] = null;
@@ -166,7 +156,6 @@ class BookingController extends Controller
                 }
             }
         } else {
-            // Customer (authenticated) or public booking:
             $payload['payment_method'] = 'transfer';
             $payload['status'] = Booking::STATUS_WAITING_PAYMENT;
             $payload['payment_deadline'] = now()->addMinutes(10);
@@ -203,6 +192,88 @@ class BookingController extends Controller
             return $this->respondServerError($request, 'Terjadi kesalahan, coba lagi.');
         }
     }
+
+    /**
+     * Normalize extras input. Accept:
+     *  - array of ids: [1,2,3]
+     *  - array of objects: [{id:1, qty:2, price:50000}, {...}]
+     *  - json string of above
+     *
+     * Returns array of structured extras:
+     *  [
+     *    ['id'=>1,'name'=>'Cetak 4R','price'=>50000,'qty'=>2,'total'=>100000],
+     *    ...
+     *  ]
+     */
+    private function normalizeExtrasInput($value): array
+    {
+        if (is_null($value) || $value === '') return [];
+
+        // decode JSON string if needed
+        if (is_string($value)) {
+            $decoded = json_decode($value, true);
+            if (json_last_error() === JSON_ERROR_NONE) {
+                $value = $decoded;
+            } elseif (Str::contains($value, ',')) {
+                $value = array_map('trim', explode(',', $value));
+            } else {
+                $value = [$value];
+            }
+        }
+
+        if (!is_array($value)) {
+            return [];
+        }
+
+        $normalized = [];
+        $idsToFetch = [];
+
+        foreach ($value as $it) {
+            if (is_array($it)) {
+                $id = $it['id'] ?? ($it[0] ?? null);
+                $qty = isset($it['qty']) ? (int)$it['qty'] : (isset($it['quantity']) ? (int)$it['quantity'] : 1);
+                $price = isset($it['price']) ? (int)$it['price'] : null;
+                $normalized[] = ['id' => $id, 'qty' => max(1, $qty), 'price' => $price, 'name' => $it['name'] ?? null];
+                if (is_numeric($id)) $idsToFetch[] = (int)$id;
+            } else {
+                // scalar id
+                $id = $it;
+                $normalized[] = ['id' => $id, 'qty' => 1, 'price' => null, 'name' => null];
+                if (is_numeric($id)) $idsToFetch[] = (int)$id;
+            }
+        }
+
+        $idsToFetch = array_values(array_unique(array_filter($idsToFetch, fn($v) => $v > 0)));
+
+        $dbItems = [];
+        if (!empty($idsToFetch)) {
+            $rows = ExtraItem::whereIn('id', $idsToFetch)->get(['id', 'name', 'price']);
+            foreach ($rows as $r) $dbItems[$r->id] = $r;
+        }
+
+        // finalize: fill missing price/name from DB and compute total
+        // finalize: fill missing price/name from DB and compute total
+        foreach ($normalized as &$entry) {
+            $id = $entry['id'];
+            if (is_numeric($id) && isset($dbItems[(int)$id])) {
+                $db = $dbItems[(int)$id];
+                // always use DB price for items that exist in DB
+                $entry['price'] = (int)$db->price;
+                if (empty($entry['name'])) $entry['name'] = $db->name;
+            } else {
+                // fallback to provided price or 0
+                $entry['price'] = (int) ($entry['price'] ?? 0);
+                $entry['name'] = $entry['name'] ?? 'Extra Item';
+            }
+            $entry['qty'] = max(1, (int)($entry['qty'] ?? 1));
+            $entry['total'] = (int)$entry['price'] * $entry['qty'];
+        }
+        unset($entry);
+
+
+        return $normalized;
+    }
+
 
     /**
      * Show payment page (customer).

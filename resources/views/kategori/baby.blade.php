@@ -372,9 +372,7 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports
-        (-moz - appearance)
-            {
+        @supports (-moz - appearance) {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -1167,8 +1165,8 @@
         }
 
         /* ========================
-               NOTIFIKASI KETERSEDIAAN WAKTU - PREMIUM (TEKS PUTIH)
-               ======================== */
+                   NOTIFIKASI KETERSEDIAAN WAKTU - PREMIUM (TEKS PUTIH)
+                   ======================== */
         .availability-notice {
             @apply relative overflow-hidden rounded-xl border px-5 py-4 text-sm font-medium shadow-sm transition-all duration-300;
             @apply backdrop-blur-lg;
@@ -1465,8 +1463,8 @@
                                     </svg>
                                 </div>
                                 <div class="btn-text-content">
-                                    <span class="btn-text">Kirim Pemesanan</span>
-                                    <span class="btn-subtext">Kami akan menghubungi Anda via WhatsApp</span>
+                                    <span class="btn-text">Submit Pemesanan</span>
+                                    <span class="btn-subtext">Menuju Halaman Pembayaran</span>
                                 </div>
                             </div>
                             <div class="btn-loading" id="btnLoading" style="display: none;">
@@ -1480,7 +1478,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami</span>
+                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk memesan layanan kami</span>
                         </div>
                     </div>
                 </form>
@@ -1540,442 +1538,464 @@
     </div>
 @endsection
 @push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    // ========================
-    // CONFIG / STATE
-    // ========================
-    const sessionData = {
-        session_name: 'baby-smash-cake',
-        package_name: 'Baby Smash Cake',
-        base_price: 550000
-    };
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // ========================
+            // CONFIG / STATE
+            // ========================
+            const sessionData = {
+                session_name: 'baby-smash-cake',
+                package_name: 'Baby Smash Cake',
+                base_price: 550000
+            };
 
-    let selectedExtras = []; // [{id, name, price}]
-    let isFormSubmitting = false;
+            let selectedExtras = []; // [{id, name, price}]
+            let isFormSubmitting = false;
 
-    // DOM
-    const bookingForm = document.getElementById('bookingForm');
-    const dateInput = document.getElementById('date');
-    const timeSelect = document.getElementById('time');
-    const timeInfoBox = document.getElementById('time-availability-info');
-    const availabilityMessage = document.getElementById('availability-message');
-    const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
-    const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
-    const totalPriceElement = document.getElementById('totalPrice');
-    const termsModal = document.getElementById('termsModal');
-    const termsCheckbox = document.getElementById('termsCheckbox');
-    const termsSubmitBtn = document.getElementById('termsSubmitBtn');
-    const termsCancelBtn = document.getElementById('termsCancelBtn');
-    const termsModalClose = document.getElementById('termsModalClose');
-    const submitBtn = document.getElementById('submitBtn');
-    const successMessage = document.getElementById('successMessage');
-    const btnContent = document.getElementById('btnContent');
-    const btnLoading = document.getElementById('btnLoading');
+            // DOM
+            const bookingForm = document.getElementById('bookingForm');
+            const dateInput = document.getElementById('date');
+            const timeSelect = document.getElementById('time');
+            const timeInfoBox = document.getElementById('time-availability-info');
+            const availabilityMessage = document.getElementById('availability-message');
+            const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+            const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
+            const totalPriceElement = document.getElementById('totalPrice');
+            const termsModal = document.getElementById('termsModal');
+            const termsCheckbox = document.getElementById('termsCheckbox');
+            const termsSubmitBtn = document.getElementById('termsSubmitBtn');
+            const termsCancelBtn = document.getElementById('termsCancelBtn');
+            const termsModalClose = document.getElementById('termsModalClose');
+            const submitBtn = document.getElementById('submitBtn');
+            const successMessage = document.getElementById('successMessage');
+            const btnContent = document.getElementById('btnContent');
+            const btnLoading = document.getElementById('btnLoading');
 
-    // ========================
-    // HELPERS
-    // ========================
-    function formatPrice(price) {
-        if (typeof price !== 'number') price = Number(price) || 0;
-        return 'Rp' + price.toLocaleString('id-ID');
-    }
-
-    function normalizePhone(raw) {
-        if (!raw) return '';
-        let s = String(raw).trim();
-        s = s.replace(/[^\d+]/g, '');
-        if (s.startsWith('+')) return s;
-        if (s.startsWith('62')) return '+' + s;
-        if (s.startsWith('0')) return '+62' + s.slice(1);
-        return '+62' + s;
-    }
-
-    function isValidPhone(raw) {
-        if (!raw) return false;
-        const s = String(raw).trim().replace(/\s+/g, '').replace(/^\+/, '');
-        return /^(62)?8[1-9][0-9]{6,11}$/.test(s);
-    }
-
-    function showNotification(message, type = 'error') {
-        const n = document.createElement('div');
-        n.className = `notification notification-${type}`;
-        n.textContent = message;
-        const bg = type === 'error' ? 'rgba(239,68,68,0.95)' : (type === 'warning' ? 'rgba(245,158,11,0.95)' : 'rgba(59,130,246,0.95)');
-        n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: ${bg}; color:#fff; padding:.75rem 1rem; border-radius:.5rem; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,0.2);`;
-        document.body.appendChild(n);
-        setTimeout(() => {
-            n.style.transition = 'opacity .2s, transform .2s';
-            n.style.opacity = '0';
-            n.style.transform = 'translateX(8px)';
-            setTimeout(() => { if (document.body.contains(n)) n.remove(); }, 220);
-        }, 3500);
-    }
-
-    function showSuccessMessageLocal() {
-        if (!successMessage) return;
-        successMessage.classList.add('show');
-        successMessage.focus();
-        setTimeout(() => successMessage.classList.remove('show'), 8000);
-    }
-
-    // ========================
-    // EXTRAS
-    // ========================
-    // expects each .extra-checkbox to have value (id) OR data-id, data-name, data-price
-    extraCheckboxes.forEach((cb, idx) => {
-        cb.addEventListener('change', function () {
-            const idCandidate = this.value ? (isNaN(Number(this.value)) ? null : Number(this.value)) : (this.dataset.id ? Number(this.dataset.id) : null);
-            const id = Number.isFinite(idCandidate) ? idCandidate : `extra-${idx}`;
-            const price = parseInt(this.dataset.price || '0', 10) || 0;
-            const name = this.dataset.name || `Extra ${id}`;
-
-            if (this.checked) {
-                if (!selectedExtras.find(x => x.id === id)) selectedExtras.push({ id, name, price });
-            } else {
-                selectedExtras = selectedExtras.filter(x => x.id !== id);
-            }
-            updateTotalPrice();
-        });
-    });
-
-    function updateTotalPrice() {
-        const extrasTotal = selectedExtras.reduce((s, i) => s + (i.price || 0), 0);
-        const total = (sessionData.base_price || 0) + extrasTotal;
-        if (totalPriceElement) {
-            totalPriceElement.textContent = `Total: ${formatPrice(total)}`;
-            totalPriceElement.setAttribute('data-total', String(total));
-            totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
-        }
-    }
-
-    // ========================
-    // VALIDATION
-    // ========================
-    function validateField(e) {
-        const field = e && e.target ? e.target : e;
-        if (!field) return true;
-        const name = field.name;
-        const val = (field.value || '').toString().trim();
-        const errEl = document.getElementById(`${name}-error`);
-        let msg = '';
-
-        if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
-        else if ((name === 'phone' || name === 'whatsapp_number') && val && !isValidPhone(val)) msg = 'Nomor WhatsApp tidak valid';
-        else if (name === 'date' && val) {
-            const chosen = new Date(val);
-            const today = new Date(); today.setHours(0,0,0,0);
-            if (isNaN(chosen.getTime()) || chosen < today) msg = 'Tanggal tidak boleh di masa lalu';
-        }
-
-        if (errEl) {
-            errEl.textContent = msg;
-            field.setAttribute('aria-invalid', msg ? 'true' : 'false');
-            field.style.borderColor = msg ? '#ef4444' : '';
-        } else if (msg) {
-            showNotification(msg, 'error');
-        }
-        return !msg;
-    }
-    function clearFieldError(e) {
-        const field = e && e.target ? e.target : e;
-        if (!field) return;
-        const errEl = document.getElementById(`${field.name}-error`);
-        if (errEl) {
-            errEl.textContent = '';
-            field.setAttribute('aria-invalid', 'false');
-            field.style.borderColor = '';
-        }
-    }
-
-    // attach validators
-    formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
-
-    // ========================
-    // REAL-TIME TIME AVAILABILITY
-    // ========================
-    async function fetchAvailableTimes() {
-        if (!dateInput || !timeSelect) return;
-        const selectedDate = (dateInput.value || '').toString().trim();
-        if (!selectedDate) return;
-
-        timeSelect.disabled = true;
-        timeSelect.innerHTML = '<option value="">Memuat...</option>';
-        if (timeInfoBox) { timeInfoBox.classList.add('hidden'); timeInfoBox.classList.remove('available','limited','full'); }
-
-        try {
-            const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers: { 'Accept': 'application/json' }});
-            const data = await resp.json().catch(() => ({}));
-
-            timeSelect.innerHTML = '';
-
-            if (data.status === 'full') {
-                const opt = document.createElement('option'); opt.value=''; opt.textContent='Hari ini full booked'; opt.disabled = true; timeSelect.appendChild(opt); timeSelect.disabled = true;
-                if (availabilityMessage) availabilityMessage.textContent = '❌ Maaf, semua slot sudah penuh di tanggal ini. Silakan pilih tanggal lain.';
-                if (timeInfoBox) timeInfoBox.classList.add('full');
-            } else {
-                (data.available_times || []).forEach(t => {
-                    const opt = document.createElement('option'); opt.value = t; opt.textContent = `${t} WIB`; timeSelect.appendChild(opt);
-                });
-                timeSelect.disabled = false;
-                if (data.status === 'limited') {
-                    if (availabilityMessage) availabilityMessage.textContent = `⚠️ Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                    if (timeInfoBox) timeInfoBox.classList.add('limited');
-                } else {
-                    if (availabilityMessage) availabilityMessage.textContent = `Masih ada ${data.available_times.length} slot yang tersedia.`;
-                    if (timeInfoBox) timeInfoBox.classList.add('available');
-                }
+            // ========================
+            // HELPERS
+            // ========================
+            function formatPrice(price) {
+                if (typeof price !== 'number') price = Number(price) || 0;
+                return 'Rp' + price.toLocaleString('id-ID');
             }
 
-            if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); setTimeout(()=>timeInfoBox.classList.add('show'),50); }
-        } catch (err) {
-            console.error('Gagal memuat ketersediaan waktu:', err);
-            timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-            timeSelect.disabled = true;
-            if (timeInfoBox && availabilityMessage) {
-                availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.';
-                timeInfoBox.classList.remove('hidden');
-            }
-        }
-    }
-    if (dateInput) {
-        dateInput.addEventListener('change', fetchAvailableTimes);
-        if (dateInput.value) fetchAvailableTimes();
-    }
-
-    // expose for debug
-    window.fetchAvailableTimes = fetchAvailableTimes;
-
-    // ========================
-    // TERMS MODAL HANDLERS
-    // ========================
-    function showTermsModal() {
-        if (!termsModal) return;
-        termsModal.classList.add('show');
-        document.body.style.overflow = 'hidden';
-        if (termsCheckbox) termsCheckbox.checked = false;
-        updateTermsSubmitButton();
-        termsModal.focus();
-    }
-    function hideTermsModal() {
-        if (!termsModal) return;
-        termsModal.classList.remove('show');
-        document.body.style.overflow = '';
-        if (submitBtn) submitBtn.focus();
-    }
-    function updateTermsSubmitButton() {
-        if (!termsSubmitBtn || !termsCheckbox) return;
-        termsSubmitBtn.disabled = !termsCheckbox.checked;
-        if (termsCheckbox.checked) termsSubmitBtn.classList.add('enabled'); else termsSubmitBtn.classList.remove('enabled');
-    }
-    if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsSubmitButton);
-    if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
-    if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
-    if (termsModal) termsModal.addEventListener('click', (e) => { if (e.target === termsModal) hideTermsModal(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
-
-    // ========================
-    // FORM SUBMIT -> show terms modal
-    // ========================
-    if (bookingForm) {
-        bookingForm.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            if (isFormSubmitting) return;
-
-            // validate fields
-            let hasErrors = false;
-            formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErrors = true; });
-
-            if (hasErrors) {
-                showNotification('Mohon perbaiki kesalahan pada form', 'error');
-                return;
+            function normalizePhone(raw) {
+                if (!raw) return '';
+                let s = String(raw).trim();
+                s = s.replace(/[^\d+]/g, '');
+                if (s.startsWith('+')) return s;
+                if (s.startsWith('62')) return '+' + s;
+                if (s.startsWith('0')) return '+62' + s.slice(1);
+                return '+62' + s;
             }
 
-            showTermsModal();
-        });
-    }
+            function isValidPhone(raw) {
+                if (!raw) return false;
+                const s = String(raw).trim().replace(/\s+/g, '').replace(/^\+/, '');
+                return /^(62)?8[1-9][0-9]{6,11}$/.test(s);
+            }
 
-    // ========================
-    // TERMS SUBMIT -> POST /booking -> redirect to payment
-    // ========================
-    if (termsSubmitBtn) {
-        termsSubmitBtn.addEventListener('click', async function () {
-            if (!(termsCheckbox && termsCheckbox.checked)) return;
+            function showNotification(message, type = 'error') {
+                const n = document.createElement('div');
+                n.className = `notification notification-${type}`;
+                n.textContent = message;
+                const bg = type === 'error' ? 'rgba(239,68,68,0.95)' : (type === 'warning' ? 'rgba(245,158,11,0.95)' : 'rgba(59,130,246,0.95)');
+                n.style.cssText = `position: fixed; top: 1.5rem; right: 1.5rem; background: ${bg}; color:#fff; padding:.75rem 1rem; border-radius:.5rem; z-index:9999; box-shadow:0 8px 32px rgba(0,0,0,0.2);`;
+                document.body.appendChild(n);
+                setTimeout(() => {
+                    n.style.transition = 'opacity .2s, transform .2s';
+                    n.style.opacity = '0';
+                    n.style.transform = 'translateX(8px)';
+                    setTimeout(() => { if (document.body.contains(n)) n.remove(); }, 220);
+                }, 3500);
+            }
 
-            hideTermsModal();
-            isFormSubmitting = true;
-            setSubmitButtonLoading(true);
+            function showSuccessMessageLocal() {
+                if (!successMessage) return;
+                successMessage.classList.add('show');
+                successMessage.focus();
+                setTimeout(() => successMessage.classList.remove('show'), 8000);
+            }
 
-            try {
-                if (!bookingForm) throw new Error('Form tidak ditemukan');
+            // ========================
+            // EXTRAS
+            // ========================
+            // expects each .extra-checkbox to have value (id) OR data-id, data-name, data-price
+            // 1. Perbaikan pengambilan data extra item
+            extraCheckboxes.forEach((cb, idx) => {
+                cb.addEventListener('change', function () {
+                    // Pastikan id selalu dalam format yang konsisten
+                    const id = this.dataset.id || this.value || `extra-${idx}`;
+                    const price = parseInt(this.dataset.price || '0', 10) || 0;
+                    const name = this.dataset.name || `Extra ${id}`;
 
-                const fd = new FormData(bookingForm);
-                // prepare payload: send selected_extra_items as array of IDs (numbers)
-                const payload = {
-                    contact_name: fd.get('contactName') || fd.get('contact_name') || '',
-                    whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
-                    booking_date: fd.get('date') || '',
-                    booking_time: fd.get('time') || '',
-                    session_name: sessionData.session_name,
-                    package_name: sessionData.package_name,
-                    selected_backgrounds: [], // none in baby session
-                    selected_extra_items: selectedExtras.map(e => Number(e.id)), // <-- only IDs
-                    total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (sessionData.base_price + selectedExtras.reduce((s,i)=>s+(i.price||0),0))),
-                    notes: fd.get('notes') || null,
-                    baby_name: fd.get('babyName') || '-',
-                    baby_age: fd.get('babyAge') || null,
-                    status: 'waiting_payment'
-                };
+                    if (this.checked) {
+                        // Pastikan format data sesuai dengan yang diharapkan server
+                        const extraItem = {
+                            id: id,
+                            name: name,
+                            unitPrice: price,  // Nama properti disesuaikan
+                            qty: 1,            // Tambahkan qty default 1
+                            price: price       // Tetap simpan price untuk kompatibilitas
+                        };
 
-                const resp = await fetch('/booking', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                // parse response robustly
-                let body = {};
-                try { body = await resp.json(); } catch (jsonErr) {
-                    try { body = { __raw_text: await resp.text() }; } catch (txtErr) { body = { __parse_error: String(txtErr) }; }
-                }
-
-                if (resp.ok) {
-                    // success: expect redirect_url
-                    if (body.redirect_url) {
-                        showSuccessMessageLocal();
-                        // optional: reset form or keep values until redirect
-                        resetLocalFormAfterSuccess();
-                        // redirect to payment
-                        window.location.href = body.redirect_url;
-                        return;
-                    } else {
-                        showNotification(body.message || 'Pesanan dibuat. Lanjutkan ke halaman pembayaran.', 'info');
-                        window.location.href = body.redirect_url || '/';
-                        return;
-                    }
-                } else {
-                    // handle known statuses
-                    if (resp.status === 409) {
-                        showNotification(body.message || 'Slot sudah diambil. Silakan pilih waktu lain.', 'error');
-                        return;
-                    }
-                    if (resp.status === 422) {
-                        showNotification('Mohon perbaiki kesalahan pada form.', 'error');
-                        // render per-field errors if available
-                        if (body.errors && typeof body.errors === 'object') {
-                            Object.keys(body.errors).forEach(key => {
-                                const el = document.getElementById(`${key}-error`);
-                                if (el) el.textContent = Array.isArray(body.errors[key]) ? body.errors[key].join(', ') : body.errors[key];
-                            });
+                        // Cek apakah sudah ada, jika ya update qty
+                        const existingIndex = selectedExtras.findIndex(x => x.id === id);
+                        if (existingIndex >= 0) {
+                            selectedExtras[existingIndex] = extraItem;
+                        } else {
+                            selectedExtras.push(extraItem);
                         }
-                        // scroll to first invalid input
-                        const first = document.querySelector('[aria-invalid="true"]');
-                        if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else {
+                        selectedExtras = selectedExtras.filter(x => x.id !== id);
+                    }
+                    updateTotalPrice();
+                });
+            });
+
+            // 2. Perbaikan perhitungan total harga
+            function updateTotalPrice() {
+                // Hitung berdasarkan unitPrice * qty
+                const extrasTotal = selectedExtras.reduce((s, i) => s + (i.unitPrice * i.qty || 0), 0);
+                const total = (sessionData.base_price || 0) + extrasTotal;
+
+                if (totalPriceElement) {
+                    totalPriceElement.textContent = `Total: ${formatPrice(total)}`;
+                    totalPriceElement.setAttribute('data-total', String(total));
+                    totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
+                }
+            }
+            // ========================
+            // VALIDATION
+            // ========================
+            function validateField(e) {
+                const field = e && e.target ? e.target : e;
+                if (!field) return true;
+                const name = field.name;
+                const val = (field.value || '').toString().trim();
+                const errEl = document.getElementById(`${name}-error`);
+                let msg = '';
+
+                if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
+                else if ((name === 'phone' || name === 'whatsapp_number') && val && !isValidPhone(val)) msg = 'Nomor WhatsApp tidak valid';
+                else if (name === 'date' && val) {
+                    const chosen = new Date(val);
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    if (isNaN(chosen.getTime()) || chosen < today) msg = 'Tanggal tidak boleh di masa lalu';
+                }
+
+                if (errEl) {
+                    errEl.textContent = msg;
+                    field.setAttribute('aria-invalid', msg ? 'true' : 'false');
+                    field.style.borderColor = msg ? '#ef4444' : '';
+                } else if (msg) {
+                    showNotification(msg, 'error');
+                }
+                return !msg;
+            }
+            function clearFieldError(e) {
+                const field = e && e.target ? e.target : e;
+                if (!field) return;
+                const errEl = document.getElementById(`${field.name}-error`);
+                if (errEl) {
+                    errEl.textContent = '';
+                    field.setAttribute('aria-invalid', 'false');
+                    field.style.borderColor = '';
+                }
+            }
+
+            // attach validators
+            formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
+
+            // ========================
+            // REAL-TIME TIME AVAILABILITY
+            // ========================
+            async function fetchAvailableTimes() {
+                if (!dateInput || !timeSelect) return;
+                const selectedDate = (dateInput.value || '').toString().trim();
+                if (!selectedDate) return;
+
+                timeSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Memuat...</option>';
+                if (timeInfoBox) { timeInfoBox.classList.add('hidden'); timeInfoBox.classList.remove('available', 'limited', 'full'); }
+
+                try {
+                    const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers: { 'Accept': 'application/json' } });
+                    const data = await resp.json().catch(() => ({}));
+
+                    timeSelect.innerHTML = '';
+
+                    if (data.status === 'full') {
+                        const opt = document.createElement('option'); opt.value = ''; opt.textContent = 'Hari ini full booked'; opt.disabled = true; timeSelect.appendChild(opt); timeSelect.disabled = true;
+                        if (availabilityMessage) availabilityMessage.textContent = '❌ Maaf, semua slot sudah penuh di tanggal ini. Silakan pilih tanggal lain.';
+                        if (timeInfoBox) timeInfoBox.classList.add('full');
+                    } else {
+                        (data.available_times || []).forEach(t => {
+                            const opt = document.createElement('option'); opt.value = t; opt.textContent = `${t} WIB`; timeSelect.appendChild(opt);
+                        });
+                        timeSelect.disabled = false;
+                        if (data.status === 'limited') {
+                            if (availabilityMessage) availabilityMessage.textContent = `⚠️ Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                            if (timeInfoBox) timeInfoBox.classList.add('limited');
+                        } else {
+                            if (availabilityMessage) availabilityMessage.textContent = `Masih ada ${data.available_times.length} slot yang tersedia.`;
+                            if (timeInfoBox) timeInfoBox.classList.add('available');
+                        }
+                    }
+
+                    if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); setTimeout(() => timeInfoBox.classList.add('show'), 50); }
+                } catch (err) {
+                    console.error('Gagal memuat ketersediaan waktu:', err);
+                    timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+                    timeSelect.disabled = true;
+                    if (timeInfoBox && availabilityMessage) {
+                        availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.';
+                        timeInfoBox.classList.remove('hidden');
+                    }
+                }
+            }
+            if (dateInput) {
+                dateInput.addEventListener('change', fetchAvailableTimes);
+                if (dateInput.value) fetchAvailableTimes();
+            }
+
+            // expose for debug
+            window.fetchAvailableTimes = fetchAvailableTimes;
+
+            // ========================
+            // TERMS MODAL HANDLERS
+            // ========================
+            function showTermsModal() {
+                if (!termsModal) return;
+                termsModal.classList.add('show');
+                document.body.style.overflow = 'hidden';
+                if (termsCheckbox) termsCheckbox.checked = false;
+                updateTermsSubmitButton();
+                termsModal.focus();
+            }
+            function hideTermsModal() {
+                if (!termsModal) return;
+                termsModal.classList.remove('show');
+                document.body.style.overflow = '';
+                if (submitBtn) submitBtn.focus();
+            }
+            function updateTermsSubmitButton() {
+                if (!termsSubmitBtn || !termsCheckbox) return;
+                termsSubmitBtn.disabled = !termsCheckbox.checked;
+                if (termsCheckbox.checked) termsSubmitBtn.classList.add('enabled'); else termsSubmitBtn.classList.remove('enabled');
+            }
+            if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsSubmitButton);
+            if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
+            if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
+            if (termsModal) termsModal.addEventListener('click', (e) => { if (e.target === termsModal) hideTermsModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
+
+            // ========================
+            // FORM SUBMIT -> show terms modal
+            // ========================
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', function (ev) {
+                    ev.preventDefault();
+                    if (isFormSubmitting) return;
+
+                    // validate fields
+                    let hasErrors = false;
+                    formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErrors = true; });
+
+                    if (hasErrors) {
+                        showNotification('Mohon perbaiki kesalahan pada form', 'error');
                         return;
                     }
-                    // for 500 or other errors show server message if any
-                    const serverMsg = body && (body.message || body.__raw_text) ? (body.message || body.__raw_text) : `Server error ${resp.status}`;
-                    showNotification(`Server error: ${typeof serverMsg === 'string' ? serverMsg.substring(0,200) : serverMsg}`, 'error');
-                    console.error('Booking API Error:', { status: resp.status, body });
-                    return;
-                }
-            } catch (err) {
-                console.error('Form submission error:', err);
-                showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-            } finally {
-                isFormSubmitting = false;
-                setSubmitButtonLoading(false);
+
+                    showTermsModal();
+                });
             }
-        });
-    }
 
-    function resetLocalFormAfterSuccess() {
-        // reset visually but allow time for UX (and avoid losing redirect data)
-        try {
-            if (bookingForm) bookingForm.reset();
-            selectedExtras = [];
-            updateTotalPrice();
-        } catch (e) { /* ignore */ }
-    }
+            // ========================
+            // TERMS SUBMIT -> POST /booking -> redirect to payment
+            // ========================
+            if (termsSubmitBtn) {
+                termsSubmitBtn.addEventListener('click', async function () {
+                    if (!(termsCheckbox && termsCheckbox.checked)) return;
 
-    // ========================
-    // LOADING UI
-    // ========================
-    function setSubmitButtonLoading(loading) {
-        if (!submitBtn) return;
-        if (loading) {
-            submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy', 'true');
-            if (btnContent) btnContent.style.display = 'none';
-            if (btnLoading) btnLoading.style.display = 'flex';
-        } else {
-            submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy', 'false');
-            if (btnLoading) btnLoading.style.display = 'none';
-            if (btnContent) btnContent.style.display = 'flex';
-        }
-    }
+                    hideTermsModal();
+                    isFormSubmitting = true;
+                    setSubmitButtonLoading(true);
 
-    // ========================
-    // WHATSAPP fallback (exposed)
-    // ========================
-    function sendWhatsAppMessage() {
-        if (!bookingForm) return;
-        const fd = new FormData(bookingForm);
-        const name = fd.get('contactName') || '-';
-        const phone = normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || '');
-        const babyName = fd.get('babyName') || '-';
-        const babyAge = fd.get('babyAge') || '-';
-        const date = fd.get('date') || '-';
-        const time = fd.get('time') || '-';
-        const notes = fd.get('notes') || '-';
-        const extrasText = selectedExtras.length ? selectedExtras.map(e => `- ${e.name} – ${formatPrice(e.price)}`).join('\n') : 'Tidak ada tambahan';
-        const total = (sessionData.base_price || 0) + selectedExtras.reduce((s,i)=>s+(i.price||0),0);
+                    try {
+                        if (!bookingForm) throw new Error('Form tidak ditemukan');
 
-        const message = `BOOKING BABY SMASH CAKE – PEACE PICTURE STUDIO
+                        const fd = new FormData(bookingForm);
+                        // prepare payload: send selected_extra_items as array of IDs (numbers)
+                        const payload = {
+                            contact_name: fd.get('contactName') || fd.get('contact_name') || '',
+                            whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
+                            booking_date: fd.get('date') || '',
+                            booking_time: fd.get('time') || '',
+                            session_name: sessionData.session_name,
+                            package_name: sessionData.package_name,
+                            selected_backgrounds: [], // none in baby session
+                            selected_extra_items: selectedExtras.map(e => ({
+                                id: e.id,
+                                qty: Number(e.qty || 1),
+                                price: Number(e.unitPrice || 0)
+                            })),// <-- only IDs
+                            total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (basePrice + selectedExtras.reduce((s, i) => s + (i.totalPrice || i.unitPrice * i.qty || 0), 0))),
+                            notes: fd.get('notes') || null,
+                            baby_name: fd.get('babyName') || '-',
+                            baby_age: fd.get('babyAge') || null,
+                            status: 'waiting_payment'
+                        };
 
-Nama Kontak: ${name}
-No. WhatsApp: ${phone}
-Nama Bayi: ${babyName}
-Usia Bayi: ${babyAge}
+                        const resp = await fetch('/booking', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            },
+                            body: JSON.stringify(payload)
+                        });
 
-Paket: ${sessionData.package_name}
-Harga Paket: ${formatPrice(sessionData.base_price)}
+                        // parse response robustly
+                        let body = {};
+                        try { body = await resp.json(); } catch (jsonErr) {
+                            try { body = { __raw_text: await resp.text() }; } catch (txtErr) { body = { __parse_error: String(txtErr) }; }
+                        }
 
-Tanggal: ${date}
-Waktu: ${time}
+                        if (resp.ok) {
+                            // success: expect redirect_url
+                            if (body.redirect_url) {
+                                showSuccessMessageLocal();
+                                // optional: reset form or keep values until redirect
+                                resetLocalFormAfterSuccess();
+                                // redirect to payment
+                                window.location.href = body.redirect_url;
+                                return;
+                            } else {
+                                showNotification(body.message || 'Pesanan dibuat. Lanjutkan ke halaman pembayaran.', 'info');
+                                window.location.href = body.redirect_url || '/';
+                                return;
+                            }
+                        } else {
+                            // handle known statuses
+                            if (resp.status === 409) {
+                                showNotification(body.message || 'Slot sudah diambil. Silakan pilih waktu lain.', 'error');
+                                return;
+                            }
+                            if (resp.status === 422) {
+                                showNotification('Mohon perbaiki kesalahan pada form.', 'error');
+                                // render per-field errors if available
+                                if (body.errors && typeof body.errors === 'object') {
+                                    Object.keys(body.errors).forEach(key => {
+                                        const el = document.getElementById(`${key}-error`);
+                                        if (el) el.textContent = Array.isArray(body.errors[key]) ? body.errors[key].join(', ') : body.errors[key];
+                                    });
+                                }
+                                // scroll to first invalid input
+                                const first = document.querySelector('[aria-invalid="true"]');
+                                if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                return;
+                            }
+                            // for 500 or other errors show server message if any
+                            const serverMsg = body && (body.message || body.__raw_text) ? (body.message || body.__raw_text) : `Server error ${resp.status}`;
+                            showNotification(`Server error: ${typeof serverMsg === 'string' ? serverMsg.substring(0, 200) : serverMsg}`, 'error');
+                            console.error('Booking API Error:', { status: resp.status, body });
+                            return;
+                        }
+                    } catch (err) {
+                        console.error('Form submission error:', err);
+                        showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+                    } finally {
+                        isFormSubmitting = false;
+                        setSubmitButtonLoading(false);
+                    }
+                });
+            }
 
-Tambahan Item:
-${extrasText}
+            function resetLocalFormAfterSuccess() {
+                // reset visually but allow time for UX (and avoid losing redirect data)
+                try {
+                    if (bookingForm) bookingForm.reset();
+                    selectedExtras = [];
+                    updateTotalPrice();
+                } catch (e) { /* ignore */ }
+            }
 
-Catatan:
-${notes}
+            // ========================
+            // LOADING UI
+            // ========================
+            function setSubmitButtonLoading(loading) {
+                if (!submitBtn) return;
+                if (loading) {
+                    submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy', 'true');
+                    if (btnContent) btnContent.style.display = 'none';
+                    if (btnLoading) btnLoading.style.display = 'flex';
+                } else {
+                    submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy', 'false');
+                    if (btnLoading) btnLoading.style.display = 'none';
+                    if (btnContent) btnContent.style.display = 'flex';
+                }
+            }
 
-Total Harga: ${formatPrice(total)}
+            // ========================
+            // WHATSAPP fallback (exposed)
+            // ========================
+            function sendWhatsAppMessage() {
+                if (!bookingForm) return;
+                const fd = new FormData(bookingForm);
+                const name = fd.get('contactName') || '-';
+                const phone = normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || '');
+                const babyName = fd.get('babyName') || '-';
+                const babyAge = fd.get('babyAge') || '-';
+                const date = fd.get('date') || '-';
+                const time = fd.get('time') || '-';
+                const notes = fd.get('notes') || '-';
+                const extrasText = selectedExtras.length ? selectedExtras.map(e => `- ${e.name} – ${formatPrice(e.price)}`).join('\n') : 'Tidak ada tambahan';
+                const total = (sessionData.base_price || 0) + selectedExtras.reduce((s, i) => s + (i.price || 0), 0);
 
-Saya telah membaca dan menyetujui syarat & ketentuan.
-*Note: Kue tidak disediakan oleh studio.*`;
+                const message = `BOOKING BABY SMASH CAKE – PEACE PICTURE STUDIO
 
-        const wa = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
-        window.open(wa, '_blank');
-    }
-    window.sendWhatsAppMessage = sendWhatsAppMessage;
+    Nama Kontak: ${name}
+    No. WhatsApp: ${phone}
+    Nama Bayi: ${babyName}
+    Usia Bayi: ${babyAge}
 
-    // ========================
-    // INIT
-    // ========================
-    (function init() {
-        // min date
-        if (dateInput) {
-            const today = new Date(); today.setHours(0,0,0,0);
-            dateInput.min = today.toISOString().split('T')[0];
-        }
-        updateTotalPrice();
-        console.log('✨ Baby Smash Cake booking script initialized.');
-    })();
+    Paket: ${sessionData.package_name}
+    Harga Paket: ${formatPrice(sessionData.base_price)}
 
-}); // DOMContentLoaded
-</script>
+    Tanggal: ${date}
+    Waktu: ${time}
+
+    Tambahan Item:
+    ${extrasText}
+
+    Catatan:
+    ${notes}
+
+    Total Harga: ${formatPrice(total)}
+
+    Saya telah membaca dan menyetujui syarat & ketentuan.
+    *Note: Kue tidak disediakan oleh studio.*`;
+
+                const wa = `https://wa.me/6285782086279?text=${encodeURIComponent(message)}`;
+                window.open(wa, '_blank');
+            }
+            window.sendWhatsAppMessage = sendWhatsAppMessage;
+
+            // ========================
+            // INIT
+            // ========================
+            (function init() {
+                // min date
+                if (dateInput) {
+                    const today = new Date(); today.setHours(0, 0, 0, 0);
+                    dateInput.min = today.toISOString().split('T')[0];
+                }
+                updateTotalPrice();
+                console.log('✨ Baby Smash Cake booking script initialized.');
+            })();
+
+        }); // DOMContentLoaded
+    </script>
 @endpush

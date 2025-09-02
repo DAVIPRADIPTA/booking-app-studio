@@ -435,9 +435,7 @@
         }
 
         /* Firefox fallback - hilangkan tampilan default */
-        @supports
-        (-moz - appearance)
-            {
+        @supports (-moz - appearance) {
             .form-input[type="date"] {
                 -moz-appearance: none;
                 appearance: none;
@@ -1668,8 +1666,8 @@
                                     </svg>
                                 </div>
                                 <div class="btn-text-content">
-                                    <span class="btn-text">Kirim Pemesanan</span>
-                                    <span class="btn-subtext">Kami akan menghubungi Anda via WhatsApp</span>
+                                    <span class="btn-text">Submit Pemesanan</span>
+                                    <span class="btn-subtext">Menuju Halaman Pembayaran</span>
                                 </div>
                             </div>
                             <div class="btn-loading" id="btnLoading" style="display: none;">
@@ -1683,7 +1681,7 @@
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                             </svg>
-                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk dihubungi oleh tim kami</span>
+                            <span>Dengan mengirim formulir ini, Anda menyetujui untuk memesan layanan kami</span>
                         </div>
                     </div>
                 </form>
@@ -1745,500 +1743,509 @@
 @endsection
 
 @push('scripts')
-<script>
-/*
-  Prewed booking — single, robust script
-  - Exposes window.fetchAvailableTimes (fixes ReferenceError)
-  - Extras: supports data-price, qty, subtotal UI
-  - Sends selected_backgrounds as IDs and selected_extra_items as IDs
-  - Normalizes WA number to +62
-  - Handles server responses (redirect_url expected)
-*/
-(function () {
-    'use strict';
+    <script>
+        /*
+          Prewed booking — single, robust script
+          - Exposes window.fetchAvailableTimes (fixes ReferenceError)
+          - Extras: supports data-price, qty, subtotal UI
+          - Sends selected_backgrounds as IDs and selected_extra_items as IDs
+          - Normalizes WA number to +62
+          - Handles server responses (redirect_url expected)
+        */
+        (function () {
+            'use strict';
 
-    // ----------------------
-    // Helper utils
-    // ----------------------
-    const parsePrice = v => {
-        if (typeof v === 'number') return v;
-        if (!v && v !== 0) return 0;
-        const s = String(v);
-        const digits = s.replace(/[^\d]/g, '');
-        return digits ? Number(digits) : 0;
-    };
-    const formatPrice = p => `Rp${(Number(p)||0).toLocaleString('id-ID')}`;
-    const normalizePhone = raw => {
-        if (!raw) return '';
-        let s = String(raw).trim().replace(/[^\d+]/g, '');
-        if (s.startsWith('+')) return s;
-        if (s.startsWith('62')) return '+' + s;
-        if (s.startsWith('0')) return '+62' + s.slice(1);
-        return '+62' + s;
-    };
-    const showNotification = (msg, type='info') => {
-        const n = document.createElement('div');
-        n.className = `notification notification-${type}`;
-        n.textContent = msg;
-        const bg = (type==='error') ? 'rgba(239,68,68,.95)' : (type==='warning' ? 'rgba(245,158,11,.95)' : 'rgba(59,130,246,.95)');
-        n.style.cssText = `position:fixed; top:1.2rem; right:1.2rem; background:${bg}; color:#fff; padding:.6rem .9rem; border-radius:.5rem; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.18);`;
-        document.body.appendChild(n);
-        setTimeout(()=>{ n.style.transition='opacity .2s, transform .2s'; n.style.opacity='0'; n.style.transform='translateX(6px)'; setTimeout(()=> n.remove(), 220); }, 3200);
-    };
-
-    // ----------------------
-    // Blade-provided config
-    // ----------------------
-    const prewedBackgroundIds = [
-        @foreach($backgroundItems as $item)
-            '{{ $item->id }}',
-        @endforeach
-    ];
-
-    const packageBackgrounds = {
-        'prewed1': { maxBackgrounds: 2, availableBackgrounds: prewedBackgroundIds },
-        'prewed2': { maxBackgrounds: 3, availableBackgrounds: prewedBackgroundIds }
-    };
-
-    // ----------------------
-    // State & DOM refs
-    // ----------------------
-    let selectedPackage = null; // {id, name, price, maxBackgrounds}
-    let selectedBackgrounds = []; // [{id, name}]
-    let selectedExtras = []; // [{id, name, unitPrice, qty, totalPrice}]
-    let basePrice = 0;
-    let maxBackgrounds = 0;
-    let isFormSubmitting = false;
-
-    // DOM (guarded)
-    const getEl = (sel) => document.getElementById(sel);
-    const packageCards = document.querySelectorAll('.package-card');
-    const backgroundOptions = document.querySelectorAll('.background-option');
-    const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
-    const totalPriceElement = getEl('totalPrice');
-    const bookingForm = getEl('bookingForm');
-    const submitBtn = getEl('submitBtn');
-    const packageNotice = getEl('packageNotice');
-    const backgroundSection = getEl('backgroundSection');
-    const backgroundCounter = getEl('backgroundCounter');
-    const successMessage = getEl('successMessage');
-    const termsModal = getEl('termsModal');
-    const termsCheckbox = getEl('termsCheckbox');
-    const termsSubmitBtn = getEl('termsSubmitBtn');
-    const termsCancelBtn = getEl('termsCancelBtn');
-    const termsModalClose = getEl('termsModalClose');
-    const dateInput = getEl('date');
-    const timeSelect = getEl('time');
-    const timeInfoBox = getEl('time-availability-info');
-    const availabilityMessage = getEl('availability-message');
-
-    // ----------------------
-    // fetchAvailableTimes (exposed on window)
-    // ----------------------
-    window.fetchAvailableTimes = async function fetchAvailableTimes() {
-        if (!dateInput || !timeSelect) return;
-        const selectedDate = (dateInput.value || '').trim();
-        if (!selectedDate) return;
-
-        timeSelect.disabled = true;
-        timeSelect.innerHTML = '<option value="">Memuat...</option>';
-        if (timeInfoBox) { timeInfoBox.classList.add('hidden'); timeInfoBox.style.background=''; timeInfoBox.style.borderColor=''; }
-
-        try {
-            const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers:{ 'Accept':'application/json' }});
-            if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-            const data = await resp.json();
-
-            timeSelect.innerHTML = '';
-            if (data.status === 'full') {
-                const o = document.createElement('option'); o.value=''; o.textContent='Hari ini full booked'; o.disabled=true; timeSelect.appendChild(o); timeSelect.disabled=true;
-                if (availabilityMessage) availabilityMessage.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
-                if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); timeInfoBox.style.background='linear-gradient(135deg, rgba(239,68,68,.18), rgba(239,68,68,.1))'; timeInfoBox.style.borderColor='rgba(239,68,68,.4)'; }
-            } else {
-                (data.available_times || []).forEach(t => {
-                    const o = document.createElement('option'); o.value=t; o.textContent = `${t} WIB`; timeSelect.appendChild(o);
-                });
-                timeSelect.disabled = false;
-                if (availabilityMessage) {
-                    if (data.status === 'limited') {
-                        availabilityMessage.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
-                        if (timeInfoBox) timeInfoBox.style.background = 'linear-gradient(135deg, rgba(234,179,8,.18), rgba(234,179,8,.1))';
-                    } else {
-                        availabilityMessage.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
-                        if (timeInfoBox) timeInfoBox.style.background = 'linear-gradient(135deg, rgba(59,130,246,.18), rgba(59,130,246,.1))';
-                    }
-                    if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); setTimeout(()=> timeInfoBox.classList.add('show'), 50); }
-                }
-            }
-        } catch (err) {
-            console.error('Gagal memuat ketersediaan waktu:', err);
-            timeSelect.innerHTML = '<option value="">Gagal muat</option>';
-            timeSelect.disabled = true;
-            if (timeInfoBox && availabilityMessage) {
-                availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.';
-                timeInfoBox.classList.remove('hidden');
-            }
-        }
-    };
-
-    // Attach change listener in JS (avoid inline onchange)
-    if (dateInput) {
-        dateInput.addEventListener('change', () => window.fetchAvailableTimes());
-        if (dateInput.value) window.fetchAvailableTimes();
-    }
-
-    // ----------------------
-    // Background & package logic
-    // ----------------------
-    function updateBackgroundAvailability(pkgId) {
-        const cfg = packageBackgrounds[pkgId];
-        if (!cfg) return;
-        maxBackgrounds = Number(cfg.maxBackgrounds) || 0;
-        if (backgroundSection) backgroundSection.classList.remove('disabled');
-        if (packageNotice) packageNotice.classList.add('hidden');
-        const avail = cfg.availableBackgrounds || [];
-        backgroundOptions.forEach(o => {
-            const id = o.dataset.background;
-            if (avail.includes(id)) {
-                o.classList.remove('disabled'); o.setAttribute('tabindex','0'); o.setAttribute('aria-disabled','false');
-            } else {
-                o.classList.add('disabled'); o.setAttribute('tabindex','-1'); o.setAttribute('aria-disabled','true'); o.classList.remove('selected');
-                selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
-            }
-        });
-        updateBackgroundCounter();
-    }
-    function updateBackgroundCounter() {
-        const sel = selectedBackgrounds.length;
-        if (backgroundCounter) backgroundCounter.textContent = `${sel}/${maxBackgrounds} dipilih`;
-        if (sel >= maxBackgrounds && maxBackgrounds > 0) {
-            if (backgroundCounter) backgroundCounter.classList.add('warning');
-            backgroundOptions.forEach(o => { if (!o.classList.contains('selected') && !o.classList.contains('disabled')) { o.style.opacity='0.3'; o.style.pointerEvents='none'; }});
-        } else {
-            if (backgroundCounter) backgroundCounter.classList.remove('warning');
-            backgroundOptions.forEach(o => { if (!o.classList.contains('disabled')) { o.style.opacity=''; o.style.pointerEvents=''; }});
-        }
-    }
-
-    packageCards.forEach(card => {
-        card.addEventListener('click', function () {
-            packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected','false'); });
-            this.classList.add('selected'); this.setAttribute('aria-selected','true');
-
-            selectedPackage = {
-                id: this.dataset.package,
-                name: (this.querySelector('.package-title') ? this.querySelector('.package-title').textContent : (this.dataset.package || 'Paket')),
-                price: Number(this.dataset.price || 0),
-                maxBackgrounds: Number(this.dataset.backgrounds || 0)
+            // ----------------------
+            // Helper utils
+            // ----------------------
+            const parsePrice = v => {
+                if (typeof v === 'number') return v;
+                if (!v && v !== 0) return 0;
+                const s = String(v);
+                const digits = s.replace(/[^\d]/g, '');
+                return digits ? Number(digits) : 0;
             };
-            basePrice = Number(selectedPackage.price) || 0;
-            maxBackgrounds = Number(selectedPackage.maxBackgrounds) || 0;
+            const formatPrice = p => `Rp${(Number(p) || 0).toLocaleString('id-ID')}`;
+            const normalizePhone = raw => {
+                if (!raw) return '';
+                let s = String(raw).trim().replace(/[^\d+]/g, '');
+                if (s.startsWith('+')) return s;
+                if (s.startsWith('62')) return '+' + s;
+                if (s.startsWith('0')) return '+62' + s.slice(1);
+                return '+62' + s;
+            };
+            const showNotification = (msg, type = 'info') => {
+                const n = document.createElement('div');
+                n.className = `notification notification-${type}`;
+                n.textContent = msg;
+                const bg = (type === 'error') ? 'rgba(239,68,68,.95)' : (type === 'warning' ? 'rgba(245,158,11,.95)' : 'rgba(59,130,246,.95)');
+                n.style.cssText = `position:fixed; top:1.2rem; right:1.2rem; background:${bg}; color:#fff; padding:.6rem .9rem; border-radius:.5rem; z-index:9999; box-shadow:0 8px 24px rgba(0,0,0,.18);`;
+                document.body.appendChild(n);
+                setTimeout(() => { n.style.transition = 'opacity .2s, transform .2s'; n.style.opacity = '0'; n.style.transform = 'translateX(6px)'; setTimeout(() => n.remove(), 220); }, 3200);
+            };
 
-            // reset backgrounds
-            backgroundOptions.forEach(o => { o.classList.remove('selected'); o.setAttribute('aria-selected','false'); });
-            selectedBackgrounds = [];
+            // ----------------------
+            // Blade-provided config
+            // ----------------------
+            const prewedBackgroundIds = [
+                @foreach($backgroundItems as $item)
+                    '{{ $item->id }}',
+                @endforeach
+        ];
 
-            updateBackgroundAvailability(selectedPackage.id);
-            updateTotalPrice();
-        });
-    });
+            const packageBackgrounds = {
+                'prewed1': { maxBackgrounds: 2, availableBackgrounds: prewedBackgroundIds },
+                'prewed2': { maxBackgrounds: 3, availableBackgrounds: prewedBackgroundIds }
+            };
 
-    // auto select default (if dataset.default or prewed2 present)
-    (function autoSelectDefault() {
-        const auto = Array.from(packageCards).find(c => c.dataset.default === 'true' || (c.dataset.package && c.dataset.package.toLowerCase()==='prewed2'));
-        if (auto && !Array.from(packageCards).some(c=>c.classList.contains('selected'))) auto.click();
-    })();
+            // ----------------------
+            // State & DOM refs
+            // ----------------------
+            let selectedPackage = null; // {id, name, price, maxBackgrounds}
+            let selectedBackgrounds = []; // [{id, name}]
+            let selectedExtras = []; // [{id, name, unitPrice, qty, totalPrice}]
+            let basePrice = 0;
+            let maxBackgrounds = 0;
+            let isFormSubmitting = false;
 
-    backgroundOptions.forEach(opt => {
-        opt.addEventListener('click', function () {
-            if (this.classList.contains('disabled')) { showNotification('Background ini tidak tersedia untuk paket yang dipilih','error'); return; }
-            const id = this.dataset.background;
-            const name = this.dataset.name || id;
-            const found = selectedBackgrounds.find(b => String(b.id) === String(id));
-            if (found) {
-                this.classList.remove('selected'); this.setAttribute('aria-selected','false');
-                selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
-            } else {
-                if (selectedBackgrounds.length >= maxBackgrounds) { showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`,'error'); return; }
-                this.classList.add('selected'); this.setAttribute('aria-selected','true');
-                selectedBackgrounds.push({ id, name });
-            }
-            updateBackgroundCounter();
-        });
-        opt.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click(); }});
-    });
+            // DOM (guarded)
+            const getEl = (sel) => document.getElementById(sel);
+            const packageCards = document.querySelectorAll('.package-card');
+            const backgroundOptions = document.querySelectorAll('.background-option');
+            const extraCheckboxes = document.querySelectorAll('.extra-checkbox');
+            const totalPriceElement = getEl('totalPrice');
+            const bookingForm = getEl('bookingForm');
+            const submitBtn = getEl('submitBtn');
+            const packageNotice = getEl('packageNotice');
+            const backgroundSection = getEl('backgroundSection');
+            const backgroundCounter = getEl('backgroundCounter');
+            const successMessage = getEl('successMessage');
+            const termsModal = getEl('termsModal');
+            const termsCheckbox = getEl('termsCheckbox');
+            const termsSubmitBtn = getEl('termsSubmitBtn');
+            const termsCancelBtn = getEl('termsCancelBtn');
+            const termsModalClose = getEl('termsModalClose');
+            const dateInput = getEl('date');
+            const timeSelect = getEl('time');
+            const timeInfoBox = getEl('time-availability-info');
+            const availabilityMessage = getEl('availability-message');
 
-    // ----------------------
-    // Extras: consistent pricing & qty
-    // Expected markup hints:
-    // .extra-checkbox (value/id, data-name, data-price)
-    // inside same container: .extra-qty (number input), .extra-price-input (optional), [data-extra-subtotal]
-    // ----------------------
-    const findRelated = checkbox => {
-        const container = checkbox.closest('.extra-row') || checkbox.parentElement || checkbox;
-        const qty = container ? container.querySelector('.extra-qty') : null;
-        const priceInput = container ? container.querySelector('.extra-price-input') : null;
-        const subtotalEl = container ? container.querySelector('[data-extra-subtotal]') : null;
-        return { container, qty, priceInput, subtotalEl };
-    };
+            // ----------------------
+            // fetchAvailableTimes (exposed on window)
+            // ----------------------
+            window.fetchAvailableTimes = async function fetchAvailableTimes() {
+                if (!dateInput || !timeSelect) return;
+                const selectedDate = (dateInput.value || '').trim();
+                if (!selectedDate) return;
 
-    const extraInitData = (cb, idx) => {
-        const id = (cb.value && !isNaN(Number(cb.value))) ? Number(cb.value) : (cb.dataset.id ? (isNaN(Number(cb.dataset.id)) ? cb.dataset.id : Number(cb.dataset.id)) : `extra-${idx}`);
-        const name = cb.dataset.name || cb.dataset.label || (cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : `Extra ${id}`);
-        const dataPrice = parsePrice(cb.dataset.price);
-        const related = findRelated(cb);
-        let unit = dataPrice;
-        if (related.priceInput) unit = parsePrice(related.priceInput.value || related.priceInput.getAttribute('value') || unit);
-        let qty = 1;
-        if (related.qty) {
-            const qv = parseInt(related.qty.value || related.qty.getAttribute('value') || '1', 10);
-            qty = isNaN(qv) || qv < 1 ? 1 : qv;
-        }
-        return { id, name, unitPrice: Number(unit)||0, qty: Number(qty)||1, totalPrice: (Number(unit)||0) * (Number(qty)||1), related };
-    };
+                timeSelect.disabled = true;
+                timeSelect.innerHTML = '<option value="">Memuat...</option>';
+                if (timeInfoBox) { timeInfoBox.classList.add('hidden'); timeInfoBox.style.background = ''; timeInfoBox.style.borderColor = ''; }
 
-    function updateExtrasState(cb, idx) {
-        const d = extraInitData(cb, idx);
-        if (cb.checked) {
-            const exist = selectedExtras.find(x => String(x.id) === String(d.id));
-            if (exist) { exist.unitPrice = d.unitPrice; exist.qty = d.qty; exist.totalPrice = d.totalPrice; }
-            else selectedExtras.push({ id:d.id, name:d.name, unitPrice:d.unitPrice, qty:d.qty, totalPrice:d.totalPrice });
-        } else {
-            selectedExtras = selectedExtras.filter(x => String(x.id) !== String(d.id));
-        }
-        if (d.related && d.related.subtotalEl) d.related.subtotalEl.textContent = formatPrice(d.totalPrice);
-        updateTotalPrice();
-    }
+                try {
+                    const resp = await fetch(`/api/available-times?booking_date=${encodeURIComponent(selectedDate)}`, { headers: { 'Accept': 'application/json' } });
+                    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                    const data = await resp.json();
 
-    function updateExtrasOnInput(cb, idx) {
-        if (!cb.checked) return;
-        const d = extraInitData(cb, idx);
-        const exist = selectedExtras.find(x => String(x.id) === String(d.id));
-        if (exist) { exist.unitPrice = d.unitPrice; exist.qty = d.qty; exist.totalPrice = d.totalPrice; }
-        else selectedExtras.push({ id:d.id, name:d.name, unitPrice:d.unitPrice, qty:d.qty, totalPrice:d.totalPrice });
-        if (d.related && d.related.subtotalEl) d.related.subtotalEl.textContent = formatPrice(d.totalPrice);
-        updateTotalPrice();
-    }
-
-    extraCheckboxes.forEach((cb, idx) => {
-        // initial if checked
-        const init = extraInitData(cb, idx);
-        if (cb.checked) selectedExtras.push({ id:init.id, name:init.name, unitPrice:init.unitPrice, qty:init.qty, totalPrice:init.totalPrice });
-        // change handler
-        cb.addEventListener('change', () => updateExtrasState(cb, idx));
-        // wire qty/price inputs if present
-        const rel = findRelated(cb);
-        if (rel.qty) {
-            rel.qty.addEventListener('input', () => { rel.qty.value = rel.qty.value.replace(/[^\d]/g,'') || '1'; updateExtrasOnInput(cb, idx); });
-            rel.qty.addEventListener('blur', () => { if (!rel.qty.value || Number(rel.qty.value) < 1) rel.qty.value = '1'; updateExtrasOnInput(cb, idx); });
-        }
-        if (rel.priceInput) {
-            rel.priceInput.addEventListener('input', () => updateExtrasOnInput(cb, idx));
-            rel.priceInput.addEventListener('blur', () => updateExtrasOnInput(cb, idx));
-        }
-        if (init.related && init.related.subtotalEl) init.related.subtotalEl.textContent = formatPrice(init.totalPrice);
-    });
-
-    // ----------------------
-    // Price total
-    // ----------------------
-    function updateTotalPrice() {
-        const extrasTotal = selectedExtras.reduce((s,e) => s + (Number(e.totalPrice) || (Number(e.unitPrice||0) * Number(e.qty||1))), 0);
-        const total = (Number(basePrice) || 0) + extrasTotal;
-        if (totalPriceElement) {
-            totalPriceElement.classList.add('updating');
-            setTimeout(()=> totalPriceElement.classList.remove('updating'), 220);
-            totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
-            totalPriceElement.setAttribute('data-total', String(total));
-            totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
-        }
-    }
-
-    // ----------------------
-    // Validation helpers
-    // ----------------------
-    const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
-    formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
-    function validateField(e){
-        const field = e.target;
-        if (!field) return true;
-        const name = field.name;
-        const val = (field.value || '').toString().trim();
-        const errEl = document.getElementById(`${name}-error`);
-        let msg = '';
-        if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
-        else if ((name === 'phone' || name === 'whatsapp_number') && val && !/^\+?[\d]{9,15}$/.test(val.replace(/\s+/g,''))) msg = 'Nomor WhatsApp tidak valid';
-        else if (name === 'date' && val) {
-            const ch = new Date(val);
-            const t = new Date(); t.setHours(0,0,0,0);
-            if (isNaN(ch.getTime()) || ch < t) msg = 'Tanggal tidak boleh di masa lalu';
-        }
-        if (errEl) { errEl.textContent = msg; field.setAttribute('aria-invalid', msg ? 'true' : 'false'); field.style.borderColor = msg ? '#ef4444' : ''; }
-        return !msg;
-    }
-    function clearFieldError(e) { const f = e.target; const el = document.getElementById(`${f.name}-error`); if (el) { el.textContent=''; f.setAttribute('aria-invalid','false'); f.style.borderColor=''; } }
-
-    // ----------------------
-    // Terms modal handlers
-    // ----------------------
-    function showTermsModal(){ if (!termsModal) return; termsModal.classList.add('show'); document.body.style.overflow='hidden'; if (termsCheckbox) termsCheckbox.checked=false; updateTermsButton(); }
-    function hideTermsModal(){ if (!termsModal) return; termsModal.classList.remove('show'); document.body.style.overflow=''; if (submitBtn) submitBtn.focus(); }
-    function updateTermsButton(){ if (!termsSubmitBtn || !termsCheckbox) return; termsSubmitBtn.disabled = !termsCheckbox.checked; termsCheckbox.checked ? termsSubmitBtn.classList.add('enabled') : termsSubmitBtn.classList.remove('enabled'); }
-    if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsButton);
-    if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
-    if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
-    if (termsModal) termsModal.addEventListener('click', (e)=> { if (e.target === termsModal) hideTermsModal(); });
-    document.addEventListener('keydown', (e)=> { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
-
-    // ----------------------
-    // Submit flow -> send to /booking (payment)
-    // ----------------------
-    if (bookingForm) {
-        bookingForm.addEventListener('submit', function (ev) {
-            ev.preventDefault();
-            if (isFormSubmitting) return;
-
-            // quick checks
-            if (!selectedPackage) { showNotification('Silakan pilih paket terlebih dahulu','error'); if (packageCards[0]) packageCards[0].focus(); return; }
-            if (selectedBackgrounds.length === 0) { showNotification('Silakan pilih minimal 1 background','error'); if (backgroundSection) backgroundSection.scrollIntoView({behavior:'smooth', block:'center'}); return; }
-
-            let hasErr = false;
-            formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErr = true; });
-            if (hasErr) { showNotification('Mohon perbaiki kesalahan pada form','error'); return; }
-
-            // show terms
-            showTermsModal();
-        });
-    }
-
-    // Terms submit sends final payload
-    if (termsSubmitBtn) {
-        termsSubmitBtn.addEventListener('click', async function () {
-            if (!(termsCheckbox && termsCheckbox.checked)) return;
-            hideTermsModal();
-            isFormSubmitting = true;
-            setSubmitLoading(true);
-
-            try {
-                if (!bookingForm) throw new Error('Form tidak ditemukan');
-                const fd = new FormData(bookingForm);
-                const payload = {
-                    contact_name: fd.get('contactName') || fd.get('contact_name') || '',
-                    whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
-                    booking_date: fd.get('date') || '',
-                    booking_time: fd.get('time') || '',
-                    session_name: 'prewed',
-                    package_name: selectedPackage ? selectedPackage.name : '',
-                    package_id: selectedPackage ? selectedPackage.id : '',
-                    package_price: Number(selectedPackage ? selectedPackage.price : basePrice),
-                    selected_backgrounds: selectedBackgrounds.map(b => b.id), // ids only
-                    selected_extra_items: selectedExtras.map(e => e.id),     // ids only
-                    total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (basePrice + selectedExtras.reduce((s,i)=>s + (i.totalPrice || i.unitPrice * i.qty || 0),0))),
-                    notes: fd.get('notes') || null,
-                    status: 'waiting_payment'
-                };
-
-                const resp = await fetch('/booking', {
-                    method:'POST',
-                    headers:{
-                        'Content-Type':'application/json',
-                        'Accept':'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                let body = {};
-                try { body = await resp.json(); } catch (jerr) { try { body = { __raw: await resp.text() }; } catch(e){ body = { __err: String(e) }; } }
-
-                if (resp.ok) {
-                    if (body.redirect_url) {
-                        showNotification('Berhasil. Mengarahkan ke pembayaran...','info');
-                        setTimeout(()=> window.location.href = body.redirect_url, 400);
-                        return;
+                    timeSelect.innerHTML = '';
+                    if (data.status === 'full') {
+                        const o = document.createElement('option'); o.value = ''; o.textContent = 'Hari ini full booked'; o.disabled = true; timeSelect.appendChild(o); timeSelect.disabled = true;
+                        if (availabilityMessage) availabilityMessage.textContent = 'Maaf, tidak ada slot tersedia di tanggal ini. Silakan pilih tanggal lain.';
+                        if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); timeInfoBox.style.background = 'linear-gradient(135deg, rgba(239,68,68,.18), rgba(239,68,68,.1))'; timeInfoBox.style.borderColor = 'rgba(239,68,68,.4)'; }
                     } else {
-                        showNotification(body.message || 'Pesanan dibuat. Lanjutkan ke pembayaran.','info');
-                        setTimeout(()=> window.location.href = body.redirect_url || '/', 400);
-                        return;
-                    }
-                } else {
-                    if (resp.status === 409) { showNotification(body.message || 'Slot sudah diambil','error'); return; }
-                    if (resp.status === 422) {
-                        showNotification('Mohon perbaiki kesalahan pada form.','error');
-                        if (body.errors && typeof body.errors === 'object') {
-                            Object.keys(body.errors).forEach(k => {
-                                const el = document.getElementById(`${k}-error`);
-                                if (el) el.textContent = Array.isArray(body.errors[k]) ? body.errors[k].join(', ') : body.errors[k];
-                            });
+                        (data.available_times || []).forEach(t => {
+                            const o = document.createElement('option'); o.value = t; o.textContent = `${t} WIB`; timeSelect.appendChild(o);
+                        });
+                        timeSelect.disabled = false;
+                        if (availabilityMessage) {
+                            if (data.status === 'limited') {
+                                availabilityMessage.textContent = `Hanya tersisa ${data.available_times.length} slot. Segera booking!`;
+                                if (timeInfoBox) timeInfoBox.style.background = 'linear-gradient(135deg, rgba(234,179,8,.18), rgba(234,179,8,.1))';
+                            } else {
+                                availabilityMessage.textContent = `Ada ${data.available_times.length} slot (sesi waktu) yang tersedia.`;
+                                if (timeInfoBox) timeInfoBox.style.background = 'linear-gradient(135deg, rgba(59,130,246,.18), rgba(59,130,246,.1))';
+                            }
+                            if (timeInfoBox) { timeInfoBox.classList.remove('hidden'); setTimeout(() => timeInfoBox.classList.add('show'), 50); }
                         }
-                        const first = document.querySelector('[aria-invalid="true"]');
-                        if (first) first.scrollIntoView({ behavior:'smooth', block:'center' });
-                        console.error('Validation errors:', body.errors || body);
-                        return;
                     }
-                    const serverMsg = body.message || body.__raw || `Server error ${resp.status}`;
-                    showNotification(String(serverMsg).substring(0,200), 'error');
-                    console.error('Booking API error:', { status: resp.status, body });
-                    return;
+                } catch (err) {
+                    console.error('Gagal memuat ketersediaan waktu:', err);
+                    timeSelect.innerHTML = '<option value="">Gagal muat</option>';
+                    timeSelect.disabled = true;
+                    if (timeInfoBox && availabilityMessage) {
+                        availabilityMessage.textContent = 'Gagal memuat ketersediaan waktu. Silakan coba beberapa saat lagi.';
+                        timeInfoBox.classList.remove('hidden');
+                    }
                 }
+            };
 
-            } catch (err) {
-                console.error('Form submission error:', err);
-                showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
-            } finally {
-                isFormSubmitting = false;
-                setSubmitLoading(false);
+            // Attach change listener in JS (avoid inline onchange)
+            if (dateInput) {
+                dateInput.addEventListener('change', () => window.fetchAvailableTimes());
+                if (dateInput.value) window.fetchAvailableTimes();
             }
-        });
-    }
 
-    function setSubmitLoading(on) {
-        const btnContent = document.getElementById('btnContent');
-        const btnLoading = document.getElementById('btnLoading');
-        if (!submitBtn) return;
-        if (on) {
-            submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy','true');
-            if (btnContent) btnContent.style.display='none';
-            if (btnLoading) btnLoading.style.display='flex';
-        } else {
-            submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy','false');
-            if (btnLoading) btnLoading.style.display='none';
-            if (btnContent) btnContent.style.display='flex';
-        }
-    }
+            // ----------------------
+            // Background & package logic
+            // ----------------------
+            function updateBackgroundAvailability(pkgId) {
+                const cfg = packageBackgrounds[pkgId];
+                if (!cfg) return;
+                maxBackgrounds = Number(cfg.maxBackgrounds) || 0;
+                if (backgroundSection) backgroundSection.classList.remove('disabled');
+                if (packageNotice) packageNotice.classList.add('hidden');
+                const avail = cfg.availableBackgrounds || [];
+                backgroundOptions.forEach(o => {
+                    const id = o.dataset.background;
+                    if (avail.includes(id)) {
+                        o.classList.remove('disabled'); o.setAttribute('tabindex', '0'); o.setAttribute('aria-disabled', 'false');
+                    } else {
+                        o.classList.add('disabled'); o.setAttribute('tabindex', '-1'); o.setAttribute('aria-disabled', 'true'); o.classList.remove('selected');
+                        selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
+                    }
+                });
+                updateBackgroundCounter();
+            }
+            function updateBackgroundCounter() {
+                const sel = selectedBackgrounds.length;
+                if (backgroundCounter) backgroundCounter.textContent = `${sel}/${maxBackgrounds} dipilih`;
+                if (sel >= maxBackgrounds && maxBackgrounds > 0) {
+                    if (backgroundCounter) backgroundCounter.classList.add('warning');
+                    backgroundOptions.forEach(o => { if (!o.classList.contains('selected') && !o.classList.contains('disabled')) { o.style.opacity = '0.3'; o.style.pointerEvents = 'none'; } });
+                } else {
+                    if (backgroundCounter) backgroundCounter.classList.remove('warning');
+                    backgroundOptions.forEach(o => { if (!o.classList.contains('disabled')) { o.style.opacity = ''; o.style.pointerEvents = ''; } });
+                }
+            }
 
-    // success/reset utilities
-    function showSuccessMessage() { if (!successMessage) return; successMessage.classList.add('show'); successMessage.focus(); setTimeout(()=> successMessage.classList.remove('show'), 8000); }
-    function resetForm() {
-        try {
-            if (!bookingForm) return;
-            bookingForm.reset();
-            packageCards.forEach(c=>{ c.classList.remove('selected'); c.setAttribute('aria-selected','false'); });
-            backgroundOptions.forEach(o=>{ o.classList.remove('selected','disabled'); o.setAttribute('aria-selected','false'); o.style.opacity=''; o.style.pointerEvents=''; });
-            extraCheckboxes.forEach(cb=>cb.checked=false);
-            selectedExtras = []; selectedBackgrounds = []; selectedPackage = null; basePrice = 0; maxBackgrounds = 0;
-            if (backgroundSection) backgroundSection.classList.add('disabled');
-            if (packageNotice) packageNotice.classList.remove('hidden');
-            if (backgroundCounter) { backgroundCounter.textContent='0/0 dipilih'; backgroundCounter.classList.remove('warning'); }
-            updateTotalPrice();
-        } catch(e) { console.warn('reset error', e); }
-    }
+            packageCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected', 'false'); });
+                    this.classList.add('selected'); this.setAttribute('aria-selected', 'true');
 
-    // init
-    (function init() {
-        if (dateInput) dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
-        updateTotalPrice();
-        console.log('✨ Prewed booking script initialized (stable).');
-    })();
+                    selectedPackage = {
+                        id: this.dataset.package,
+                        name: (this.querySelector('.package-title') ? this.querySelector('.package-title').textContent : (this.dataset.package || 'Paket')),
+                        price: Number(this.dataset.price || 0),
+                        maxBackgrounds: Number(this.dataset.backgrounds || 0)
+                    };
+                    basePrice = Number(selectedPackage.price) || 0;
+                    maxBackgrounds = Number(selectedPackage.maxBackgrounds) || 0;
 
-    // expose for debug
-    window.prewed = {
-        fetchAvailableTimes,
-        resetForm,
-        getSelectedExtras: ()=> selectedExtras.map(e=> ({...e})),
-        getSelectedBackgrounds: ()=> selectedBackgrounds.map(b=> ({...b}))
-    };
+                    // reset backgrounds
+                    backgroundOptions.forEach(o => { o.classList.remove('selected'); o.setAttribute('aria-selected', 'false'); });
+                    selectedBackgrounds = [];
 
-})(); // IIFE
-</script>
+                    updateBackgroundAvailability(selectedPackage.id);
+                    updateTotalPrice();
+                });
+            });
+
+            // auto select default (if dataset.default or prewed2 present)
+            (function autoSelectDefault() {
+                const auto = Array.from(packageCards).find(c => c.dataset.default === 'true' || (c.dataset.package && c.dataset.package.toLowerCase() === 'prewed2'));
+                if (auto && !Array.from(packageCards).some(c => c.classList.contains('selected'))) auto.click();
+            })();
+
+            backgroundOptions.forEach(opt => {
+                opt.addEventListener('click', function () {
+                    if (this.classList.contains('disabled')) { showNotification('Background ini tidak tersedia untuk paket yang dipilih', 'error'); return; }
+                    const id = this.dataset.background;
+                    const name = this.dataset.name || id;
+                    const found = selectedBackgrounds.find(b => String(b.id) === String(id));
+                    if (found) {
+                        this.classList.remove('selected'); this.setAttribute('aria-selected', 'false');
+                        selectedBackgrounds = selectedBackgrounds.filter(b => String(b.id) !== String(id));
+                    } else {
+                        if (selectedBackgrounds.length >= maxBackgrounds) { showNotification(`Maksimal ${maxBackgrounds} background untuk paket ini`, 'error'); return; }
+                        this.classList.add('selected'); this.setAttribute('aria-selected', 'true');
+                        selectedBackgrounds.push({ id, name });
+                    }
+                    updateBackgroundCounter();
+                });
+                opt.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); opt.click(); } });
+            });
+
+            // ----------------------
+            // Extras: consistent pricing & qty
+            // Expected markup hints:
+            // .extra-checkbox (value/id, data-name, data-price)
+            // inside same container: .extra-qty (number input), .extra-price-input (optional), [data-extra-subtotal]
+            // ----------------------
+            const findRelated = checkbox => {
+                const container = checkbox.closest('.extra-row') || checkbox.parentElement || checkbox;
+                const qty = container ? container.querySelector('.extra-qty') : null;
+                const priceInput = container ? container.querySelector('.extra-price-input') : null;
+                const subtotalEl = container ? container.querySelector('[data-extra-subtotal]') : null;
+                return { container, qty, priceInput, subtotalEl };
+            };
+
+            const extraInitData = (cb, idx) => {
+                const id = (cb.value && !isNaN(Number(cb.value))) ? Number(cb.value) : (cb.dataset.id ? (isNaN(Number(cb.dataset.id)) ? cb.dataset.id : Number(cb.dataset.id)) : `extra-${idx}`);
+                const name = cb.dataset.name || cb.dataset.label || (cb.nextElementSibling ? cb.nextElementSibling.textContent.trim() : `Extra ${id}`);
+                const dataPrice = parsePrice(cb.dataset.price);
+                const related = findRelated(cb);
+                let unit = dataPrice;
+                if (related.priceInput) unit = parsePrice(related.priceInput.value || related.priceInput.getAttribute('value') || unit);
+                let qty = 1;
+                if (related.qty) {
+                    const qv = parseInt(related.qty.value || related.qty.getAttribute('value') || '1', 10);
+                    qty = isNaN(qv) || qv < 1 ? 1 : qv;
+                }
+                return { id, name, unitPrice: Number(unit) || 0, qty: Number(qty) || 1, totalPrice: (Number(unit) || 0) * (Number(qty) || 1), related };
+            };
+
+            function updateExtrasState(cb, idx) {
+                const d = extraInitData(cb, idx);
+                if (cb.checked) {
+                    const exist = selectedExtras.find(x => String(x.id) === String(d.id));
+                    if (exist) { exist.unitPrice = d.unitPrice; exist.qty = d.qty; exist.totalPrice = d.totalPrice; }
+                    else selectedExtras.push({ id: d.id, name: d.name, unitPrice: d.unitPrice, qty: d.qty, totalPrice: d.totalPrice });
+                } else {
+                    selectedExtras = selectedExtras.filter(x => String(x.id) !== String(d.id));
+                }
+                if (d.related && d.related.subtotalEl) d.related.subtotalEl.textContent = formatPrice(d.totalPrice);
+                updateTotalPrice();
+            }
+
+            function updateExtrasOnInput(cb, idx) {
+                if (!cb.checked) return;
+                const d = extraInitData(cb, idx);
+                const exist = selectedExtras.find(x => String(x.id) === String(d.id));
+                if (exist) { exist.unitPrice = d.unitPrice; exist.qty = d.qty; exist.totalPrice = d.totalPrice; }
+                else selectedExtras.push({ id: d.id, name: d.name, unitPrice: d.unitPrice, qty: d.qty, totalPrice: d.totalPrice });
+                if (d.related && d.related.subtotalEl) d.related.subtotalEl.textContent = formatPrice(d.totalPrice);
+                updateTotalPrice();
+            }
+
+            extraCheckboxes.forEach((cb, idx) => {
+                // initial if checked
+                const init = extraInitData(cb, idx);
+                if (cb.checked) selectedExtras.push({ id: init.id, name: init.name, unitPrice: init.unitPrice, qty: init.qty, totalPrice: init.totalPrice });
+                // change handler
+                cb.addEventListener('change', () => updateExtrasState(cb, idx));
+                // wire qty/price inputs if present
+                const rel = findRelated(cb);
+                if (rel.qty) {
+                    rel.qty.addEventListener('input', () => { rel.qty.value = rel.qty.value.replace(/[^\d]/g, '') || '1'; updateExtrasOnInput(cb, idx); });
+                    rel.qty.addEventListener('blur', () => { if (!rel.qty.value || Number(rel.qty.value) < 1) rel.qty.value = '1'; updateExtrasOnInput(cb, idx); });
+                }
+                if (rel.priceInput) {
+                    rel.priceInput.addEventListener('input', () => updateExtrasOnInput(cb, idx));
+                    rel.priceInput.addEventListener('blur', () => updateExtrasOnInput(cb, idx));
+                }
+                if (init.related && init.related.subtotalEl) init.related.subtotalEl.textContent = formatPrice(init.totalPrice);
+            });
+
+            // ----------------------
+            // Price total
+            // ----------------------
+            function updateTotalPrice() {
+                const extrasTotal = selectedExtras.reduce((s, e) => s + (Number(e.totalPrice) || (Number(e.unitPrice || 0) * Number(e.qty || 1))), 0);
+                const total = (Number(basePrice) || 0) + extrasTotal;
+                if (totalPriceElement) {
+                    totalPriceElement.classList.add('updating');
+                    setTimeout(() => totalPriceElement.classList.remove('updating'), 220);
+                    totalPriceElement.textContent = `Total : ${formatPrice(total)}`;
+                    totalPriceElement.setAttribute('data-total', String(total));
+                    totalPriceElement.setAttribute('aria-label', `Total price: ${formatPrice(total)}`);
+                }
+            }
+
+            // ----------------------
+            // Validation helpers
+            // ----------------------
+            const formInputs = document.querySelectorAll('.form-input, .form-select, .notes-textarea');
+            formInputs.forEach(i => { i.addEventListener('blur', validateField); i.addEventListener('input', clearFieldError); });
+            function validateField(e) {
+                const field = e.target;
+                if (!field) return true;
+                const name = field.name;
+                const val = (field.value || '').toString().trim();
+                const errEl = document.getElementById(`${name}-error`);
+                let msg = '';
+                if (field.hasAttribute('required') && !val) msg = 'Field ini wajib diisi';
+                else if ((name === 'phone' || name === 'whatsapp_number') && val && !/^\+?[\d]{9,15}$/.test(val.replace(/\s+/g, ''))) msg = 'Nomor WhatsApp tidak valid';
+                else if (name === 'date' && val) {
+                    const ch = new Date(val);
+                    const t = new Date(); t.setHours(0, 0, 0, 0);
+                    if (isNaN(ch.getTime()) || ch < t) msg = 'Tanggal tidak boleh di masa lalu';
+                }
+                if (errEl) { errEl.textContent = msg; field.setAttribute('aria-invalid', msg ? 'true' : 'false'); field.style.borderColor = msg ? '#ef4444' : ''; }
+                return !msg;
+            }
+            function clearFieldError(e) { const f = e.target; const el = document.getElementById(`${f.name}-error`); if (el) { el.textContent = ''; f.setAttribute('aria-invalid', 'false'); f.style.borderColor = ''; } }
+
+            // ----------------------
+            // Terms modal handlers
+            // ----------------------
+            function showTermsModal() { if (!termsModal) return; termsModal.classList.add('show'); document.body.style.overflow = 'hidden'; if (termsCheckbox) termsCheckbox.checked = false; updateTermsButton(); }
+            function hideTermsModal() { if (!termsModal) return; termsModal.classList.remove('show'); document.body.style.overflow = ''; if (submitBtn) submitBtn.focus(); }
+            function updateTermsButton() { if (!termsSubmitBtn || !termsCheckbox) return; termsSubmitBtn.disabled = !termsCheckbox.checked; termsCheckbox.checked ? termsSubmitBtn.classList.add('enabled') : termsSubmitBtn.classList.remove('enabled'); }
+            if (termsCheckbox) termsCheckbox.addEventListener('change', updateTermsButton);
+            if (termsModalClose) termsModalClose.addEventListener('click', hideTermsModal);
+            if (termsCancelBtn) termsCancelBtn.addEventListener('click', hideTermsModal);
+            if (termsModal) termsModal.addEventListener('click', (e) => { if (e.target === termsModal) hideTermsModal(); });
+            document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && termsModal && termsModal.classList.contains('show')) hideTermsModal(); });
+
+            // ----------------------
+            // Submit flow -> send to /booking (payment)
+            // ----------------------
+            if (bookingForm) {
+                bookingForm.addEventListener('submit', function (ev) {
+                    ev.preventDefault();
+                    if (isFormSubmitting) return;
+
+                    // quick checks
+                    if (!selectedPackage) { showNotification('Silakan pilih paket terlebih dahulu', 'error'); if (packageCards[0]) packageCards[0].focus(); return; }
+                    if (selectedBackgrounds.length === 0) { showNotification('Silakan pilih minimal 1 background', 'error'); if (backgroundSection) backgroundSection.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+
+                    let hasErr = false;
+                    formInputs.forEach(inp => { const ok = validateField({ target: inp }); if (!ok || inp.getAttribute('aria-invalid') === 'true') hasErr = true; });
+                    if (hasErr) { showNotification('Mohon perbaiki kesalahan pada form', 'error'); return; }
+
+                    // show terms
+                    showTermsModal();
+                });
+            }
+
+            // Terms submit sends final payload
+            if (termsSubmitBtn) {
+                termsSubmitBtn.addEventListener('click', async function () {
+                    if (!(termsCheckbox && termsCheckbox.checked)) return;
+                    hideTermsModal();
+                    isFormSubmitting = true;
+                    setSubmitLoading(true);
+
+                    try {
+                        if (!bookingForm) throw new Error('Form tidak ditemukan');
+                        const fd = new FormData(bookingForm);
+                        // ...di dalam click handler termsSubmitBtn, sebelum fetch():
+                        const payload = {
+                            contact_name: fd.get('contactName') || fd.get('contact_name') || '',
+                            whatsapp_number: normalizePhone(fd.get('phone') || fd.get('whatsapp_number') || ''),
+                            booking_date: fd.get('date') || '',
+                            booking_time: fd.get('time') || '',
+                            session_name: 'prewed',
+                            package_name: selectedPackage ? selectedPackage.name : '',
+                            package_id: selectedPackage ? selectedPackage.id : '',
+                            package_price: Number(selectedPackage ? selectedPackage.price : basePrice),
+                            // <<---  KIRIM DETAIL extras: id, qty, price (unit)
+                            selected_extra_items: selectedExtras.map(e => ({
+                                id: e.id,
+                                qty: Number(e.qty || 1),
+                                price: Number(e.unitPrice || 0)
+                            })),
+                            // kirim backgrounds sebagai array id (server akan ambil detail background)
+                            selected_backgrounds: selectedBackgrounds.map(b => b.id),
+                            total_price: Number(totalPriceElement ? totalPriceElement.getAttribute('data-total') : (basePrice + selectedExtras.reduce((s, i) => s + (i.totalPrice || i.unitPrice * i.qty || 0), 0))),
+                            notes: fd.get('notes') || null,
+                            // client boleh kirim status, tapi server akan menentukan status final sendiri.
+                        };
+
+                        // fetch with JSON
+                        const resp = await fetch('/booking', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || ''
+                            },
+                            body: JSON.stringify(payload)
+                        });
+
+
+                        let body = {};
+                        try { body = await resp.json(); } catch (jerr) { try { body = { __raw: await resp.text() }; } catch (e) { body = { __err: String(e) }; } }
+
+                        if (resp.ok) {
+                            if (body.redirect_url) {
+                                showNotification('Berhasil. Mengarahkan ke pembayaran...', 'info');
+                                setTimeout(() => window.location.href = body.redirect_url, 400);
+                                return;
+                            } else {
+                                showNotification(body.message || 'Pesanan dibuat. Lanjutkan ke pembayaran.', 'info');
+                                setTimeout(() => window.location.href = body.redirect_url || '/', 400);
+                                return;
+                            }
+                        } else {
+                            if (resp.status === 409) { showNotification(body.message || 'Slot sudah diambil', 'error'); return; }
+                            if (resp.status === 422) {
+                                showNotification('Mohon perbaiki kesalahan pada form.', 'error');
+                                if (body.errors && typeof body.errors === 'object') {
+                                    Object.keys(body.errors).forEach(k => {
+                                        const el = document.getElementById(`${k}-error`);
+                                        if (el) el.textContent = Array.isArray(body.errors[k]) ? body.errors[k].join(', ') : body.errors[k];
+                                    });
+                                }
+                                const first = document.querySelector('[aria-invalid="true"]');
+                                if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                                console.error('Validation errors:', body.errors || body);
+                                return;
+                            }
+                            const serverMsg = body.message || body.__raw || `Server error ${resp.status}`;
+                            showNotification(String(serverMsg).substring(0, 200), 'error');
+                            console.error('Booking API error:', { status: resp.status, body });
+                            return;
+                        }
+
+                    } catch (err) {
+                        console.error('Form submission error:', err);
+                        showNotification('Terjadi kesalahan. Silakan coba lagi.', 'error');
+                    } finally {
+                        isFormSubmitting = false;
+                        setSubmitLoading(false);
+                    }
+                });
+            }
+
+            function setSubmitLoading(on) {
+                const btnContent = document.getElementById('btnContent');
+                const btnLoading = document.getElementById('btnLoading');
+                if (!submitBtn) return;
+                if (on) {
+                    submitBtn.classList.add('loading'); submitBtn.disabled = true; submitBtn.setAttribute('aria-busy', 'true');
+                    if (btnContent) btnContent.style.display = 'none';
+                    if (btnLoading) btnLoading.style.display = 'flex';
+                } else {
+                    submitBtn.classList.remove('loading'); submitBtn.disabled = false; submitBtn.setAttribute('aria-busy', 'false');
+                    if (btnLoading) btnLoading.style.display = 'none';
+                    if (btnContent) btnContent.style.display = 'flex';
+                }
+            }
+
+            // success/reset utilities
+            function showSuccessMessage() { if (!successMessage) return; successMessage.classList.add('show'); successMessage.focus(); setTimeout(() => successMessage.classList.remove('show'), 8000); }
+            function resetForm() {
+                try {
+                    if (!bookingForm) return;
+                    bookingForm.reset();
+                    packageCards.forEach(c => { c.classList.remove('selected'); c.setAttribute('aria-selected', 'false'); });
+                    backgroundOptions.forEach(o => { o.classList.remove('selected', 'disabled'); o.setAttribute('aria-selected', 'false'); o.style.opacity = ''; o.style.pointerEvents = ''; });
+                    extraCheckboxes.forEach(cb => cb.checked = false);
+                    selectedExtras = []; selectedBackgrounds = []; selectedPackage = null; basePrice = 0; maxBackgrounds = 0;
+                    if (backgroundSection) backgroundSection.classList.add('disabled');
+                    if (packageNotice) packageNotice.classList.remove('hidden');
+                    if (backgroundCounter) { backgroundCounter.textContent = '0/0 dipilih'; backgroundCounter.classList.remove('warning'); }
+                    updateTotalPrice();
+                } catch (e) { console.warn('reset error', e); }
+            }
+
+            // init
+            (function init() {
+                if (dateInput) dateInput.setAttribute('min', new Date().toISOString().split('T')[0]);
+                updateTotalPrice();
+                console.log('✨ Prewed booking script initialized (stable).');
+            })();
+
+            // expose for debug
+            window.prewed = {
+                fetchAvailableTimes,
+                resetForm,
+                getSelectedExtras: () => selectedExtras.map(e => ({ ...e })),
+                getSelectedBackgrounds: () => selectedBackgrounds.map(b => ({ ...b }))
+            };
+
+        })(); // IIFE
+    </script>
 @endpush
