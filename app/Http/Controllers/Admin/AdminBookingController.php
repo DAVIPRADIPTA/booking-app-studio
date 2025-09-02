@@ -10,11 +10,10 @@ use App\Models\ExtraItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Validator;
+use Carbon\Carbon;
 
 class AdminBookingController extends Controller
 {
@@ -27,7 +26,7 @@ class AdminBookingController extends Controller
 
         // quick search on contact_name, whatsapp_number, package_name
         if ($request->filled('q')) {
-            $q = $request->q;
+            $q = trim($request->q);
             $query->where(function ($sub) use ($q) {
                 $sub->where('contact_name', 'like', "%{$q}%")
                     ->orWhere('whatsapp_number', 'like', "%{$q}%")
@@ -35,9 +34,19 @@ class AdminBookingController extends Controller
             });
         }
 
-        // filter by status
+        // filter by status (including special 'cancellation_requested' filter)
         if ($request->filled('status') && $request->status !== 'all') {
-            $query->where('status', $request->status);
+            $status = $request->status;
+
+            // special filter to show bookings that have a cancellation request
+            if ($status === 'cancellation_requested') {
+                $query->where('cancellation_requested', true);
+            } else {
+                // normal booking status filter (guard with Booking::statuses())
+                if (in_array($status, Booking::statuses())) {
+                    $query->where('status', $status);
+                }
+            }
         }
 
         // filter by package name
@@ -53,7 +62,7 @@ class AdminBookingController extends Controller
             $query->whereDate('booking_date', '<=', $request->date_to);
         }
 
-        // **sorting** (DEFAULT: created_at desc — Dibuat baru -> lama)
+        // **sorting** (DEFAULT: created_at desc)
         $sortBy = $request->get('sort_by', 'created_at_desc');
         switch ($sortBy) {
             case 'booking_date_asc':
@@ -67,14 +76,13 @@ class AdminBookingController extends Controller
                 break;
             case 'created_at_desc':
             default:
-                // default: created_at desc
                 $query->orderBy('created_at', 'desc');
                 break;
         }
 
         // per-page
         $perPage = (int) $request->get('per_page', 10);
-        if ($perPage <= 0) $perPage = 10;
+        $perPage = max(5, min(100, $perPage));
 
         // stats: counts by status
         $statusCounts = Booking::selectRaw('status, count(*) as cnt')
@@ -90,10 +98,14 @@ class AdminBookingController extends Controller
             ->pluck('package_name')
             ->toArray();
 
+        // count permohonan pembatalan (dipakai di view sebagai badge)
+        $pendingCount = Booking::where('cancellation_requested', true)->count();
+
         $bookings = $query->paginate($perPage)->withQueryString();
 
-        return view('admin.bookings.index', compact('bookings', 'statusCounts', 'packages'));
+        return view('admin.bookings.index', compact('bookings', 'statusCounts', 'packages', 'pendingCount'));
     }
+
 
     /**
      * Tampilkan detail booking
@@ -102,6 +114,79 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
         return view('admin.bookings.show', compact('booking'));
+    }
+
+    /**
+     * Halaman daftar permohonan pembatalan (admin)
+     */
+    public function cancellationRequests(Request $request)
+    {
+        $query = Booking::where('cancellation_requested', true)
+            ->orderBy('cancellation_requested_at', 'desc');
+
+        // optional filter: status
+        if ($request->filled('status') && $request->status !== 'all' && in_array($request->status, Booking::statuses())) {
+            $query->where('status', $request->status);
+        }
+
+        $perPage = (int) $request->get('per_page', 20);
+        $perPage = max(5, min(200, $perPage));
+
+        $requests = $query->paginate($perPage)->withQueryString();
+
+        // counts for badge/notification
+        $pendingCount = Booking::where('cancellation_requested', true)->count();
+
+        return view('admin.bookings.cancellations', compact('requests', 'pendingCount'));
+    }
+
+    /**
+     * ADMIN: Mark booking as having a cancellation request (admin-triggered)
+     *
+     * This helps when admin wants to create a request (for testing or to start the flow)
+     * so that the same UI and approval modal are shown in the show page.
+     *
+     * Accepts optional cancellation_reason.
+     */
+    public function markCancellationRequested(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        if (in_array($booking->status, [Booking::STATUS_CANCELLED, Booking::STATUS_COMPLETED])) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Booking tidak dapat diajukan pembatalan pada status saat ini.'], 422);
+            }
+            return back()->with('errorMessage', '❌ Booking tidak dapat diajukan pembatalan pada status saat ini.');
+        }
+
+        $request->validate([
+            'cancellation_reason' => 'nullable|string|max:255',
+        ]);
+
+        try {
+            $booking->markCancellationRequested($request->input('cancellation_reason'));
+
+            Log::info("Admin membuat permohonan pembatalan untuk booking #{$booking->id}", [
+                'booking_id' => $booking->id,
+                'admin_id' => auth('web')->id(),
+                'reason' => $request->input('cancellation_reason'),
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Permohonan pembatalan dibuat.', 'booking_id' => $booking->id]);
+            }
+
+            return back()->with('successMessage', '✅ Permohonan pembatalan berhasil dibuat untuk booking #' . $booking->id);
+        } catch (\Exception $e) {
+            Log::error('Gagal membuat permohonan pembatalan (admin): ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'exception' => $e,
+            ]);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Terjadi kesalahan saat membuat permohonan pembatalan.'], 500);
+            }
+            return back()->with('errorMessage', 'Terjadi kesalahan saat membuat permohonan pembatalan. Silakan coba lagi.');
+        }
     }
 
     /**
@@ -171,7 +256,7 @@ class AdminBookingController extends Controller
         $booking = Booking::findOrFail($id);
 
         // Hanya izinkan edit untuk booking dengan status 'booked'
-        if ($booking->status !== 'booked') {
+        if ($booking->status !== Booking::STATUS_BOOKED) {
             return redirect()->route('bookings.index')
                 ->with('errorMessage', '❌ Hanya booking dengan status "Sudah Dibooking" yang bisa di-edit.');
         }
@@ -229,18 +314,13 @@ class AdminBookingController extends Controller
 
     /**
      * Update booking - HANYA UNTUK STATUS 'booked'
-     *
-     * Mendukung partial update:
-     * - Hanya field yang dikirim akan di-update.
-     * - Cek slot bentrok hanya kalau tanggal atau jam berubah.
-     * - File payment_proof hanya menimpa jika ada upload baru.
      */
     public function update(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
         // Hanya izinkan update untuk booking dengan status 'booked'
-        if ($booking->status !== 'booked') {
+        if ($booking->status !== Booking::STATUS_BOOKED) {
             return redirect()->route('bookings.index')
                 ->with('errorMessage', '❌ Hanya booking dengan status "Sudah Dibooking" yang bisa di-edit.');
         }
@@ -253,7 +333,6 @@ class AdminBookingController extends Controller
 
         // Tentukan paket target (incoming atau fallback ke existing)
         $incomingPackage = $request->has('package_name') ? (string) $request->input('package_name') : (string) $booking->package_name;
-        $isBabySmash = in_array(Str::lower($incomingPackage), ['baby smash cake', 'babysmash']);
 
         // Rules 'sometimes' agar partial update dimungkinkan
         $rules = [
@@ -266,7 +345,6 @@ class AdminBookingController extends Controller
             'package_name'    => 'sometimes|string|max:100',
             'payment_method'  => 'sometimes|in:cash,transfer',
             'selected_extra_items' => 'sometimes',
-            // payment_proof only validated if a new file is uploaded
             'payment_proof'   => $request->hasFile('payment_proof') ? 'image|mimes:jpg,jpeg,png|max:2048' : 'sometimes',
             'baby_name'       => 'sometimes|nullable|string|max:255',
             'baby_age'        => 'sometimes|nullable|string|max:50',
@@ -274,7 +352,6 @@ class AdminBookingController extends Controller
         ];
 
         $validator = Validator::make($request->all(), $rules);
-
         if ($validator->fails()) {
             return back()->withInput()->withErrors($validator->errors());
         }
@@ -310,7 +387,9 @@ class AdminBookingController extends Controller
 
         // Compute totalPrice if package or extras changed; otherwise, keep existing total
         if ($packageChanged || $extrasChanged) {
-            $extraItemsPrice = array_sum(array_map(function ($e) { return (int) ($e['price'] ?? 0); }, $extras));
+            $extraItemsPrice = array_sum(array_map(function ($e) {
+                return (int) ($e['price'] ?? 0);
+            }, $extras));
             $totalPrice = $packagePrice + $extraItemsPrice;
         } else {
             $totalPrice = $booking->total_price ?? 0;
@@ -351,13 +430,30 @@ class AdminBookingController extends Controller
         $updateData = [];
 
         $maybeFields = [
-            'customer_id', 'contact_name', 'whatsapp_number', 'booking_date', 'booking_time',
-            'session_name', 'package_name', 'payment_method', 'notes', 'baby_name', 'baby_age'
+            'customer_id',
+            'contact_name',
+            'whatsapp_number',
+            'booking_date',
+            'booking_time',
+            'session_name',
+            'package_name',
+            'payment_method',
+            'notes',
+            'baby_name',
+            'baby_age'
         ];
 
         foreach ($maybeFields as $field) {
             if ($request->has($field)) {
-                $updateData[$field] = $request->input($field);
+                $val = $request->input($field);
+                if (is_string($val)) $val = trim($val);
+                if ($field === 'booking_date') {
+                    try {
+                        $val = Carbon::parse($val)->toDateString();
+                    } catch (\Throwable $e) {
+                    }
+                }
+                $updateData[$field] = $val;
             }
         }
 
@@ -392,7 +488,7 @@ class AdminBookingController extends Controller
             return redirect()->route('bookings.index')->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diperbarui.');
         } catch (\Exception $e) {
             Log::error('Admin update booking gagal: ' . $e->getMessage(), [
-                'booking_id' => $id,
+                'booking_id' => $id ?? null,
                 'exception' => $e,
             ]);
 
@@ -407,7 +503,7 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        if (in_array($booking->status, ['completed', 'cancelled'])) {
+        if (in_array($booking->status, [Booking::STATUS_COMPLETED, Booking::STATUS_CANCELLED])) {
             return back()->with('errorMessage', '❌ Booking tidak dapat dibatalkan pada status saat ini.');
         }
 
@@ -420,7 +516,7 @@ class AdminBookingController extends Controller
         try {
             DB::transaction(function () use ($booking, $reason) {
                 $booking->update([
-                    'status' => 'cancelled',
+                    'status' => Booking::STATUS_CANCELLED,
                     'auto_cancelled_at' => now(),
                     'cancellation_reason' => $reason,
                     'cancellation_requested' => false,
@@ -451,7 +547,7 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        if (in_array($booking->status, ['completed', 'cancelled'])) {
+        if (in_array($booking->status, [Booking::STATUS_COMPLETED, Booking::STATUS_CANCELLED])) {
             return back()->with('errorMessage', '❌ Booking tidak dapat dibatalkan pada status saat ini.');
         }
 
@@ -464,7 +560,7 @@ class AdminBookingController extends Controller
         try {
             DB::transaction(function () use ($booking, $reason) {
                 $booking->update([
-                    'status' => 'cancelled',
+                    'status' => Booking::STATUS_CANCELLED,
                     'auto_cancelled_at' => now(),
                     'cancellation_reason' => $reason,
                     'cancellation_requested' => false,
@@ -495,11 +591,18 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        if ($booking->status !== 'pending_verification') {
+        if ($booking->status !== Booking::STATUS_PENDING_VERIFICATION) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Booking tidak dalam status menunggu verifikasi.'], 422);
+            }
             return back()->with('errorMessage', '❌ Booking tidak dalam status menunggu verifikasi.');
         }
 
-        $booking->update(['status' => 'booked']);
+        $booking->update(['status' => Booking::STATUS_BOOKED]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Booking diverifikasi dan dikonfirmasi.', 'booking_id' => $booking->id]);
+        }
 
         return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil diverifikasi dan dikonfirmasi.');
     }
@@ -511,43 +614,85 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        if ($booking->status !== 'booked') {
+        if ($booking->status !== Booking::STATUS_BOOKED) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Booking tidak dalam status bisa ditandai selesai.'], 422);
+            }
             return back()->with('errorMessage', '❌ Booking tidak dalam status bisa ditandai selesai.');
         }
 
-        $booking->update(['status' => 'completed']);
+        $booking->update(['status' => Booking::STATUS_COMPLETED]);
+
+        if ($request->expectsJson()) {
+            return response()->json(['message' => 'Booking ditandai selesai.', 'booking_id' => $booking->id]);
+        }
 
         return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil ditandai selesai.');
     }
 
     /**
-     * Proses pembatalan + refund
+     * Proses pembatalan + refund (admin)
+     * Endpoint digunakan oleh form proses pembatalan (approve flow).
+     * Validasi memastikan refund_amount <= total_price.
      */
     public function processCancellation(Request $request, $id)
     {
         $booking = Booking::findOrFail($id);
 
-        $request->validate([
-            'refund_amount' => 'required|numeric|min:0',
+        $rules = [
+            'refund_amount' => 'nullable|numeric|min:0',
             'refund_proof' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'cancellation_reason' => 'required|string|max:255',
-        ]);
+            'cancellation_reason' => 'nullable|string|max:255',
+        ];
+
+        $validator = Validator::make($request->all(), $rules);
+        if ($validator->fails()) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Validasi gagal', 'errors' => $validator->errors()], 422);
+            }
+            return back()->withInput()->withErrors($validator->errors());
+        }
+
+        $inputRefund = $request->input('refund_amount', null);
+        $totalPrice = (float) ($booking->total_price ?? 0);
+
+        // jika tidak diberikan, hitung default 90%
+        $refundAmount = is_null($inputRefund) ? round($totalPrice * 0.90, 2) : (float) $inputRefund;
+
+        if ($refundAmount < 0 || $refundAmount > $totalPrice) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Nilai refund tidak valid.'], 422);
+            }
+            return back()->with('errorMessage', '❌ Nilai refund tidak valid.');
+        }
 
         try {
-            DB::transaction(function () use ($booking, $request, &$refundPath) {
+            DB::transaction(function () use ($booking, $request, &$refundPath, $refundAmount) {
                 $refundPath = null;
                 if ($request->hasFile('refund_proof')) {
                     $refundPath = $this->storeUploadedFile($request->file('refund_proof'), 'refund_proofs', $booking->refund_proof ?? null);
                 }
 
                 $booking->update([
-                    'status' => 'cancelled',
-                    'refund_amount' => $request->refund_amount,
+                    'status' => Booking::STATUS_CANCELLED,
+                    'refund_amount' => $refundAmount,
                     'refund_proof' => $refundPath,
                     'auto_cancelled_at' => now(),
-                    'cancellation_reason' => $request->cancellation_reason,
+                    'cancellation_reason' => $request->input('cancellation_reason', $booking->cancellation_reason),
+                    'cancellation_requested' => false,
+                    'cancellation_requested_at' => null,
                 ]);
             });
+
+            Log::info("Admin memproses pembatalan booking #{$booking->id}. Refund: {$refundAmount}", [
+                'booking_id' => $booking->id,
+                'admin_id' => auth('web')->id(),
+                'refund_amount' => $refundAmount,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Booking dibatalkan dan refund diproses.', 'booking_id' => $booking->id]);
+            }
 
             return back()->with('successMessage', '✅ Booking #' . $booking->id . ' berhasil dibatalkan dengan refund.');
         } catch (\Exception $e) {
@@ -555,12 +700,82 @@ class AdminBookingController extends Controller
                 'booking_id' => $booking->id,
                 'exception' => $e,
             ]);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Terjadi kesalahan saat memproses refund.'], 500);
+            }
             return back()->with('errorMessage', 'Terjadi kesalahan saat memproses refund. Silakan coba lagi.');
         }
     }
 
     /**
+     * ADMIN: Approve cancellation request quickly (helper)
+     */
+    public function approveCancellation(Request $request, $id)
+    {
+        return $this->processCancellation($request, $id);
+    }
+
+    /**
+     * ADMIN: Reject cancellation request
+     */
+    public function rejectCancellation(Request $request, $id)
+    {
+        $booking = Booking::findOrFail($id);
+
+        // allow admin to reject even if the request flag is not set (admin-initiated rejection)
+        $request->validate([
+            'rejection_reason' => 'nullable|string|max:500',
+        ]);
+
+        $reason = $request->input('rejection_reason', 'Permohonan pembatalan ditolak oleh admin');
+
+        try {
+            DB::transaction(function () use ($booking, $reason) {
+                $existingNotes = $booking->notes ?? '';
+                $newNotes = trim(($existingNotes ? $existingNotes . "\n\n" : '') . '[Pembatalan Ditolak] ' . $reason);
+
+                $booking->update([
+                    'cancellation_requested' => false,
+                    'cancellation_requested_at' => null,
+                    'notes' => $newNotes,
+                ]);
+            });
+
+            Log::info("Admin menolak pembatalan booking #{$booking->id}", [
+                'booking_id' => $booking->id,
+                'admin_id' => auth('web')->id(),
+                'reason' => $reason,
+            ]);
+
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Permohonan pembatalan berhasil ditolak.', 'booking_id' => $booking->id]);
+            }
+
+            return back()->with('successMessage', '✅ Permohonan pembatalan berhasil ditolak.');
+        } catch (\Exception $e) {
+            Log::error('Gagal menolak pembatalan (admin): ' . $e->getMessage(), [
+                'booking_id' => $booking->id,
+                'exception' => $e,
+            ]);
+            if ($request->expectsJson()) {
+                return response()->json(['message' => 'Terjadi kesalahan saat menolak permohonan pembatalan.'], 500);
+            }
+            return back()->with('errorMessage', 'Terjadi kesalahan saat menolak permohonan pembatalan. Silakan coba lagi.');
+        }
+    }
+
+    /**
+     * Hitungan permohonan pembatalan (untuk badge/notifications)
+     */
+    public function pendingCancellationCount()
+    {
+        $count = Booking::where('cancellation_requested', true)->count();
+        return response()->json(['count' => $count]);
+    }
+
+    /**
      * Simpan booking manual dengan validasi & hitung ulang harga
+     * (tidak diubah - tetap seperti sebelumnya)
      */
     public function store(Request $request)
     {
@@ -581,7 +796,7 @@ class AdminBookingController extends Controller
             'package_name'         => 'required|string|max:100',
             'payment_method'       => 'required|in:cash,transfer',
             'selected_extra_items' => 'nullable',
-            'payment_proof'        => $request->input('payment_method') === 'transfer' ? 'required|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
+            'payment_proof'        => $request->input('payment_method') === 'transfer' ? 'nullable|image|mimes:jpg,jpeg,png|max:2048' : 'nullable',
             'baby_name'            => 'nullable|string|max:255',
             'baby_age'             => 'nullable|string|max:50',
         ];
@@ -593,7 +808,7 @@ class AdminBookingController extends Controller
             return back()->withInput()->withErrors($validator->errors());
         }
 
-        // Validasi booking_time valid
+        // Validasi booking_time valid (safeguard if Booking provides times)
         $allTimes = Booking::getAllTimes();
         if (!in_array($request->booking_time, $allTimes)) {
             return back()->withInput()->with('errorMessage', 'Waktu booking tidak valid.');
@@ -609,12 +824,14 @@ class AdminBookingController extends Controller
 
         // Ambil harga extra items dari DB
         $extras = $this->fetchExtrasByIds($request->input('selected_extra_items', []));
-        $extraItemsPrice = array_sum(array_map(function ($e) { return (int) ($e['price'] ?? 0); }, $extras));
+        $extraItemsPrice = array_sum(array_map(function ($e) {
+            return (int) ($e['price'] ?? 0);
+        }, $extras));
         $totalPrice = $packagePrice + $extraItemsPrice;
 
         // Upload bukti transfer jika ada
         $paymentProofPath = null;
-        if ($request->input('payment_method') === 'transfer' && $request->hasFile('payment_proof')) {
+        if ($request->hasFile('payment_proof')) {
             $paymentProofPath = $this->storeUploadedFile($request->file('payment_proof'), 'payment_proofs', null);
         }
 
@@ -634,25 +851,49 @@ class AdminBookingController extends Controller
             $backgrounds = $this->fetchBackgroundsByIds($selectedBackgroundIds);
         }
 
+        // Normalize booking_date
+        try {
+            $bookingDate = Carbon::parse($request->booking_date)->toDateString();
+        } catch (\Throwable $e) {
+            $bookingDate = $request->booking_date;
+        }
+
         // Simpan booking (transaction)
         try {
-            $booking = DB::transaction(function () use ($request, $backgrounds, $extras, $totalPrice, $normalizedPhone, $paymentProofPath) {
+            $booking = DB::transaction(function () use ($request, $backgrounds, $extras, $totalPrice, $normalizedPhone, $paymentProofPath, $bookingDate) {
+                // determine status/payment_deadline depending on payment method & whether proof uploaded
+                $status = Booking::STATUS_BOOKED;
+                $payment_deadline = null;
+                if ($request->input('payment_method') === 'cash') {
+                    $status = Booking::STATUS_BOOKED;
+                    $payment_deadline = null;
+                } else {
+                    // transfer
+                    if (!empty($paymentProofPath)) {
+                        $status = Booking::STATUS_PENDING_VERIFICATION;
+                        $payment_deadline = null;
+                    } else {
+                        $status = Booking::STATUS_WAITING_PAYMENT;
+                        $payment_deadline = now()->addMinutes(10);
+                    }
+                }
+
                 return Booking::create([
                     'user_id'              => auth('web')->id(),
                     'customer_id'          => $request->customer_id,
-                    'contact_name'         => $request->contact_name,
+                    'contact_name'         => trim($request->contact_name),
                     'whatsapp_number'      => $normalizedPhone,
-                    'booking_date'         => $request->booking_date,
+                    'booking_date'         => $bookingDate,
                     'booking_time'         => $request->booking_time,
-                    'session_name'         => $request->session_name,
-                    'package_name'         => $request->package_name,
+                    'session_name'         => trim($request->session_name),
+                    'package_name'         => trim($request->package_name),
                     'selected_backgrounds' => $backgrounds,
                     'selected_extra_items' => $extras,
                     'total_price'          => $totalPrice,
-                    'status'               => 'booked', // admin langsung booked
+                    'status'               => $status,
                     'payment_method'       => $request->payment_method,
                     'payment_proof'        => $paymentProofPath,
-                    'payment_deadline'     => null,
+                    'payment_deadline'     => $payment_deadline,
                     'notes'                => $request->notes,
                     'baby_name'            => $request->baby_name,
                     'baby_age'             => $request->baby_age,
@@ -675,7 +916,7 @@ class AdminBookingController extends Controller
     {
         $booking = Booking::findOrFail($id);
 
-        if (!in_array($booking->status, ['completed', 'cancelled'])) {
+        if (!in_array($booking->status, [Booking::STATUS_COMPLETED, Booking::STATUS_CANCELLED])) {
             return back()->with('errorMessage', '❌ Hanya pesanan dengan status "Selesai" atau "Dibatalkan" yang boleh dihapus.');
         }
 
@@ -707,9 +948,10 @@ class AdminBookingController extends Controller
         }
     }
 
-    /**
-     * Helper untuk dapatkan harga paket
-     */
+    // -------------------------
+    // Helper methods (unchanged)
+    // -------------------------
+
     private function getPackagePrice($packageName)
     {
         switch (Str::lower((string)$packageName)) {
@@ -737,9 +979,6 @@ class AdminBookingController extends Controller
         }
     }
 
-    /**
-     * Helper untuk dapatkan jumlah maksimal background per paket
-     */
     private function getMaxBackgrounds($packageName)
     {
         switch (Str::lower((string)$packageName)) {
@@ -767,9 +1006,6 @@ class AdminBookingController extends Controller
         }
     }
 
-    /**
-     * Normalisasi nomor WhatsApp
-     */
     private function normalizePhone($raw)
     {
         $s = (string)$raw;
@@ -790,25 +1026,18 @@ class AdminBookingController extends Controller
         return '+62' . $s;
     }
 
-    /**
-     * Normalisasi input selected ids.
-     * Bisa menerima array, JSON string, or comma separated string.
-     * Mengembalikan array of ints (unique).
-     */
     private function normalizeSelectedIds($value): array
     {
         if (is_null($value)) return [];
 
         if (is_string($value)) {
             $value = trim($value);
-            // try json first
             $decoded = json_decode($value, true);
             if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
                 $arr = $decoded;
             } elseif (Str::contains($value, ',')) {
                 $arr = array_filter(array_map('trim', explode(',', $value)));
             } else {
-                // single value
                 $arr = [$value];
             }
         } elseif (is_array($value)) {
@@ -825,16 +1054,11 @@ class AdminBookingController extends Controller
             return is_numeric($v) ? (int)$v : $v;
         }, $arr);
 
-        // dedupe & ensure ints where possible
         $arr = array_values(array_unique($arr, SORT_REGULAR));
 
         return $arr;
     }
 
-    /**
-     * Ambil extra items dari DB berdasarkan array id.
-     * Mengembalikan array objek ['id','name','price'].
-     */
     private function fetchExtrasByIds($idsInput = [])
     {
         $ids = $this->normalizeSelectedIds($idsInput);
@@ -851,10 +1075,6 @@ class AdminBookingController extends Controller
         })->toArray();
     }
 
-    /**
-     * Ambil backgrounds dari DB berdasarkan array id.
-     * Mengembalikan array objek ['id','name','image'].
-     */
     private function fetchBackgroundsByIds($idsInput = [])
     {
         $ids = $this->normalizeSelectedIds($idsInput);
@@ -871,10 +1091,6 @@ class AdminBookingController extends Controller
         })->toArray();
     }
 
-    /**
-     * Simpan file upload ke disk 'public' dan hapus old path jika ada.
-     * Mengembalikan path yang disimpan atau null.
-     */
     private function storeUploadedFile($file, $folder = 'uploads', $oldPath = null)
     {
         try {

@@ -16,10 +16,19 @@ use App\Models\ExtraItem;
 use App\Models\TermsAndCondition;
 use Livewire\Volt\Volt;
 
-// ========================
-// LANDING PAGE & INFO (tanpa login)
-// ========================
+/*
+|--------------------------------------------------------------------------
+| Web Routes
+|--------------------------------------------------------------------------
+|
+| Clean, final routes file for the application. Public pages, customer
+| auth & pages, admin area (requires Breeze auth), Volt settings, and API.
+|
+*/
 
+// ========================
+// LANDING PAGE & PUBLIC INFO (no login)
+// ========================
 Route::get('/', fn() => view('welcome'))->name('home');
 
 Route::get('/customer/terms', function () {
@@ -30,9 +39,8 @@ Route::get('/customer/terms', function () {
 Route::get('/customer/privacy', fn() => view('web.customer.privacy'))->name('customer.privacy');
 
 // ========================
-// CUSTOMER AUTH (login/register/forgot password)
+// CUSTOMER AUTH (login / register / forgot password)
 // ========================
-
 Route::prefix('customer')->group(function () {
     Route::controller(CustomerAuthController::class)->group(function () {
         Route::get('login', 'login')->name('customer.login');
@@ -42,7 +50,7 @@ Route::prefix('customer')->group(function () {
         Route::post('logout', 'logout')->name('customer.logout');
     });
 
-    // Forgot / Reset password untuk customer
+    // Forgot / Reset password
     Route::get('forgot-password', [CustomerPasswordController::class, 'showForgotForm'])
         ->name('customer.forgot-password');
     Route::post('forgot-password', [CustomerPasswordController::class, 'sendResetLink'])
@@ -54,38 +62,35 @@ Route::prefix('customer')->group(function () {
 });
 
 // ========================
-// HALAMAN CUSTOMER (HARUS LOGIN)
+// CUSTOMER PAGES (requires customer.auth middleware)
 // ========================
-
+// Ensure you have middleware 'customer.auth' implemented (you referenced it earlier)
 Route::middleware(['customer.auth'])->group(function () {
-    // Booking
+    // Customer booking flows
     Route::post('/booking', [BookingController::class, 'store'])->name('booking.store');
     Route::get('/booking/{booking}/payment', [BookingController::class, 'payment'])
-        ->where('booking', '[0-9]+')
-        ->name('booking.payment');
+        ->where('booking', '[0-9]+')->name('booking.payment');
     Route::post('/booking/{booking}/upload-proof', [BookingController::class, 'uploadProof'])
-        ->where('booking', '[0-9]+')
-        ->name('booking.uploadProof');
+        ->where('booking', '[0-9]+')->name('booking.uploadProof');
     Route::get('/booking/{booking}/check-status', [BookingController::class, 'checkStatus'])
-        ->where('booking', '[0-9]+')
-        ->name('booking.checkStatus');
+        ->where('booking', '[0-9]+')->name('booking.checkStatus');
 
-    // Pages
+    // Customer-initiated cancellation request
+    Route::post('/booking/{booking}/request-cancellation', [BookingController::class, 'requestCancellation'])
+        ->where('booking', '[0-9]+')->name('booking.requestCancellation');
+
+    // Simple pages
     Route::get('/homepage', fn() => view('homepage'))->name('homepage');
     Route::get('/info-more', fn() => view('info'))->name('info');
 
-    // Riwayat booking
+    // Customer history & profile
     Route::get('/riwayat-pemesanan', [CustomerController::class, 'bookings'])->name('customer.bookings');
-
-    // Pengaturan Akun
     Route::get('/customer/profile', [CustomerAuthController::class, 'profile'])->name('customer.profile');
     Route::put('/customer/profile/update', [CustomerAuthController::class, 'updateProfile'])->name('customer.profile.update');
     Route::get('/customer/password/edit', [CustomerPasswordController::class, 'editPassword'])->name('customer.password.edit');
     Route::put('/customer/password/update', [CustomerPasswordController::class, 'updatePassword'])->name('customer.password.update');
 
-    // ========================
-    // KATEGORI (Paket Booking)
-    // ========================
+    // Category pages (frontend) — pass necessary collections
     Route::get('/kategori/prewed', function () {
         return view('kategori.prewed', [
             'printItems' => ExtraItem::where('category', 'cetak-foto')->where('is_active', true)->get(),
@@ -116,33 +121,58 @@ Route::middleware(['customer.auth'])->group(function () {
 });
 
 // ========================
-// ADMIN AREA (HARUS LOGIN BREEZE)
+// ADMIN AREA (requires Breeze auth: auth & verified)
 // ========================
-
 Route::middleware(['auth', 'verified'])->group(function () {
-    // Dashboard (controller di App\Http\Controllers\DashboardController)
+    // Dashboard (template uses route('dashboard'))
     Route::get('/dashboard', [DashboardController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard/export/bookings', [DashboardController::class, 'exportBookingsCsv'])->name('dashboard.export.bookings');
+    Route::post('/dashboard/export/financial', [DashboardController::class, 'exportFinancialCsv'])->name('dashboard.export.financial');
 
-    // Manajemen booking (admin)
-    Route::resource('bookings', AdminBookingController::class);
+    // -------------------------
+    // Bookings: custom endpoints (must be before resource routes)
+    // -------------------------
+    Route::get('/bookings/cancellations', [AdminBookingController::class, 'cancellationRequests'])
+        ->name('bookings.cancellations.index');
 
-    // Route untuk cancel booking dan operasi terkait
+    Route::get('/bookings/cancellations/count', [AdminBookingController::class, 'pendingCancellationCount'])
+        ->name('bookings.cancellations.count');
+
+    // Approve/process cancellation (multipart/form-data)
+    Route::post('/bookings/{id}/process-cancellation', [AdminBookingController::class, 'processCancellation'])
+        ->where('id', '[0-9]+')->name('bookings.processCancellation');
+
+    // Backward compatibility alias
+    Route::post('/bookings/{id}/approve-cancellation', [AdminBookingController::class, 'approveCancellation'])
+        ->where('id', '[0-9]+')->name('bookings.cancellations.approve');
+
+    // Reject cancellation
+    Route::post('/bookings/{id}/reject-cancellation', [AdminBookingController::class, 'rejectCancellation'])
+        ->where('id', '[0-9]+')->name('bookings.cancellations.reject');
+
+    // NOTE: removed admin "mark cancellation request" route to enforce that only customers request cancellations.
+
+    // Other booking actions
     Route::post('/bookings/{id}/verify-payment', [AdminBookingController::class, 'verifyPayment'])->name('bookings.verifyPayment');
     Route::post('/bookings/{id}/cancel-booking', [AdminBookingController::class, 'cancelBooking'])->name('bookings.cancelBooking');
     Route::post('/bookings/{id}/force-cancel', [AdminBookingController::class, 'forceCancel'])->name('bookings.forceCancel');
     Route::post('/bookings/{id}/complete-booking', [AdminBookingController::class, 'completeBooking'])->name('bookings.completeBooking');
-    Route::post('/bookings/{id}/process-cancellation', [AdminBookingController::class, 'processCancellation'])->name('bookings.processCancellation');
 
-    // Resource lainnya
+    // -------------------------
+    // Booking resource (index, create, store, show, edit, update, destroy)
+    // placed after custom booking routes to avoid collisions
+    // -------------------------
+    Route::resource('bookings', AdminBookingController::class);
+
+    // Other admin resources
     Route::resource('backgrounds', BackgroundController::class);
     Route::resource('extra-items', ExtraItemsController::class);
     Route::resource('terms', TermsAndConditionController::class);
 });
 
 // ========================
-// SETTINGS (ADMIN) via Volt
+// SETTINGS (ADMIN) via Volt (requires auth)
 // ========================
-
 Route::middleware(['auth'])->group(function () {
     Route::redirect('settings', 'settings/profile');
     Volt::route('settings/profile', 'settings.profile')->name('settings.profile');
@@ -151,13 +181,12 @@ Route::middleware(['auth'])->group(function () {
 });
 
 // ========================
-// API
+// API (public helpers)
 // ========================
-
-Route::get('/api/available-times', [BookingAvailabilityController::class, 'getAvailableTimes'])->name('api.available.times');
+Route::get('/api/available-times', [BookingAvailabilityController::class, 'getAvailableTimes'])
+    ->name('api.available.times');
 
 // ========================
-// AUTH ROUTES (ADMIN BREEZE)
+// ADMIN AUTH (Breeze) — keep default Breeze auth routes
 // ========================
-
 require __DIR__ . '/auth.php';
